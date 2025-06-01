@@ -1,4 +1,4 @@
-// routes/auth.js
+
 const express = require('express');
 const { pool } = require('../config/database');
 
@@ -12,7 +12,7 @@ router.post('/moods', async (req, res) => {
 
     // Create user
     const newMood = await pool.query(
-      'INSERT INTO moods (user_id, mood) VALUES ($1, $2) RETURNING user_id, mood,created_at',
+      'INSERT INTO moods (user_id, mood) VALUES ($1, $2) RETURNING id,user_id, mood,created_at',
       [user_id, mood]
     );
 
@@ -38,4 +38,4 @@ router.post('/moods', async (req, res) => {
 
 
 
-module.exports = moodsRoutes;
+module.exports = selectedMoodRoutes;
