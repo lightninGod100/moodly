@@ -1,0 +1,48 @@
+Moodly (Mood Tracker App)
+Problem Statement
+People often struggle to track their emotional well-being and identify patterns in their mood over time. There's also a lack of connection to how others are feeling globally, which can lead to feelings of isolation.
+Moodly solves this by letting users:
+Track daily mood changes
+View mood history and trends
+See a real-time world mood map
+Receive uplifting support when feeling low
+Moodly promotes self-awareness, emotional insight, and a sense of global connection — all in one app.
+
+Functionality
+User Auth
+Mood selection
+Personal Mood Stats
+Global Mood stats
+Message Card from other users
+
+Screens
+
+S.no	Screen	Whom to show	When to Show	What to show
+1	Landing Page	Not Logged Users	When they land on website	Info about moodly
+Signup, login
+Globe stats
+	Landing Page	Logged Users	When they land on website and logged in	Mood Selection  Screen
+Nav other pages (Globe Stats, personal stats and logout)
+2	Signup Page	Users who clicks on signup	Sign-up Button Clicked	Usernamel, Password, Country
+3	Login Page	Users who clicks on login	Login Button Clicked	Username, Password
+4	Dashboard Page (main page)	Logged-In Users	When logged-in user opens website, or when home is clicked	Mood Selection Screen
+Mood Selected Screen
+5	World Stats	All users	When user clicks on Global Stats	World MoodMap with filters like right now, day and month.
+Other feature to be decided
+6	Personal Stats	Logged In users	When user clicks its username	To be decided
+
+
+Order of Build (MileStone1)
+Mood Selection Screen
+This is shown when a logged user lands on Dashboard which is if a logged user opens a website through domain.
+Provided in MoodSelector.jpg
+For Nav bar button exist and we can ignore redirecting for now
+Mood Selected Screen
+This is shown after user clicks a mood
+Provided in MoodSelectedScreen.jpg
+As of Now Keep the Mood Dependent Message Static “Mood Dependent Message will come here”
+State Based on Mood Message to be static right now “You are Among XX% users feeling YY right now
+Insight Message to be static “Insights will come here”
+To be decided
+
+
