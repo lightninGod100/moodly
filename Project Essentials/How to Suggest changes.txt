@@ -1,0 +1,12 @@
+For modifications:
+Previous code:
+[existing code segment]
+
+Updated Code:
+[modified code with changes]
+For new files/segments:
+New Code - Place in: [file path/location]
+[complete new code]
+For additions to existing files:
+Add this to: [file path] at [specific location/after which line]
+[new code to add]
