@@ -12,5 +12,5 @@ CREATE TABLE moods (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),
   mood VARCHAR(50) NOT NULL,
-  timestamp TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMP DEFAULT NOW()
 );
