@@ -10,6 +10,7 @@ import LoginPage from './components/LoginPage';
 import MoodSelectedScreen from './components/MoodSelectedScreen';
 import GlobePage from './components/GlobePage';
 import UserDashboard from './components/UserDashboard';
+import ErrorScreen from './components/ErrorScreen';
 // Define a type for mood entries with timestamps
 type MoodEntry = {
   mood: string;
