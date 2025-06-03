@@ -11,19 +11,19 @@ import MoodSelectedScreen from './components/MoodSelectedScreen';
 import GlobePage from './components/GlobePage';
 import UserDashboard from './components/UserDashboard';
 import ErrorScreen from './components/ErrorScreen';
+// ADDED: Import mood API service for backend integration
+import { moodApiService } from './services/MoodService';
 // Define a type for mood entries with timestamps
-type MoodEntry = {
-  mood: string;
-  timestamp: number;
-};
+
 
 //Helper function to check if timestamp is within 10 minutes
 const isWithin10Minutes = (timestamp: number): boolean => {
   const now = Date.now();
-  const tenMinutesInMs = 0.15 * 60 * 1000; // 10 minutes in milliseconds
+  const tenMinutesInMs = 10 * 60 * 1000; // 10 minutes in milliseconds
   return (now - timestamp) <= tenMinutesInMs;
 };
 
+//Helper function to get mood emoji
 const getMoodEmoji = (mood: string): string => {
   const moodEmojis: Record<string, string> = {
     'Excited': '😃',
@@ -37,33 +37,53 @@ const getMoodEmoji = (mood: string): string => {
   return moodEmojis[mood] || '😐';
 };
 
-// Key for localStorage
-const LOCAL_STORAGE_KEY = 'moodHistory';
+
 
 function App() {
-  // Store mood history with timestamps
-  const [moodHistory, setMoodHistory] = useState<MoodEntry[]>([]);
+  // ADDED: API status tracking for error handling and loading states
+  const [apiStatus, setApiStatus] = useState<'loading' | 'healthy' | 'error'>('loading');
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   // Current page state
   const [currentPage, setCurrentPage] = useState('home');
 
+  const [currentMoodData, setCurrentMoodData] = useState<{mood: string, timestamp: number} | null>(null);
+
   // Load mood history from localStorage on initial render
-  useEffect(() => {
-    const storedHistory = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (storedHistory) {
-      setMoodHistory(JSON.parse(storedHistory));
-    }
-    
-    // Check for auth state using token
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      setIsAuthenticated(true);
-      setCurrentPage('home');
-    } else {
-      setIsAuthenticated(false);
-      setCurrentPage('landing');
-    }
+    useEffect(() => {
+    const initializeApp = async () => {
+      
+      // Check for auth state using token
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        setIsAuthenticated(true);
+        setCurrentPage('home');
+        
+        // ADDED: Fetch last mood from API for authenticated users
+        try {
+          const lastMood = await moodApiService.getLastMood();
+          if (lastMood) {
+            setCurrentMoodData({
+              mood: lastMood.mood,
+              timestamp: new Date(lastMood.createdAt).getTime()
+            });
+          }
+          // ADDED: Mark API as healthy after successful call
+          setApiStatus('healthy');
+        } catch (error) {
+          console.error('Failed to fetch last mood:', error);
+          // ADDED: Mark API as error if initial mood fetch fails
+          setApiStatus('error');
+        }
+      } else {
+        setIsAuthenticated(false);
+        setCurrentPage('landing');
+        // ADDED: For unauthenticated users, API status is healthy (no mood API needed)
+        setApiStatus('healthy');
+      }
+    };
+
+    initializeApp();
   }, []);
 
   // Handle navigation
@@ -83,39 +103,45 @@ function App() {
   };
 
   // Handle mood selection
-  const handleSelectMood = (mood: string) => {
-    // Create new mood entry with current timestamp
-    console.log('Mood selected:', mood);
-    console.log('Current mood history before update:', moodHistory);
-
-    const newEntry = {
-      mood,
-      timestamp: Date.now()
-    };
-    console.log('New mood entry:', newEntry);
-    // Update mood history
-    const updatedHistory = [...moodHistory, newEntry];
-    setMoodHistory(updatedHistory);
-    
-    console.log('Updated mood history:', updatedHistory);
-
-    // Save to localStorage
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedHistory));
+  const handleSelectMood = async(mood: string) => {
+    try {
+      await moodApiService.createMood(mood);
+      
+      // ADDED: Update local state after successful API call
+      setCurrentMoodData({
+        mood,
+        timestamp: Date.now()
+      });
+      
+      console.log('Mood saved successfully:', mood);
+    } catch (error) {
+      console.error('Failed to save mood:', error);
+      // ADDED: Let MoodSelector component handle this error (will be thrown to component)
+      throw error;
+    }
   };
 
   // Get the most recently selected mood (or null if none)
   const getCurrentMood = () => {
-    if (moodHistory.length === 0) {
-      console.log('No mood history found, returning null');
-      return null;
-    }
-    const currentMood = moodHistory[moodHistory.length - 1].mood;
-    console.log('Current mood derived from history:', currentMood);
-    return currentMood;
+    return currentMoodData?.mood || null;
   };
 
   // Temporary content display for testing
   const renderContent = () => {
+     // ADDED: Handle API error state for authenticated users - show error screen if mood API failed
+     if (isAuthenticated && apiStatus === 'error') {
+      return <ErrorScreen />;
+    }
+    
+    // ADDED: Handle loading state for authenticated users - show loading while fetching initial mood data
+    if (isAuthenticated && apiStatus === 'loading') {
+      return (
+        <div className="text-center py-12">
+          <div className="text-2xl">Loading your mood data...</div>
+        </div>
+      );
+    }
+
     if (currentPage === 'globe') {
       return <GlobePage />;
     }
@@ -146,8 +172,8 @@ function App() {
       // Authenticated users logic with 10-minute rule
       if (currentPage === 'you') {
         const currentMood = getCurrentMood();
-        const hasRecentMood = currentMood && moodHistory.length > 0 ? 
-          isWithin10Minutes(moodHistory[moodHistory.length - 1].timestamp) : false;
+        const hasRecentMood = currentMood && currentMoodData ? 
+          isWithin10Minutes(currentMoodData.timestamp) : false;
           
         return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} />;
       }
@@ -155,8 +181,8 @@ function App() {
       const currentMood = getCurrentMood();
       
       // Check if user has recent mood (within 10 minutes)
-      if (currentMood && moodHistory.length > 0) {
-        const lastMoodTimestamp = moodHistory[moodHistory.length - 1].timestamp;
+       if (currentMood && currentMoodData) {
+        const lastMoodTimestamp = currentMoodData.timestamp;
         
         if (isWithin10Minutes(lastMoodTimestamp)) {
           // Show mood selected screen (within 10 minutes)
