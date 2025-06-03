@@ -28,9 +28,11 @@ router.post('/', authenticateToken, async (req, res) => {
     }
 
     // Insert mood into database
+    // Insert mood into database - ADD: UNIX timestamp for created_at
+    const now = Date.now(); // UNIX timestamp in milliseconds
     const newMood = await pool.query(
-      'INSERT INTO moods (user_id, mood) VALUES ($1, $2) RETURNING id, user_id, mood, created_at',
-      [userId, mood]
+    'INSERT INTO moods (user_id, mood, created_at, created_at_utc) VALUES ($1, $2, $3, to_timestamp($3/1000.0)) RETURNING id, user_id, mood, created_at, created_at_utc',
+    [userId, mood, now]
     );
 
     res.status(201).json({
@@ -81,8 +83,9 @@ router.get('/last', authenticateToken, async (req, res) => {
     const lastMood = lastMoodResult.rows[0];
     
     // Calculate if within 10 minutes (matching your frontend logic)
+    // Calculate if within 10 minutes - SIMPLIFIED: direct UNIX timestamp comparison
     const now = Date.now();
-    const moodTime = new Date(lastMood.created_at).getTime();
+    const moodTime = lastMood.created_at; // Already UNIX timestamp
     const tenMinutesInMs = 10 * 60 * 1000;
     const isWithin10Minutes = (now - moodTime) <= tenMinutesInMs;
 
