@@ -53,8 +53,8 @@ router.post('/register', async (req, res) => {
    // Create user - ADD: UNIX timestamp for created_at
     const now = Date.now(); // UNIX timestamp in milliseconds
     const newUser = await pool.query(
-      'INSERT INTO users (email, password_hash, country, created_at, created_at_utc) VALUES ($1, $2, $3, $4, to_timestamp($4/1000.0)) RETURNING id, email, country, created_at, created_at_utc, test_user',
-      [email.toLowerCase(), passwordHash, country, now]
+     'INSERT INTO users (email, password_hash, country, created_at, created_at_utc) VALUES ($1, $2, $3, $4, to_timestamp($4::bigint/1000.0)) RETURNING id, email, country, created_at, created_at_utc, test_user',
+     [email.toLowerCase(), passwordHash, country, now]
     );
 
     // Generate JWT token

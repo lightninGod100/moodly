@@ -31,7 +31,7 @@ router.post('/', authenticateToken, async (req, res) => {
     // Insert mood into database - ADD: UNIX timestamp for created_at
     const now = Date.now(); // UNIX timestamp in milliseconds
     const newMood = await pool.query(
-    'INSERT INTO moods (user_id, mood, created_at, created_at_utc) VALUES ($1, $2, $3, to_timestamp($3/1000.0)) RETURNING id, user_id, mood, created_at, created_at_utc',
+    'INSERT INTO moods (user_id, mood, created_at, created_at_utc) VALUES ($1, $2, $3, to_timestamp($3::bigint/1000.0)) RETURNING id, user_id, mood, created_at, created_at_utc',
     [userId, mood, now]
     );
 

@@ -7,6 +7,7 @@ const { pool, testConnection } = require('./config/database');
 // Import routes
 const authRoutes = require('./routes/auth');
 const MoodsRoutes = require('./routes/moods');
+const worldStatsRoutes = require('./routes/worldStats');
 
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
@@ -73,6 +74,7 @@ app.get('/api/test-db', async (req, res) => {
 // Authentication routes
 app.use('/api/auth', authRoutes);
 app.use('/api/moods', MoodsRoutes);
+app.use('/api/world-stats', worldStatsRoutes);
 
 // Protected route example (requires authentication)
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
