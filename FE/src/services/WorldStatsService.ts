@@ -114,18 +114,74 @@ export const fetchCountryStats = async (period: string): Promise<CountryStats> =
 };
 
 /**
- * Fetch both global and country stats for a specific time period
+ * Fetch mood frequency statistics and convert to percentages
+ */
+export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStats> => {
+  try {
+    // Map frontend period to backend period
+    const backendPeriod = periodMap[period.toLowerCase()];
+    if (!backendPeriod) {
+      throw new Error(`Invalid period: ${period}`);
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/world-stats/mood_frequency?period=${backendPeriod}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status >= 500) {
+        throw new Error('Something seems wrong, please refresh or come back later');
+      } else if (response.status >= 400) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'Invalid request parameters');
+      }
+      throw new Error('Something seems wrong, please refresh or come back later');
+    }
+
+    const rawData: GlobalMoodStats = await response.json();
+    
+    // Calculate total frequency count
+    const totalCount = Object.values(rawData).reduce((sum, count) => sum + count, 0);
+    
+    // Convert raw counts to percentages
+    const percentageData: GlobalMoodStats = {} as GlobalMoodStats;
+    Object.keys(rawData).forEach(mood => {
+      percentageData[mood as keyof GlobalMoodStats] = totalCount > 0 
+        ? Math.round((rawData[mood as keyof GlobalMoodStats] / totalCount) * 100)
+        : 0;
+    });
+
+    return percentageData;
+
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Something seems wrong, please refresh or come back later');
+    }
+    throw error;
+  }
+};
+
+/**
+ * Fetch global, country, and frequency stats for a specific time period
  */
 export const fetchWorldStats = async (period: string) => {
   try {
-    const [globalStats, countryStats] = await Promise.all([
+    const [globalStats, countryStats, frequencyStats] = await Promise.all([
       fetchGlobalStats(period),
-      fetchCountryStats(period)
+      fetchCountryStats(period),
+      fetchMoodFrequency(period)
     ]);
 
     return {
-      global: globalStats,
-      countries: countryStats
+      global: globalStats,      // First row: "X% Users" (dominant mood)
+      countries: countryStats,  // Map data: country tooltips
+      frequency: frequencyStats // Second row: "X% Times" (frequency percentages)
     };
   } catch (error) {
     throw error;
