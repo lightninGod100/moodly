@@ -1,6 +1,8 @@
 // src/components/GlobePage.tsx
 import React, { useState, useEffect } from 'react';
-import { fetchGlobalStats} from '../services/WorldStatsService';
+import { fetchWorldStats } from '../services/GlobalStatsService';
+import type { GlobalMoodStats, CountryStats } from '../services/GlobalStatsService';
+import WorldMap from './WorldMap';
 
 // Mood emoji mapping
 const moodEmojis: { [key: string]: string } = {
@@ -15,27 +17,34 @@ const moodEmojis: { [key: string]: string } = {
 
 const moodOrder = ['Happy', 'Excited', 'Calm', 'Tired', 'Sad', 'Angry', 'Anxious'];
 
+// Interface for all world stats data
+interface GlobalStatsData {
+  global: GlobalMoodStats;
+  frequency: GlobalMoodStats;  
+  countries: CountryStats;
+}
+
 const GlobePage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('live');
-  const [globalStats, setGlobalStats] = useState<GlobalMoodStats | null>(null);
+  const [worldStats, setWorldStats] = useState<GlobalStatsData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // Load initial data
   useEffect(() => {
-    loadGlobalStats(selectedPeriod);
+    loadWorldStats(selectedPeriod);
   }, []);
 
-  // Load global stats for selected period
-  const loadGlobalStats = async (period: string) => {
+  // Load all world stats for selected period
+  const loadWorldStats = async (period: string) => {
     try {
       setIsLoading(true);
       setError(null);
       
-      const stats = await fetchGlobalStats(period);
-      setGlobalStats(stats);
+      const stats = await fetchWorldStats(period);
+      setWorldStats(stats);
     } catch (err) {
-      console.error('Failed to load global stats:', err);
+      console.error('Failed to load world stats:', err);
       setError(err instanceof Error ? err.message : 'Something seems wrong, please refresh or come back later');
     } finally {
       setIsLoading(false);
@@ -45,7 +54,7 @@ const GlobePage: React.FC = () => {
   // Handle period change
   const handlePeriodChange = async (period: string) => {
     setSelectedPeriod(period);
-    await loadGlobalStats(period);
+    await loadWorldStats(period);
   };
 
   // Get display text for periods
@@ -61,7 +70,7 @@ const GlobePage: React.FC = () => {
 
   return (
     <div className="text-center py-8">
-      {/* Header - will be shown by navbar, keeping for context */}
+      {/* Header */}
       <h1 className="text-3xl font-bold mb-8">Global Mood Statistics</h1>
       
       {/* Time Filter Tabs */}
@@ -98,7 +107,7 @@ const GlobePage: React.FC = () => {
           <div className="bg-red-50 border-2 border-red-300 p-6 max-w-md mx-auto">
             <p className="text-red-600 mb-4">{error}</p>
             <button
-              onClick={() => loadGlobalStats(selectedPeriod)}
+              onClick={() => loadWorldStats(selectedPeriod)}
               className="bg-red-600 text-white px-4 py-2 border-2 border-red-600 hover:bg-red-700 transition-colors"
             >
               Try Again
@@ -108,9 +117,10 @@ const GlobePage: React.FC = () => {
       )}
 
       {/* Global Mood Statistics Grid */}
-      {globalStats && !isLoading && !error && (
+      {worldStats && !isLoading && !error && (
         <>
-          <div className="mb-12">
+          {/* First Row - Users Statistics (Dominant Mood) */}
+          <div className="mb-8">
             <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
               {moodOrder.map((mood) => (
                 <div
@@ -127,24 +137,45 @@ const GlobePage: React.FC = () => {
                     {mood}
                   </div>
                   
-                  {/* Percentage */}
+                  {/* Percentage - Users */}
                   <div className="text-gray-700">
-                    {globalStats[mood as keyof GlobalMoodStats]}% Users
+                    {worldStats.global[mood as keyof GlobalMoodStats]}% Users
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Placeholder for World Map */}
-          <div className="bg-gray-200 h-96 flex items-center justify-center rounded-lg mx-auto max-w-4xl">
-            <div className="text-center">
-              <div className="text-2xl font-bold mb-2">🌍</div>
-              <div className="text-lg text-gray-600">Interactive World Map</div>
-              <div className="text-sm text-gray-500">
-                (Will be implemented with static image + overlays)
-              </div>
+          {/* Second Row - Frequency Statistics */}
+          <div className="mb-12">
+            <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
+              {moodOrder.map((mood) => (
+                <div
+                  key={`freq-${mood}`}
+                  className="border-2 border-black p-6 flex flex-col items-center min-w-[150px]"
+                >
+                  {/* Mood Emoji */}
+                  <div className="text-4xl mb-2">
+                    {moodEmojis[mood]}
+                  </div>
+                  
+                  {/* Mood Name */}
+                  <div className="font-bold text-lg mb-2">
+                    {mood}
+                  </div>
+                  
+                  {/* Percentage - Times */}
+                  <div className="text-gray-700">
+                    {worldStats.frequency[mood as keyof GlobalMoodStats]}% Times
+                  </div>
+                </div>
+              ))}
             </div>
+          </div>
+
+          {/* Interactive World Map */}
+          <div className="mx-auto max-w-5xl">
+            <WorldMap countryData={worldStats.countries} />
           </div>
 
           {/* Data Info */}
