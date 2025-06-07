@@ -5,6 +5,7 @@ import {
   Geographies,
   Geography,
 } from 'react-simple-maps';
+import type { CountryStats } from '../services/GlobalStatsService';
 
 // Mood color mapping
 const moodColors: { [key: string]: string } = {
@@ -18,53 +19,17 @@ const moodColors: { [key: string]: string } = {
   default: '#9ca3af'   // Gray for no data
 };
 
-// Sample placeholder data for countries (will be replaced with API data)
-const sampleCountryData: { [key: string]: { topMood: string; userCount: number } } = {
-  // Common English names
-  'United States of America': { topMood: 'Happy', userCount: 1250 },
-  'United States': { topMood: 'Happy', userCount: 1250 },
-  'USA': { topMood: 'Happy', userCount: 1250 },
-  'Canada': { topMood: 'Calm', userCount: 340 },
-  'Brazil': { topMood: 'Excited', userCount: 890 },
-  'United Kingdom': { topMood: 'Tired', userCount: 420 },
-  'UK': { topMood: 'Tired', userCount: 420 },
-  'Germany': { topMood: 'Anxious', userCount: 380 },
-  'France': { topMood: 'Sad', userCount: 290 },
-  'India': { topMood: 'Happy', userCount: 2100 },
-  'China': { topMood: 'Calm', userCount: 1800 },
-  'Australia': { topMood: 'Excited', userCount: 180 },
-  'Japan': { topMood: 'Tired', userCount: 650 },
-  'Russia': { topMood: 'Calm', userCount: 850 },
-  'Russian Federation': { topMood: 'Calm', userCount: 850 },
-  'Mexico': { topMood: 'Happy', userCount: 420 },
-  'Argentina': { topMood: 'Excited', userCount: 280 },
-  // Additional common map names
-  'South Africa': { topMood: 'Happy', userCount: 320 },
-  'New Zealand': { topMood: 'Calm', userCount: 85 },
-  'Spain': { topMood: 'Excited', userCount: 290 },
-  'Italy': { topMood: 'Happy', userCount: 310 },
-  'Netherlands': { topMood: 'Calm', userCount: 140 },
-  'Sweden': { topMood: 'Calm', userCount: 95 },
-  'Norway': { topMood: 'Happy', userCount: 87 },
-  'Poland': { topMood: 'Tired', userCount: 180 },
-  'Turkey': { topMood: 'Anxious', userCount: 210 },
-  'Egypt': { topMood: 'Sad', userCount: 150 },
-  'Nigeria': { topMood: 'Happy', userCount: 380 },
-  'South Korea': { topMood: 'Tired', userCount: 220 },
-  'Thailand': { topMood: 'Happy', userCount: 140 },
-  'Indonesia': { topMood: 'Calm', userCount: 450 },
-  'Philippines': { topMood: 'Excited', userCount: 200 },
-  'Vietnam': { topMood: 'Happy', userCount: 180 }
-};
-
 interface WorldMapProps {
-  // countryData will be passed later from API
-  countryData?: { [key: string]: { topMood: string; userCount: number } };
+  countryData: CountryStats;
 }
 
-const WorldMap: React.FC<WorldMapProps> = ({ countryData = sampleCountryData }) => {
-  const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; country: string; data: any } | null>(null);
+const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
+  const [tooltip, setTooltip] = useState<{ 
+    x: number; 
+    y: number; 
+    country: string; 
+    data: { topMood: string; userCount: number; moods?: any } 
+  } | null>(null);
 
   // Get country color based on dominant mood
   const getCountryColor = (countryName: string): string => {
@@ -80,18 +45,20 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData = sampleCountryData }) 
     const data = countryData[countryName];
     
     if (countryName) {
-      setHoveredCountry(countryName);
       setTooltip({
         x: event.clientX,
         y: event.clientY,
         country: countryName,
-        data: data || { topMood: 'No Data', userCount: 0 }
+        data: data || { 
+          topMood: 'No Data', 
+          userCount: 0, 
+          moods: { Happy: 0, Excited: 0, Calm: 0, Tired: 0, Sad: 0, Angry: 0, Anxious: 0 }
+        }
       });
     }
   };
 
   const handleMouseLeave = () => {
-    setHoveredCountry(null);
     setTooltip(null);
   };
 
