@@ -15,7 +15,6 @@ const MOOD_SCORES: Record<MoodType, number> = {
   Angry: -0.7,
   Sad: -1
 };
-
 // Mood emoji mapping
 const MOOD_EMOJIS: Record<MoodType, string> = {
   Happy: '😊',
@@ -134,49 +133,54 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
 
   // Personal Happiness Index Chart Component
   const HappinessIndexChart: React.FC = () => {
+    // Debug logs
+  console.log('Happiness Chart Data:', MOCK_HAPPINESS_DATA);
+  console.log('Happiness Chart Data Length:', MOCK_HAPPINESS_DATA.length);
     return (
       <div className="border-2 border-black p-6 h-full">
         <h3 className="font-bold text-lg mb-2">Personal Happiness Index</h3>
         <div className="text-xs text-gray-600 mb-4">Last 30 Days</div>
         
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={MOCK_HAPPINESS_DATA}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="day" 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12, fill: '#6b7280' }}
-                interval="preserveStartEnd"
-              />
-              <YAxis 
-                domain={[-1, 1]}
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12, fill: '#6b7280' }}
-                tickFormatter={(value) => value.toFixed(1)}
-              />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '12px'
-                }}
-                formatter={(value: number) => [value.toFixed(2), 'Happiness Score']}
-                labelFormatter={(label) => `Day ${label}`}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="score" 
-                stroke="#3b82f6" 
-                strokeWidth={2}
-                dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, fill: '#1d4ed8' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div style={{ width: '100%', height: '256px', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={MOCK_HAPPINESS_DATA}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="day" 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#6b7280' }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis 
+                  domain={[-1, 1]}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#6b7280' }}
+                  tickFormatter={(value) => value.toFixed(1)}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '12px'
+                  }}
+                  formatter={(value: number) => [value.toFixed(2), 'Happiness Score']}
+                  labelFormatter={(label) => `Day ${label}`}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="score" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#1d4ed8' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     );
@@ -217,52 +221,53 @@ const UserDashboard: React.FC<UserDashboardProps> = ({
         </div>
         
         {/* Bar chart */}
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="mood"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: '#6b7280' }}
-                angle={-45}
-                textAnchor="end"
-                height={60}
-                interval={0}
-              />
-              <YAxis 
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12, fill: '#6b7280' }}
-              />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '12px'
-                }}
-                formatter={(value: number, name: string, props: any) => [
-                  `${value} times`,
-                  `${props.payload.emoji} ${props.payload.mood}`
-                ]}
-                labelFormatter={() => ''}
-              />
-              <Bar 
-                dataKey="count" 
-                fill="#3b82f6" 
-                radius={[4, 4, 0, 0]}
-                stroke="#1e40af"
-                strokeWidth={1}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+        <div style={{ width: '100%', height: '256px', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="mood"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  interval={0}
+                />
+                <YAxis 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#6b7280' }}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '12px'
+                  }}
+                  formatter={(value: number, name: string, props: any) => [
+                    `${value} times`,
+                    `${props.payload.emoji} ${props.payload.mood}`
+                  ]}
+                  labelFormatter={() => ''}
+                />
+                <Bar 
+                  dataKey="count" 
+                  fill="#3b82f6" 
+                  radius={[4, 4, 0, 0]}
+                  stroke="#1e40af"
+                  strokeWidth={1}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     );
   };
-
   return (
     <div className="py-8">
       {/* Header */}
