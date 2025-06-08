@@ -21,6 +21,3 @@ yarn-error.log*
 # Package locks (optional)
 package-lock.json
 yarn.lock
-
-
-BE/node_modules/
