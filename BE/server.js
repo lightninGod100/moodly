@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { pool, testConnection } = require('./config/database');
+const userStatsRoutes = require('./routes/userStats');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -75,6 +76,7 @@ app.get('/api/test-db', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/moods', MoodsRoutes);
 app.use('/api/world-stats', worldStatsRoutes);
+app.use('/api/user-stats', userStatsRoutes);
 
 // Protected route example (requires authentication)
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
