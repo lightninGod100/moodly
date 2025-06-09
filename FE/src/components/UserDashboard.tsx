@@ -152,14 +152,13 @@ const DominantModeSection: React.FC = () => {
   );
 };
 
-  // Personal Happiness Index Chart Component
+// Personal Happiness Index Chart Component
 const HappinessIndexChart: React.FC = () => {
-  // Transform API data for Recharts (convert date to day number for display)
-  const chartData = happinessData.map((point, index) => ({
-    day: happinessData.length - index, // Reverse day numbers
-    score: point.score || 0,
-    date: point.date
-  })).reverse();
+  // Use data as-is (already in chronological order from API)
+  const chartData = happinessData.map((point) => ({
+    date: point.date,
+    score: point.score || 0
+  }));
 
   return (
     <div className="border-2 border-black p-6 h-full">
@@ -172,11 +171,16 @@ const HappinessIndexChart: React.FC = () => {
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis 
-                dataKey="day" 
+                dataKey="date" 
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12, fill: '#6b7280' }}
-                interval="preserveStartEnd"
+                tick={{ fontSize: 10, fill: '#6b7280' }}
+                interval={6} // Show every 7th date (0, 7, 14, 21, 28)
+                tickFormatter={(value) => {
+                  // Format date as MM/DD
+                  const date = new Date(value);
+                  return `${date.getMonth() + 1}/${date.getDate()}`;
+                }}
               />
               <YAxis 
                 domain={[-1, 1]}
@@ -194,8 +198,13 @@ const HappinessIndexChart: React.FC = () => {
                 }}
                 formatter={(value: number) => [value.toFixed(2), 'Happiness Score']}
                 labelFormatter={(label) => {
-                  const point = chartData.find(d => d.day === label);
-                  return point ? `${point.date} (Day ${label})` : `Day ${label}`;
+                  // Show full date in tooltip
+                  const date = new Date(label);
+                  return date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  });
                 }}
               />
               <Line 
