@@ -21,94 +21,133 @@ const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
   disabled,
   className = '',
+  style = {},
   ...props
 }) => {
-  // Base button classes
-  const baseClasses = `
-    inline-flex items-center justify-center
-    font-medium rounded-lg
-    transition-all duration-normal
-    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2
-    disabled:opacity-50 disabled:cursor-not-allowed
-    ${fullWidth ? 'w-full' : ''}
-  `;
-
-  // Variant classes using your design system
-  const variantClasses = {
-    primary: `
-      bg-primary-500 text-white
-      hover:bg-primary-600 
-      active:bg-primary-700
-      shadow-sm hover:shadow-md
-    `,
-    secondary: `
-      bg-neutral-100 text-neutral-900
-      hover:bg-neutral-200
-      active:bg-neutral-300
-      border border-neutral-200
-    `,
-    outline: `
-      bg-transparent text-primary-500
-      border-2 border-primary-500
-      hover:bg-primary-50
-      active:bg-primary-100
-    `,
-    ghost: `
-      bg-transparent text-primary-500
-      hover:bg-primary-50
-      active:bg-primary-100
-    `
+  // Base styles using CSS custom properties
+  const baseStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-family)',
+    fontWeight: 'var(--font-medium)',
+    borderRadius: 'var(--radius-lg)',
+    transition: 'all var(--transition-normal)',
+    cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
+    opacity: disabled || isLoading ? 0.5 : 1,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+    outline: 'none',
+    textDecoration: 'none',
+    width: fullWidth ? '100%' : 'auto',
+    ...style
   };
 
-  // Size classes
-  const sizeClasses = {
-    sm: 'px-3 py-2 text-sm',
-    md: 'px-4 py-3 text-base',
-    lg: 'px-6 py-4 text-lg'
+  // Variant-specific styles
+  const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
+    primary: {
+      backgroundColor: 'var(--primary-500)',
+      color: '#ffffff',
+      boxShadow: 'var(--shadow-sm)',
+    },
+    secondary: {
+      backgroundColor: 'var(--neutral-100)',
+      color: 'var(--neutral-900)',
+      border: '1px solid var(--neutral-200)',
+    },
+    outline: {
+      backgroundColor: 'transparent',
+      color: 'var(--primary-500)',
+      border: '2px solid var(--primary-500)',
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+      color: 'var(--primary-500)',
+      border: 'none',
+    }
   };
 
-  // Combine all classes
-  const buttonClasses = `
-    ${baseClasses}
-    ${variantClasses[variant]}
-    ${sizeClasses[size]}
-    ${className}
-  `.trim().replace(/\s+/g, ' ');
+  // Size-specific styles
+  const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
+    sm: {
+      padding: 'var(--space-2) var(--space-3)',
+      fontSize: 'var(--text-sm)',
+    },
+    md: {
+      padding: 'var(--space-3) var(--space-4)',
+      fontSize: 'var(--text-base)',
+    },
+    lg: {
+      padding: 'var(--space-4) var(--space-6)',
+      fontSize: 'var(--text-lg)',
+    }
+  };
+
+  // Hover styles (applied via CSS)
+  const hoverClass = `button-${variant}`;
+
+  // Combine all styles
+  const combinedStyle = {
+    ...baseStyle,
+    ...variantStyles[variant],
+    ...sizeStyles[size],
+  };
 
   return (
-    <button
-      className={buttonClasses}
-      disabled={disabled || isLoading}
-      {...props}
-    >
-      {isLoading ? (
-        <>
-          <svg 
-            className="animate-spin -ml-1 mr-2 h-4 w-4" 
-            xmlns="http://www.w3.org/2000/svg" 
-            fill="none" 
-            viewBox="0 0 24 24"
-          >
-            <circle 
-              className="opacity-25" 
-              cx="12" 
-              cy="12" 
-              r="10" 
-              stroke="currentColor" 
-              strokeWidth="4"
+    <>
+      {/* Add hover styles via CSS */}
+      <style>{`
+        .button-primary:hover:not(:disabled) {
+          background-color: var(--primary-600) !important;
+          box-shadow: var(--shadow-md) !important;
+        }
+        .button-secondary:hover:not(:disabled) {
+          background-color: var(--neutral-200) !important;
+        }
+        .button-outline:hover:not(:disabled) {
+          background-color: var(--primary-50) !important;
+        }
+        .button-ghost:hover:not(:disabled) {
+          background-color: var(--primary-50) !important;
+        }
+        .button-primary:focus {
+          outline: 2px solid var(--primary-500);
+          outline-offset: 2px;
+        }
+      `}</style>
+      
+      <button
+        className={`${hoverClass} ${className}`}
+        style={combinedStyle}
+        disabled={disabled || isLoading}
+        {...props}
+      >
+        {isLoading ? (
+          <span style={{ display: 'flex', alignItems: 'center' }}>
+            <span 
+              style={{
+                width: '16px',
+                height: '16px',
+                border: '2px solid currentColor',
+                borderTop: '2px solid transparent',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                marginRight: 'var(--space-2)'
+              }}
             />
-            <path 
-              className="opacity-75" 
-              fill="currentColor" 
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            />
-          </svg>
-          Loading...
-        </>
-      ) : (
-        children
-      )}
-    </button>
+            Loading...
+          </span>
+        ) : (
+          children
+        )}
+      </button>
+      
+      {/* Keyframe animation for loading spinner */}
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </>
   );
 };
 

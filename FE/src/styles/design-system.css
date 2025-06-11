@@ -2,41 +2,25 @@
    MOODLY DESIGN SYSTEM FOUNDATION
    ======================================== */
 
+   
    :root {
+    /* ----Images ----------------------- --------- */
+    --landing-bg-image: url('/images/fog-clouds-mountains.jpg');
+
     /* ===== PRIMARY BRAND COLORS (Blue & White) ===== */
     /* Your Custom Blue Palette - Based on rgb(50, 100, 255) */
-    --primary-50: #f0f4ff;     /* Very light blue tint */
-    --primary-100: #e0eaff;    /* Light blue tint */
-    --primary-200: #c7d8ff;    /* Lighter blue */
-    --primary-300: #a3c1ff;    /* Light blue */
-    --primary-400: #7aa3ff;    /* Medium light blue */
-    --primary-500: #3264ff;    /* YOUR MAIN BLUE */
-    --primary-600: #2854e6;    /* Darker blue */
-    --primary-700: #1e44cc;    /* Dark blue */
-    --primary-800: #1a3bb3;    /* Darker blue */
-    --primary-900: #162866;    /* Very dark blue */
+   
+    --pcolor-0: #a3c1ff;    /* Light blue */
+    --pcolor-200: #3264ff;    /* YOUR MAIN BLUE */
+    --pcolor-300: #2854e6;    /* Darker blue */
+  
   
     /* ===== NEUTRAL COLORS (Whites & Grays) ===== */
-    --neutral-0: #ffffff;      /* Pure white */
-    --neutral-50: #f9fafb;     /* Very light gray */
-    --neutral-100: #f3f4f6;    /* Light gray */
-    --neutral-200: #e5e7eb;    /* Light gray */
-    --neutral-300: #d1d5db;    /* Medium light gray */
-    --neutral-400: #9ca3af;    /* Medium gray */
-    --neutral-500: #6b7280;    /* Medium gray */
-    --neutral-600: #4b5563;    /* Medium dark gray */
-    --neutral-700: #374151;    /* Dark gray */
-    --neutral-800: #1f2937;    /* Darker gray */
-    --neutral-900: #111827;    /* Very dark gray */
+    --ncolor-0: #ffffff;      /* Pure white */
+    --ncolor-10: #e5e7eb;    /* Light gray */
+    --ncolor-300: #9ca3af;    /* Medium gray */
+
   
-    /* ===== MOOD COLORS (Only for MoodSelectedScreen) ===== */
-    --mood-happy: #22c55e;     /* Green */
-    --mood-excited: #f59e0b;   /* Amber */
-    --mood-calm: #3b82f6;      /* Blue (different from primary) */
-    --mood-tired: #8b5cf6;     /* Purple */
-    --mood-anxious: #f97316;   /* Orange */
-    --mood-angry: #ef4444;     /* Red */
-    --mood-sad: #6366f1;       /* Indigo */
   
     /* ===== SEMANTIC COLORS ===== */
     --success: #10b981;        /* Success green */
@@ -46,7 +30,7 @@
   
     /* ===== TYPOGRAPHY SYSTEM ===== */
     /* Font Family */
-    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     
     /* Font Sizes */
     --text-xs: 0.75rem;        /* 12px */
@@ -97,45 +81,12 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   
-    /* ===== TRANSITIONS ===== */
-    --transition-fast: 150ms ease-in-out;
-    --transition-normal: 250ms ease-in-out;
-    --transition-slow: 350ms ease-in-out;
   }
   
-  /* ===== GLOBAL TYPOGRAPHY CLASSES ===== */
-  .heading-6xl {
-    font-family: var(--font-family);
-    font-size: var(--text-6xl);
-    font-weight: var(--font-bold);
-    line-height: var(--leading-tight);
-    color: var(--neutral-900);
-  }
-  
-  .heading-4xl {
-    font-family: var(--font-family);
-    font-size: var(--text-4xl);
-    font-weight: var(--font-bold);
-    line-height: var(--leading-tight);
-    color: var(--neutral-900);
-  }
-  
-  .heading-2xl {
-    font-family: var(--font-family);
-    font-size: var(--text-2xl);
-    font-weight: var(--font-semibold);
-    line-height: var(--leading-tight);
-    color: var(--neutral-900);
-  }
-  
-  .heading-xl {
-    font-family: var(--font-family);
-    font-size: var(--text-xl);
-    font-weight: var(--font-semibold);
-    line-height: var(--leading-normal);
-    color: var(--neutral-900);
-  }
-  
+
+  /*------------------------------Text Format Classes---------------------------------------------------*/
+
+ 
   .body-base {
     font-family: var(--font-family);
     font-size: var(--text-base);
@@ -143,53 +94,5 @@
     line-height: var(--leading-normal);
     color: var(--neutral-700);
   }
+ 
   
-  .body-sm {
-    font-family: var(--font-family);
-    font-size: var(--text-sm);
-    font-weight: var(--font-normal);
-    line-height: var(--leading-normal);
-    color: var(--neutral-600);
-  }
-  
-  /* ===== UTILITY CLASSES ===== */
-  .text-primary {
-    color: var(--primary-500);
-  }
-  
-  .bg-primary {
-    background-color: var(--primary-500);
-  }
-  
-  .border-primary {
-    border-color: var(--primary-500);
-  }
-  
-  /* ===== MOOD-SPECIFIC UTILITIES (Only for MoodSelectedScreen) ===== */
-  .mood-happy { color: var(--mood-happy); }
-  .bg-mood-happy { background-color: var(--mood-happy); }
-  .border-mood-happy { border-color: var(--mood-happy); }
-  
-  .mood-excited { color: var(--mood-excited); }
-  .bg-mood-excited { background-color: var(--mood-excited); }
-  .border-mood-excited { border-color: var(--mood-excited); }
-  
-  .mood-calm { color: var(--mood-calm); }
-  .bg-mood-calm { background-color: var(--mood-calm); }
-  .border-mood-calm { border-color: var(--mood-calm); }
-  
-  .mood-tired { color: var(--mood-tired); }
-  .bg-mood-tired { background-color: var(--mood-tired); }
-  .border-mood-tired { border-color: var(--mood-tired); }
-  
-  .mood-anxious { color: var(--mood-anxious); }
-  .bg-mood-anxious { background-color: var(--mood-anxious); }
-  .border-mood-anxious { border-color: var(--mood-anxious); }
-  
-  .mood-angry { color: var(--mood-angry); }
-  .bg-mood-angry { background-color: var(--mood-angry); }
-  .border-mood-angry { border-color: var(--mood-angry); }
-  
-  .mood-sad { color: var(--mood-sad); }
-  .bg-mood-sad { background-color: var(--mood-sad); }
-  .border-mood-sad { border-color: var(--mood-sad); }
