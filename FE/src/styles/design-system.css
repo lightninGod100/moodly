@@ -6,6 +6,10 @@
    :root {
     /* ----Images ----------------------- --------- */
     --landing-bg-image: url('/images/fog-clouds-mountains.jpg');
+    --landing-bg-image-2: url('/images/4.jpg');
+    --step3-image: url('/images/a1.jpg');
+    --step1-image: url('/images/a2.jpg');
+    --step2-image: url('/images/a3.jpg');
 
     /* ===== PRIMARY BRAND COLORS (Blue & White) ===== */
     /* Your Custom Blue Palette - Based on rgb(50, 100, 255) */
@@ -43,6 +47,8 @@
     --text-4xl: 2.25rem;       /* 36px */
     --text-5xl: 3rem;          /* 48px */
     --text-6xl: 3.75rem;       /* 60px */
+    --text-7xl: 4.5rem;       /* 72px */
+    --text-8xl: 6rem;       /* 96px */
   
     /* Font Weights */
     --font-normal: 400;
@@ -86,13 +92,118 @@
 
   /*------------------------------Text Format Classes---------------------------------------------------*/
 
- 
-  .body-base {
+ /* To be used as default body styling*/
+  .body_default {
     font-family: var(--font-family);
     font-size: var(--text-base);
     font-weight: var(--font-normal);
     line-height: var(--leading-normal);
-    color: var(--neutral-700);
+    color: var(--ncolor-300);
   }
  
+  /*hero Section*/
+  .hero_section {
+    background-image: var(--landing-bg-image-2);
+    height: 100vh;
+    /* background-attachment: fixed; */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-family: var(--font-family);
+    /* color: var(--ncolor-0); */
+  }
+
+  .lp_sec2 {
+    background-color: white;
+    padding: 4rem 2rem;
+    text-align: center;
+  }
   
+  .lp_sec2_1 {
+    background-image: var(--step1-image);
+    width: 80px;
+    height: 80px;
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .lp_sec2_2 {
+    background-image: var(--step2-image);
+    width: 80px;
+    height: 80px;
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .lp_sec2_3 {
+    background-image: var(--step3-image);
+    width: 80px;
+    height: 80px;
+    background-size: cover;
+    background-position: center;
+  }
+
+
+  .lp_sec3 {
+    background-color: var(--pcolor-0);
+    padding: 4rem 2rem;
+  }
+  
+  .lp_sec3_card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 320px;
+    text-align: center;
+  }
+
+  .lp_footer {
+    background-color: var(--pcolor-200);
+    padding: 1.5rem 2rem;
+  }
+
+  .lp_try_now_button {
+    background-color: var(--ncolor-0);  /* White background */
+    color: var(--pcolor-300);           /* Dark blue text */
+    border: 4px solid var(--ncolor-0);  /* White border */
+    padding: 0.5rem 2.8rem;
+    border-radius: 40px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .lp_try_now_button:hover {
+    background-color: transparent;
+    color: var(--ncolor-0);             /* White text on hover */
+    border: 4px solid var(--ncolor-0);  /* Keep white border */
+  }
+
+  .lp_cta {
+    background: linear-gradient(135deg, #8b5cf6, #a855f7);
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+  
+  .lp_cta_button {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 1rem 3rem;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .lp_cta_button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+  }

@@ -206,7 +206,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div>
       {/* Render appropriate navbar based on auth state */}
       {isAuthenticated ? (
         <AuthenticatedNavbar onNavigate={handleNavigate} currentPage={currentPage} />
@@ -215,8 +215,8 @@ function App() {
       )}
       
       {/* Main content area */}
-      <div className="flex-1 flex justify-center items-start pt-12">
-        <div className="w-full max-w-4xl px-4">
+      <div>
+        <div>
           {renderContent()}
         </div>
       </div>

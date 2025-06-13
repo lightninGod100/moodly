@@ -38,7 +38,7 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
           </button>
         </div>
       </nav>
-      <div className="w-full h-px bg-gray-300"></div>
+      
     </>
   );
 };
