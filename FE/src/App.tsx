@@ -208,11 +208,11 @@ function App() {
   return (
     <div>
       {/* Render appropriate navbar based on auth state */}
-      {isAuthenticated ? (
+      {currentPage !== 'signup' && currentPage !== 'login' && (isAuthenticated ? (
         <AuthenticatedNavbar onNavigate={handleNavigate} currentPage={currentPage} />
       ) : (
         <PublicNavbar onNavigate={handleNavigate} currentPage={currentPage} />
-      )}
+      ))}
       
       {/* Main content area */}
       <div>
