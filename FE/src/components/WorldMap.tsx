@@ -9,7 +9,7 @@ import {
 import type { CountryStats } from '../services/GlobalStatsService';
 
 // Mood color mapping
-const moodColors: { [key: string]: string } = {
+export const moodColors: { [key: string]: string } = {
   Happy: '#22c55e',    // Green
   Excited: '#f59e0b',  // Amber  
   Calm: '#3b82f6',     // Blue
@@ -231,14 +231,14 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-gray-900 border border-gray-700 text-white p-3 rounded">
-        <div className="text-sm font-bold mb-2">Mood Colors</div>
+      <div className="absolute bottom-4 right-4 bg-gray-900 border border-gray-700 text-white p-3 rounded">
+        <div className="text-sm font-bold mb-2 text-center">Mood Colors</div>
         <div className="grid grid-cols-2 gap-1 text-xs">
           {Object.entries(moodColors).map(([mood, color]) => (
             mood !== 'default' && (
               <div key={mood} className="flex items-center gap-1">
                 <div
-                  className="w-3 h-3 border border-gray-600"
+                  className="rounded-full w-3 h-3 border border-gray-600"
                   style={{ backgroundColor: color }}
                 ></div>
                 <span>{mood}</span>

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchWorldStats } from '../services/GlobalStatsService';
 import type { GlobalMoodStats, CountryStats } from '../services/GlobalStatsService';
 import WorldMap from './WorldMap';
+import { moodColors } from './WorldMap';
 
 // Mood emoji mapping
 const moodEmojis: { [key: string]: string } = {
@@ -84,12 +85,16 @@ const GlobePage: React.FC = () => {
       className="relative bg-black" 
       style={{ 
         height: isAuthenticated ? 'calc(100vh - 3.5rem)' : '100vh',
-        paddingTop: !isAuthenticated ? '3.5rem' : '0',
         overflow: 'hidden' 
       }}
     >
       {/* Map Container - Full screen */}
-      <div className="absolute inset-0 bg-black">
+      <div className="absolute bg-black" style={{
+      top: !isAuthenticated ? '3.5rem' : '0',  // Start below navbar for non-auth
+      left: '0',
+      right: '0', 
+      bottom: '0'
+    }}>
         {/* Loading State */}
         {isLoading && (
           <div className="flex items-center justify-center" style={{ height: '100%' }}>
@@ -123,7 +128,15 @@ const GlobePage: React.FC = () => {
       </div>
 
       {/* Overlay Sidebar - Positioned absolutely */}
-      <div className="absolute left-0 top-0 flex flex-col pointer-events-none" style={{ width: '15rem', padding: '1rem', height: '100%' }}>
+      <div 
+  className="absolute left-0 flex flex-col pointer-events-none" 
+  style={{ 
+    top: !isAuthenticated ? '3.5rem' : '0',  // Same logic as map container
+    width: '18rem', 
+    padding: '1rem', 
+    height: isAuthenticated ? '100%' : 'calc(100% - 3.5rem)'  // Adjust height too
+  }}
+>
         {/* Time Filter Tabs - Make clickable */}
         <div style={{ marginBottom: '1rem' }} className="pointer-events-auto">
           <div className="flex border border-gray-600 rounded overflow-hidden" style={{ backgroundColor: 'rgba(31, 41, 55, 0.9)' }}>
@@ -151,26 +164,62 @@ const GlobePage: React.FC = () => {
             <div className="text-white rounded" style={{ padding: '1rem', backgroundColor: 'rgba(31, 41, 55, 0.85)' }}>
               <h2 className="font-bold text-center" style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Dominant Mood</h2>
               <div className="space-y-1">
-                {moodOrder.map((mood) => (
-                  <div key={mood} className="flex justify-between items-center" style={{ paddingTop: '0.125rem', paddingBottom: '0.125rem' }}>
-                    <span style={{ fontSize: '0.875rem' }}>{mood}</span>
-                    <span style={{ fontSize: '0.875rem' }}>{worldStats.global[mood as keyof GlobalMoodStats] || 0}% Users</span>
-                  </div>
-                ))}
-              </div>
+  {moodOrder.map((mood, index) => (
+    <div key={mood}>
+      <div className="flex justify-between items-center" style={{ paddingTop: '0.125rem', paddingBottom: '0.125rem' }}>
+        <div className="flex items-center" style={{ gap: '0.5rem' }}>
+          <div 
+            className="rounded-full" 
+            style={{ 
+              width: '8px', 
+              height: '8px', 
+              backgroundColor: moodColors[mood] || moodColors.default 
+            }}
+          />
+          <span style={{ fontSize: '0.875rem' }}>{mood}</span>
+        </div>
+        <span style={{ fontSize: '0.875rem' }}>{worldStats.global[mood as keyof GlobalMoodStats] || 0}% Users</span>
+      </div>
+      {index < moodOrder.length - 1 && (
+        <div 
+          className="border-t border-white" 
+          style={{ marginLeft: '0.05rem', marginRight: '0.05rem', marginTop: '0.25rem', marginBottom: '0.25rem' , opacity: 0.5}}
+        />
+      )}
+    </div>
+  ))}
+</div>
             </div>
 
             {/* Top Modes Stats - Semi-transparent dark gray */}
             <div className="text-white rounded" style={{ padding: '1rem', backgroundColor: 'rgba(31, 41, 55, 0.85)' }}>
               <h2 className="font-bold text-center" style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Top Modes</h2>
               <div className="space-y-1">
-                {moodOrder.map((mood) => (
-                  <div key={mood} className="flex justify-between items-center" style={{ paddingTop: '0.125rem', paddingBottom: '0.125rem' }}>
-                    <span style={{ fontSize: '0.875rem' }}>{mood}</span>
-                    <span style={{ fontSize: '0.875rem' }}>{worldStats.frequency[mood as keyof GlobalMoodStats] || 0}% Times</span>
-                  </div>
-                ))}
-              </div>
+  {moodOrder.map((mood, index) => (
+    <div key={mood}>
+      <div className="flex justify-between items-center" style={{ paddingTop: '0.125rem', paddingBottom: '0.125rem' }}>
+        <div className="flex items-center" style={{ gap: '0.5rem' }}>
+          <div 
+            className="rounded-full" 
+            style={{ 
+              width: '8px', 
+              height: '8px', 
+              backgroundColor: moodColors[mood] || moodColors.default 
+            }}
+          />
+          <span style={{ fontSize: '0.875rem' }}>{mood}</span>
+        </div>
+        <span style={{ fontSize: '0.875rem' }}>{worldStats.frequency[mood as keyof GlobalMoodStats] || 0}% Times</span>
+      </div>
+      {index < moodOrder.length - 1 && (
+        <div 
+          className="border-t border-white" 
+          style={{ marginLeft: '0.05rem', marginRight: '0.05rem', marginTop: '0.25rem', marginBottom: '0.25rem' , opacity: 0.5}}
+        />
+      )}
+    </div>
+  ))}
+</div>
             </div>
           </div>
         )}
