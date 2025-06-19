@@ -10,6 +10,7 @@
     --step3-image: url('/images/a1.jpg');
     --step1-image: url('/images/a2.jpg');
     --step2-image: url('/images/a3.jpg');
+    --test-image: url('/images/auth.jpg');
 
     /* ===== PRIMARY BRAND COLORS (Blue & White) ===== */
     /* Your Custom Blue Palette - Based on rgb(50, 100, 255) */
@@ -206,4 +207,12 @@
     background-color: rgba(255, 255, 255, 0.3);
     border: 2px solid rgba(255, 255, 255, 0.5);
     transform: translateY(-2px);
+  }
+  .test {
+    background-image: var(--test-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 100%;
   }

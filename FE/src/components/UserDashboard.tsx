@@ -306,7 +306,7 @@ const HappinessIndexChart: React.FC = () => {
     );
   };
   return (
-    <div className="py-8">
+    <div className="test py-8">
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2">Hi User!</h1>

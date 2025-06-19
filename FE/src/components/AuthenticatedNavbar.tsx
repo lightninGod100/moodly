@@ -9,7 +9,7 @@ interface AuthNavbarProps {
 const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPage }) => {
   return (
     <>
-      <nav className="w-full py-4 px-6 flex justify-between items-center">
+      <nav className="w-full py-3 px-6 flex justify-between items-center">
         <div className="text-2xl font-bold">Moodly</div>
         <div className="flex gap-6">
           <button 

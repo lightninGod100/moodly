@@ -4,6 +4,7 @@ import {
   ComposableMap,
   Geographies,
   Geography,
+  ZoomableGroup,
 } from 'react-simple-maps';
 import type { CountryStats } from '../services/GlobalStatsService';
 
@@ -16,7 +17,7 @@ const moodColors: { [key: string]: string } = {
   Sad: '#6366f1',      // Indigo
   Angry: '#ef4444',    // Red
   Anxious: '#f97316',  // Orange
-  default: '#9ca3af'   // Gray for no data
+  default: '#4b5563'   // Gray for no data
 };
 
 interface WorldMapProps {
@@ -30,7 +31,47 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
     country: string; 
     data: { topMood: string; userCount: number; moods?: any } 
   } | null>(null);
+  const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
 
+
+  // Handle zoom
+  const handleZoomIn = () => {
+    if (position.zoom >= 4) return;
+    setPosition(pos => ({ ...pos, zoom: pos.zoom * 1.2 }));
+  };
+
+  const handleZoomOut = () => {
+    if (position.zoom <= 1) return;
+    setPosition(pos => ({ ...pos, zoom: pos.zoom / 1.2 }));
+  };
+
+  const handleMoveEnd = (position: any) => {
+    const [longitude, latitude] = position.coordinates;
+    const zoom = position.zoom;
+  
+    const center = [0, 0]; // <-- MAKE SURE this is your true map center (e.g., [lng, lat])
+  
+    // Define the threshold for snapping back to center
+    const longitudeThreshold = 180;
+    const latitudeThreshold = 90;
+  
+    const isOutOfBounds =
+      Math.abs(longitude) > longitudeThreshold || Math.abs(latitude) > latitudeThreshold;
+  
+    if (isOutOfBounds) {
+      setPosition({
+        coordinates: center,
+        zoom,
+      });
+    } else {
+      // Stay where you are (no clamping here unless you want to)
+      setPosition({
+        coordinates: [longitude, latitude],
+        zoom,
+      });
+    }
+  };
+  
   // Get country color based on dominant mood
   const getCountryColor = (countryName: string): string => {
     const data = countryData[countryName];
@@ -73,7 +114,19 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
   };
 
   return (
-    <div className="relative w-full h-96 bg-gray-900 rounded-lg overflow-hidden">
+    <div className="relative w-full h-full bg-black">
+      <style>{`
+        .rsm-zoomable-group {
+          touch-action: none;
+          user-select: none;
+        }
+        .rsm-zoomable-group > g {
+          pointer-events: auto !important;
+        }
+        .rsm-zoomable-group.dragging {
+          cursor: default !important;
+        }
+      `}</style>
       {/* World Map */}
       <ComposableMap
         projectionConfig={{
@@ -83,7 +136,14 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
         style={{ width: '100%', height: '100%' }}
         onMouseMove={handleMouseMove}
       >
-        <Geographies geography="https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json">
+        <ZoomableGroup
+          zoom={position.zoom}
+          minZoom={1}
+          maxZoom={4}
+          center={position.coordinates as [number, number]}
+          onMoveEnd={handleMoveEnd}
+        >
+          <Geographies geography="https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json">
           {({ geographies }) =>
             geographies.map((geo) => {
               const countryName = geo.properties.name || geo.properties.NAME || geo.properties.ADMIN;
@@ -98,14 +158,14 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
                   style={{
                     default: {
                       fill: getCountryColor(countryName),
-                      stroke: '#374151',
+                      stroke: '#1f2937',
                       strokeWidth: 0.5,
                       outline: 'none',
                       opacity: hasData ? 1 : 0.3
                     },
                     hover: {
                       fill: getCountryColor(countryName),
-                      stroke: '#f3f4f6',
+                      stroke: '#e5e7eb',
                       strokeWidth: 2,
                       outline: 'none',
                       opacity: 1,
@@ -113,7 +173,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
                     },
                     pressed: {
                       fill: getCountryColor(countryName),
-                      stroke: '#f3f4f6',
+                      stroke: '#e5e7eb',
                       strokeWidth: 2,
                       outline: 'none'
                     }
@@ -122,13 +182,14 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
               );
             })
           }
-        </Geographies>
+          </Geographies>
+        </ZoomableGroup>
       </ComposableMap>
 
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="absolute z-10 bg-white border-2 border-black p-3 rounded shadow-lg pointer-events-none max-w-xs"
+          className="absolute z-10 bg-gray-900 border border-gray-700 text-white p-3 rounded shadow-lg pointer-events-none max-w-xs"
           style={{
             left: Math.min(tooltip.x + 10, window.innerWidth - 250),
             top: tooltip.y - 80,
@@ -146,15 +207,38 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
         </div>
       )}
 
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
+        <button
+          onClick={handleZoomIn}
+          className="bg-gray-900 border border-gray-700 text-white w-10 h-10 rounded hover:bg-gray-800 transition-colors flex items-center justify-center"
+          title="Zoom In"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <button
+          onClick={handleZoomOut}
+          className="bg-gray-900 border border-gray-700 text-white w-10 h-10 rounded hover:bg-gray-800 transition-colors flex items-center justify-center"
+          title="Zoom Out"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-white border-2 border-black p-3 rounded">
+      <div className="absolute bottom-4 left-4 bg-gray-900 border border-gray-700 text-white p-3 rounded">
         <div className="text-sm font-bold mb-2">Mood Colors</div>
         <div className="grid grid-cols-2 gap-1 text-xs">
           {Object.entries(moodColors).map(([mood, color]) => (
             mood !== 'default' && (
               <div key={mood} className="flex items-center gap-1">
                 <div
-                  className="w-3 h-3 border border-gray-400"
+                  className="w-3 h-3 border border-gray-600"
                   style={{ backgroundColor: color }}
                 ></div>
                 <span>{mood}</span>

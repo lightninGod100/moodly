@@ -29,6 +29,17 @@ const GlobePage: React.FC = () => {
   const [worldStats, setWorldStats] = useState<GlobalStatsData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Check if user is authenticated by looking for auth token
+  const isAuthenticated = !!localStorage.getItem('authToken');
+
+  // Ensure no body scroll
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   // Load initial data
   useEffect(() => {
@@ -62,133 +73,120 @@ const GlobePage: React.FC = () => {
     switch (period) {
       case 'live': return 'Live';
       case 'today': return 'Today';
-      case 'week': return 'Last 7 Days';
-      case 'month': return 'Last 30 Days';
+      case 'week': return 'Week';
+      case 'month': return 'Month';
       default: return period;
     }
   };
 
   return (
-    <div className="text-center py-8">
-      {/* Header */}
-      <h1 className="text-3xl font-bold mb-8">Global Mood Statistics</h1>
-      
-      {/* Time Filter Tabs */}
-      <div className="mb-8">
-        <div className="inline-flex border-2 border-black">
-          {['live', 'today', 'week', 'month'].map((period) => (
-            <button
-              key={period}
-              onClick={() => handlePeriodChange(period)}
-              disabled={isLoading}
-              className={`px-6 py-3 text-lg font-medium border-r-2 border-black last:border-r-0 ${
-                selectedPeriod === period
-                  ? 'bg-black text-white'
-                  : 'bg-white text-black hover:bg-gray-100'
-              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {getPeriodDisplayText(period)}
-            </button>
-          ))}
-        </div>
+    <div 
+      className="relative bg-black" 
+      style={{ 
+        height: isAuthenticated ? 'calc(100vh - 3.5rem)' : '100vh',
+        paddingTop: !isAuthenticated ? '3.5rem' : '0',
+        overflow: 'hidden' 
+      }}
+    >
+      {/* Map Container - Full screen */}
+      <div className="absolute inset-0 bg-black">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center" style={{ height: '100%' }}>
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full border-b-2 border-white" style={{ height: '2rem', width: '2rem' }}></div>
+              <p className="text-gray-400" style={{ marginTop: '1rem' }}>Loading global mood data...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <div className="flex items-center justify-center" style={{ height: '100%' }}>
+            <div className="bg-red-900 border border-red-700 rounded" style={{ padding: '1.5rem', maxWidth: '28rem' }}>
+              <p className="text-red-200" style={{ marginBottom: '1rem' }}>{error}</p>
+              <button
+                onClick={() => loadWorldStats(selectedPeriod)}
+                className="bg-red-700 text-white rounded hover:bg-red-600 transition-colors"
+                style={{ padding: '0.5rem 1rem' }}
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Map */}
+        {worldStats && !isLoading && !error && (
+          <WorldMap countryData={worldStats.countries} />
+        )}
       </div>
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-          <p className="mt-4 text-gray-600">Loading global mood data...</p>
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && !isLoading && (
-        <div className="py-12">
-          <div className="bg-red-50 border-2 border-red-300 p-6 max-w-md mx-auto">
-            <p className="text-red-600 mb-4">{error}</p>
-            <button
-              onClick={() => loadWorldStats(selectedPeriod)}
-              className="bg-red-600 text-white px-4 py-2 border-2 border-red-600 hover:bg-red-700 transition-colors"
-            >
-              Try Again
-            </button>
+      {/* Overlay Sidebar - Positioned absolutely */}
+      <div className="absolute left-0 top-0 flex flex-col pointer-events-none" style={{ width: '15rem', padding: '1rem', height: '100%' }}>
+        {/* Time Filter Tabs - Make clickable */}
+        <div style={{ marginBottom: '1rem' }} className="pointer-events-auto">
+          <div className="flex border border-gray-600 rounded overflow-hidden" style={{ backgroundColor: 'rgba(31, 41, 55, 0.9)' }}>
+            {['live', 'today', 'week', 'month'].map((period) => (
+              <button
+                key={period}
+                onClick={() => handlePeriodChange(period)}
+                disabled={isLoading}
+                className={`flex-1 text-sm font-medium transition-colors ${
+                  selectedPeriod === period
+                    ? 'bg-black text-white'
+                    : 'text-gray-300 hover:bg-gray-700'
+                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                style={{ padding: '0.5rem' }}
+              >
+                {getPeriodDisplayText(period)}
+              </button>
+            ))}
           </div>
         </div>
-      )}
 
-      {/* Global Mood Statistics Grid */}
+        {!isLoading && !error && worldStats && (
+          <div className="flex flex-col pointer-events-auto" style={{ gap: '1rem' }}>
+            {/* Dominant Mood Stats - Semi-transparent dark gray */}
+            <div className="text-white rounded" style={{ padding: '1rem', backgroundColor: 'rgba(31, 41, 55, 0.85)' }}>
+              <h2 className="font-bold text-center" style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Dominant Mood</h2>
+              <div className="space-y-1">
+                {moodOrder.map((mood) => (
+                  <div key={mood} className="flex justify-between items-center" style={{ paddingTop: '0.125rem', paddingBottom: '0.125rem' }}>
+                    <span style={{ fontSize: '0.875rem' }}>{mood}</span>
+                    <span style={{ fontSize: '0.875rem' }}>{worldStats.global[mood as keyof GlobalMoodStats] || 0}% Users</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Top Modes Stats - Semi-transparent dark gray */}
+            <div className="text-white rounded" style={{ padding: '1rem', backgroundColor: 'rgba(31, 41, 55, 0.85)' }}>
+              <h2 className="font-bold text-center" style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Top Modes</h2>
+              <div className="space-y-1">
+                {moodOrder.map((mood) => (
+                  <div key={mood} className="flex justify-between items-center" style={{ paddingTop: '0.125rem', paddingBottom: '0.125rem' }}>
+                    <span style={{ fontSize: '0.875rem' }}>{mood}</span>
+                    <span style={{ fontSize: '0.875rem' }}>{worldStats.frequency[mood as keyof GlobalMoodStats] || 0}% Times</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Data Info Footer - Positioned at bottom */}
       {worldStats && !isLoading && !error && (
-        <>
-          {/* First Row - Users Statistics (Dominant Mood) */}
-          <div className="mb-8">
-            <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
-              {moodOrder.map((mood) => (
-                <div
-                  key={mood}
-                  className="border-2 border-black p-6 flex flex-col items-center min-w-[150px]"
-                >
-                  {/* Mood Emoji */}
-                  <div className="text-4xl mb-2">
-                    {moodEmojis[mood]}
-                  </div>
-                  
-                  {/* Mood Name */}
-                  <div className="font-bold text-lg mb-2">
-                    {mood}
-                  </div>
-                  
-                  {/* Percentage - Users */}
-                  <div className="text-gray-700">
-                    {worldStats.global[mood as keyof GlobalMoodStats]}% Users
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Second Row - Frequency Statistics */}
-          <div className="mb-12">
-            <div className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
-              {moodOrder.map((mood) => (
-                <div
-                  key={`freq-${mood}`}
-                  className="border-2 border-black p-6 flex flex-col items-center min-w-[150px]"
-                >
-                  {/* Mood Emoji */}
-                  <div className="text-4xl mb-2">
-                    {moodEmojis[mood]}
-                  </div>
-                  
-                  {/* Mood Name */}
-                  <div className="font-bold text-lg mb-2">
-                    {mood}
-                  </div>
-                  
-                  {/* Percentage - Times */}
-                  <div className="text-gray-700">
-                    {worldStats.frequency[mood as keyof GlobalMoodStats]}% Times
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Interactive World Map */}
-          <div className="mx-auto max-w-5xl">
-            <WorldMap countryData={worldStats.countries} />
-          </div>
-
-          {/* Data Info */}
-          <div className="text-center text-gray-500 text-sm mt-8">
-            <p>Showing data for: <strong>{getPeriodDisplayText(selectedPeriod)}</strong></p>
-            <p className="mt-1">
-              {selectedPeriod === 'live' && 'Data from the last 10 minutes'}
-              {selectedPeriod === 'today' && 'Data from the last 24 hours'}
-              {selectedPeriod === 'week' && 'Data from the last 7 days'}
-              {selectedPeriod === 'month' && 'Data from the last 30 days'}
-            </p>
-          </div>
-        </>
+        <div className="absolute bottom-0 left-0 right-0 text-center text-gray-400 text-sm pointer-events-none" style={{ padding: '1rem' }}>
+          <p>Showing data for: <strong>{getPeriodDisplayText(selectedPeriod)}</strong></p>
+          <p style={{ marginTop: '0.25rem' }}>
+            {selectedPeriod === 'live' && 'Data from the last 10 minutes'}
+            {selectedPeriod === 'today' && 'Data from the last 24 hours'}
+            {selectedPeriod === 'week' && 'Data from the last 7 days'}
+            {selectedPeriod === 'month' && 'Data from the last 30 days'}
+          </p>
+        </div>
       )}
     </div>
   );
