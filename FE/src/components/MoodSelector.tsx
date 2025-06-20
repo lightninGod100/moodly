@@ -32,29 +32,19 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood 
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log('useEffect running with delay...');
+      console.log('=== VANTA DEBUGGING ===');
       console.log('vantaRef.current:', vantaRef.current);
+      console.log('Element dimensions:', {
+        width: vantaRef.current?.offsetWidth,
+        height: vantaRef.current?.offsetHeight,
+        clientWidth: vantaRef.current?.clientWidth,
+        clientHeight: vantaRef.current?.clientHeight
+      });
       
       try {
         if (!vantaEffect.current && vantaRef.current) {
           console.log('Initializing Vanta Waves...');
           
-          // vantaEffect.current = NET({
-          //   el: vantaRef.current,
-          //   THREE: THREE,
-          //   mouseControls: true,
-          //   touchControls: true,
-          //   gyroControls: false,
-          //   minHeight: 200.00,
-          //   minWidth: 200.00,
-          //   scale: 1.00,
-          //   scaleMobile: 1.00,
-          //   color: 0x3f51b5,           // Blue network lines
-          //   backgroundColor: 0x000000,  // Dark background
-          //   points: 10.00,             // Number of connection points
-          //   maxDistance: 20.00,        // Connection distance
-          //   spacing: 15.00             // Space between points
-          // });
           vantaEffect.current = WAVES({
             el: vantaRef.current,
             THREE: THREE,
@@ -65,19 +55,38 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood 
             minWidth: 200.00,
             scale: 1.00,
             scaleMobile: 1.00,
-            color: 0xffffff,        // Red/pink waves
-            shininess: 200,         // Very high shininess
-            waveHeight: 100,         // Very large waves
-            waveSpeed: 2,           // Fast speed
-            zoom: 0.05
+            color: 0x980720,
+            shininess: 50,
+            waveHeight: 20,
+            waveSpeed: 1.2,
+            zoom: 0.75
           });
           
           console.log('Vanta effect created:', vantaEffect.current);
+          
+          // Force a resize after creation
+          setTimeout(() => {
+            if (vantaEffect.current && vantaEffect.current.resize) {
+              console.log('Forcing Vanta resize...');
+              vantaEffect.current.resize();
+            }
+            
+            // Check canvas after resize
+            const canvas = vantaRef.current?.querySelector('canvas');
+            console.log('Canvas after resize:', canvas ? {
+              width: canvas.width,
+              height: canvas.height,
+              styleWidth: canvas.style.width,
+              styleHeight: canvas.style.height,
+              display: canvas.style.display,
+              visibility: canvas.style.visibility
+            } : 'No canvas');
+          }, 500);
         }
       } catch (error) {
         console.error('Error initializing Vanta Waves:', error);
       }
-    }, 100); // 100ms delay
+    }, 100); // Reduced delay
   
     return () => {
       clearTimeout(timer);
@@ -92,7 +101,7 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood 
       }
     };
   }, []);
-
+  
   return (
     <div ref={vantaRef} className="vanta-waves-container">
       <h1 className="text-white text-4xl md:text-6xl font-bold text-center mb-6">How Are You Feeling Right Now?</h1>

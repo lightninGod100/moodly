@@ -246,5 +246,27 @@
     align-items: center;
     padding: 2rem;
     position: relative;
-    background-color: #000; /* Fallback background */
+    background-color: #000;
+    overflow: hidden;
+    min-height: 100vh; /* Ensure minimum height */
+  }
+  
+  /* Force canvas to be visible and properly sized */
+  .vanta-waves-container canvas {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* Ensure content appears above the canvas */
+  .vanta-waves-container > h1,
+  .vanta-waves-container > p,
+  .vanta-waves-container > div {
+    position: relative;
+    z-index: 1;
   }
