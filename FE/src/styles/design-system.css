@@ -270,3 +270,47 @@
     position: relative;
     z-index: 1;
   }
+
+  .mood-button {
+    border: 2px solid #d1d5db;
+    background: transparent;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 120px;              /* Fixed width */
+    height: 120px;             /* Fixed height */
+    min-width: 120px;          /* Ensure minimum */
+    min-height: 120px;         /* Ensure minimum */
+    transition: transform 0.3s ease-out, border-color 0.3s ease;
+    transform: scale(1);
+    font-family: var(--font-family);
+    color: white;
+    /* background-color: red; */
+  }
+  
+  /* Ensure text sizes are consistent within buttons */
+  .mood-button span:first-child {
+    font-size: 2rem;           /* Fixed emoji size */
+    margin-bottom: 0.25rem;
+  }
+  
+  .mood-button span:last-child {
+    font-size: 1rem;           /* Fixed text size */
+    text-align: center;
+  }
+  
+  /* Remove the hover transform, keep only border color change */
+  .mood-button:hover {
+    border-color: #3b82f6;
+  }
+  
+  /* .mood-button.selected {
+    box-shadow: 0 0 0 2px #3b82f6;
+  } */
+  
+  /* .mood-button.selected {
+    box-shadow: 0 0 0 2px #3b82f6;
+  } */

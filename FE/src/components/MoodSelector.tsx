@@ -1,5 +1,5 @@
 // src/components/MoodSelector.tsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import NET from 'vanta/dist/vanta.net.min';
 import WAVES from 'vanta/dist/vanta.waves.min';
@@ -19,6 +19,20 @@ interface MoodSelectorProps {
 const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood }) => {
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  // Function to calculate scale based on distance from hovered button
+  const getScale = (currentIndex: number): number => {
+    if (hoveredIndex === null) return 1; // No hover, normal size
+    
+    const distance = Math.abs(currentIndex - hoveredIndex);
+    
+    if (distance === 0) return 1.25;   // Peak - much bigger (40% larger)
+    if (distance === 1) return 1.10;  // Adjacent - big (25% larger)
+    if (distance === 2) return 1;   // Second adjacent - medium (10% larger)
+    if (distance === 3) return 0.9;  // Third adjacent - small (5% larger)
+    return 0.85; // Far buttons get smaller for contrast (5% smaller)
+  };
 
   const moods: Mood[] = [
     { name: 'Excited', emoji: '😃', bgColor: 'bg-yellow-300', hoverColor: 'hover:bg-yellow-400' },
@@ -55,7 +69,7 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood 
             minWidth: 200.00,
             scale: 1.00,
             scaleMobile: 1.00,
-            color: 0x980720,
+            color: 0xb0b10,
             shininess: 50,
             waveHeight: 20,
             waveSpeed: 1.2,
@@ -106,25 +120,29 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood 
     <div ref={vantaRef} className="vanta-waves-container">
       <h1 className="text-white text-4xl md:text-6xl font-bold text-center mb-6">How Are You Feeling Right Now?</h1>
       <p className="text-white text-2xl md:text-3xl text-center mb-10">Select a Mood</p>
-      <div className="flex flex-wrap justify-center gap-x-8 gap-y-6">
-        {moods.map((mood) => (
-          <button
-            key={mood.name}
-            onClick={() => {
-              console.log('Button clicked:', mood.name);
-              onSelectMood(mood.name)
-            }}
-            className={`
-              border-2 border-gray-300 bg-transparent hover:border-gray-400
-              ${selectedMood === mood.name ? 'ring-2 ring-blue-500' : ''}
-              rounded-lg p-4 flex flex-col items-center transition-all min-w-[100px]
-            `}
-          >
-            <span className="text-white text-2xl md:text-3xl">{mood.emoji}</span>
-            <span className="text-white text-2xl md:text-3xl">{mood.name}</span>
-          </button>
-        ))}
-      </div>
+<div className="flex flex-wrap justify-center gap-x-8 gap-y-6">
+  {moods.map((mood, index) => (
+    <button
+    key={mood.name}
+    onClick={() => {
+      console.log('Button clicked:', mood.name);
+      onSelectMood(mood.name)
+    }}
+    onMouseEnter={() => setHoveredIndex(index)}
+    onMouseLeave={() => setHoveredIndex(null)}
+    style={{
+      transform: `scale(${getScale(index)})`,
+    }}
+    className={`
+      mood-button
+      ${selectedMood === mood.name ? 'selected' : ''}
+    `}
+  >
+    <span>{mood.emoji}</span>
+    <span>{mood.name}</span>
+  </button>
+  ))}
+</div>
     </div>
   );
 };
