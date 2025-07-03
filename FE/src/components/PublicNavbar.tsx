@@ -27,38 +27,49 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
       window.removeEventListener('scroll', handleScroll);
     };
   }, [currentPage]);
+  const getNavbarPageClass = () => {
+    if (currentPage === 'landing') {
+      return isScrolled ? 'navbar-landing-scrolled' : 'navbar-landing-transparent';
+    }
+    if (currentPage === 'globe') {
+      return 'navbar-globe';
+    }
+    return 'navbar-default';
+  };
 
-  return (
-    <>
-      <nav className={`w-full py-3 px-6 flex justify-between items-center fixed top-0 z-10 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-white' 
-          : 'bg-transparent text-black'
-      }`}>
-        <div className="text-2xl font-bold">mOOdly</div>
-        <div className="flex gap-6">
-          <button 
-            className={`px-2 ${currentPage === 'globe' ? 'font-semibold' : ''}`}
-            onClick={() => onNavigate('globe')}
-          >
-            Globe
-          </button>
-          <button 
-            className={`px-2 ${currentPage === 'signup' ? 'font-semibold' : ''}`}
-            onClick={() => onNavigate('signup')}
-          >
-            Signup
-          </button>
-          <button 
-            className={`px-2 ${currentPage === 'login' ? 'font-semibold' : ''}`}
-            onClick={() => onNavigate('login')}
-          >
-            Login
-          </button>
-        </div>
-      </nav>
-    </>
-  );
+return (
+  <>
+    <nav className={`navbar-base ${getNavbarPageClass()}`}>
+      <div className="text-2xl font-bold">
+        <button
+            onClick={()=> onNavigate('landing')}>
+        mOOdly
+        </button>
+      </div>
+
+      <div className="navbar-menu">
+        <button 
+          className={`navbar-button ${currentPage === 'globe' ? 'navbar-button-active' : ''}`}
+          onClick={() => onNavigate('globe')}
+        >
+          Globe
+        </button>
+        <button 
+          className="navbar-button"
+          onClick={() => onNavigate('signup')}
+        >
+          Signup
+        </button>
+        <button 
+          className="navbar-button"
+          onClick={() => onNavigate('login')}
+        >
+          Login
+        </button>
+      </div>
+    </nav>
+  </>
+);
 };
 
 export default PublicNavbar;
