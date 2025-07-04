@@ -1,11 +1,29 @@
 // src/components/LandingPage.tsx
-import React from 'react';
+import React, { useState } from 'react';
+import ContactPopup from './ContactPopup';
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
+  const [showContactPopup, setShowContactPopup] = useState(false);
+
+  const handleContactClick = () => {
+    setShowContactPopup(true);
+  };
+
+  const handleContactClose = () => {
+    setShowContactPopup(false);
+  };
+
+  const handleContactSubmit = (reason: string, message: string) => {
+    console.log('Contact Form Submitted:');
+    console.log('Reason:', reason);
+    console.log('Message:', message);
+    // TODO: Implement email sending functionality later
+  };
+
   return (
     // {/* This div parent of all the sections */}
     <div className="text-center pt-200">  
@@ -129,13 +147,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
           {/* Right side - Links */}
           <div className="flex gap-6  hover: font-semibold">
-            <a href="#" >Contact Us</a>
+            <button 
+              onClick={handleContactClick}
+              className="text-white hover:text-gray-300 bg-transparent border-none cursor-pointer"
+            >
+              Contact Us
+            </button>
             <a href="#" >Privacy & Terms</a>
             <a href="#" >FAQs</a>
             <a href="#" >Support</a>
           </div>
         </div>
       </section>
+
+      {/* Contact Popup */}
+      <ContactPopup 
+        isOpen={showContactPopup}
+        onClose={handleContactClose}
+        onSubmit={handleContactSubmit}
+      />
     </div>
   );
 };
