@@ -542,3 +542,10 @@
       padding-top: var(--space-12);
     }
   } */
+
+  .navbar-privacy-terms {
+    background-color: white;
+    color: black;
+    position: static;
+    
+  }

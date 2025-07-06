@@ -34,6 +34,9 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
     if (currentPage === 'globe') {
       return 'navbar-globe';
     }
+    if (currentPage === 'privacy-and-terms') {
+      return 'navbar-privacy-terms';
+    }
     return 'navbar-default';
   };
 

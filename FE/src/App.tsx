@@ -14,6 +14,7 @@ import ErrorScreen from './components/ErrorScreen';
 // ADDED: Import mood API service for backend integration
 import { moodApiService } from './services/MoodService';
 // Define a type for mood entries with timestamps
+import PrivacyAndTermsPage from './components/PrivacyAndTermsPage';
 
 
 //Helper function to check if timestamp is within 10 minutes
@@ -159,7 +160,9 @@ function App() {
       if (currentPage === 'login') {
         return <LoginPage onNavigate={handleNavigate} />;
       }
-      
+      if (currentPage === 'privacy-and-terms') {
+        return <PrivacyAndTermsPage onNavigate={handleNavigate} />;
+      }
   
       // For other unimplemented pages, show placeholder
       return (

@@ -153,7 +153,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             >
               Contact Us
             </button>
-            <a href="#" >Privacy & Terms</a>
+            <button 
+  onClick={() => onNavigate('privacy-and-terms')}
+  className="text-white hover:text-gray-300 bg-transparent border-none cursor-pointer"
+>
+  Privacy & Terms
+</button>
             <a href="#" >FAQs</a>
             <a href="#" >Support</a>
           </div>
