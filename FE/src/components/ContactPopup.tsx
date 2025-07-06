@@ -67,7 +67,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
         {/* Popup Container */}
         <div 
           style={{
-            backgroundColor: 'white',
+            backgroundColor: 'rgb(245, 245, 245)',
             color: 'black',
             padding: isSubmitted ? '1.5rem' : '2rem',
             borderRadius: '15px',
@@ -127,7 +127,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
                 fontSize: '1rem', 
                 marginBottom: '2rem', 
                 lineHeight: '1.6',
-                color: '#6b7280'
+                color: 'rgb(20, 20, 20)'
               }}>
                 Thanks for the message. <br />
                 We will get back in touch with you as soon as possible.
