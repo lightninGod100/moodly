@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import ContactPopup from './ContactPopup';
 import SupportUsPopup from './SupportUsPopup';
+import FAQPopup from './FAQPopup';
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
@@ -26,21 +27,31 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   };
   const [showSupportPopup, setShowSupportPopup] = useState(false);
 
-const handleSupportClick = () => {
-  setShowSupportPopup(true);
-};
+  const handleSupportClick = () => {
+    setShowSupportPopup(true);
+  };
 
-const handleSupportClose = () => {
-  setShowSupportPopup(false);
-};
+  const handleSupportClose = () => {
+    setShowSupportPopup(false);
+  };
 
-const handleSupportSignUp = () => {
-  onNavigate('signup'); // Navigate to signup page
-};
+  const handleSupportSignUp = () => {
+    onNavigate('signup'); // Navigate to signup page
+  };
+
+  const [showFAQPopup, setShowFAQPopup] = useState(false);
+
+  const handleFAQClick = () => {
+    setShowFAQPopup(true);
+  };
+
+  const handleFAQClose = () => {
+    setShowFAQPopup(false);
+  };
   return (
     // {/* This div parent of all the sections */}
-    <div className="text-center pt-200">  
-    
+    <div className="text-center pt-200">
+
       <section className="hero_section">
         <h1 className="text-6xl font-bold mb-8 text-white" style={{
           color: 'white',
@@ -160,42 +171,52 @@ const handleSupportSignUp = () => {
 
           {/* Right side - Links */}
           <div className="flex gap-6  hover: font-semibold">
-            <button 
+            <button
               onClick={handleContactClick}
               className="text-white hover:text-gray-300 bg-transparent border-none cursor-pointer"
             >
               Contact Us
             </button>
-            <button 
-  onClick={() => onNavigate('privacy-and-terms')}
-  className="text-white hover:text-gray-300 bg-transparent border-none cursor-pointer"
->
-  Privacy & Terms
-</button>
-            <a href="#" >FAQs</a>
-            <button 
-  onClick={handleSupportClick}
-  className="text-white hover:text-gray-300  bg-transparent border-none cursor-pointer"
->
-  Support
-</button>
+            <button
+              onClick={() => onNavigate('privacy-and-terms')}
+              className="text-white hover:text-gray-300 bg-transparent border-none cursor-pointer"
+            >
+              Privacy & Terms
+            </button>
+            <button
+              onClick={handleFAQClick}
+              className="text-white hover:text-gray-300 bg-transparent border-none cursor-pointer"
+            >
+              FAQs
+            </button>
+            <button
+              onClick={handleSupportClick}
+              className="text-white hover:text-gray-300  bg-transparent border-none cursor-pointer"
+            >
+              Support Us
+            </button>
           </div>
         </div>
       </section>
 
       {/* Contact Popup */}
-      <ContactPopup 
+      <ContactPopup
         isOpen={showContactPopup}
         onClose={handleContactClose}
         onSubmit={handleContactSubmit}
       />
       {/* Add this before the closing </div> along with ContactPopup */}
-<SupportUsPopup 
-  isOpen={showSupportPopup}
-  onClose={handleSupportClose}
-  onSignUp={handleSupportSignUp}
-/>
+      <SupportUsPopup
+        isOpen={showSupportPopup}
+        onClose={handleSupportClose}
+        onSignUp={handleSupportSignUp}
+      />
+      <FAQPopup
+        isOpen={showFAQPopup}
+        onClose={handleFAQClose}
+      />
     </div>
+
   );
 };
 
