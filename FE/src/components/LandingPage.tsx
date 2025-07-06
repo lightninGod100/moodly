@@ -1,6 +1,7 @@
 // src/components/LandingPage.tsx
 import React, { useState } from 'react';
 import ContactPopup from './ContactPopup';
+import SupportUsPopup from './SupportUsPopup';
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
@@ -23,7 +24,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
     console.log('Message:', message);
     // TODO: Implement email sending functionality later
   };
+  const [showSupportPopup, setShowSupportPopup] = useState(false);
 
+const handleSupportClick = () => {
+  setShowSupportPopup(true);
+};
+
+const handleSupportClose = () => {
+  setShowSupportPopup(false);
+};
+
+const handleSupportSignUp = () => {
+  onNavigate('signup'); // Navigate to signup page
+};
   return (
     // {/* This div parent of all the sections */}
     <div className="text-center pt-200">  
@@ -160,7 +173,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   Privacy & Terms
 </button>
             <a href="#" >FAQs</a>
-            <a href="#" >Support</a>
+            <button 
+  onClick={handleSupportClick}
+  className="text-white hover:text-gray-300  bg-transparent border-none cursor-pointer"
+>
+  Support
+</button>
           </div>
         </div>
       </section>
@@ -171,6 +189,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         onClose={handleContactClose}
         onSubmit={handleContactSubmit}
       />
+      {/* Add this before the closing </div> along with ContactPopup */}
+<SupportUsPopup 
+  isOpen={showSupportPopup}
+  onClose={handleSupportClose}
+  onSignUp={handleSupportSignUp}
+/>
     </div>
   );
 };
