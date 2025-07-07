@@ -36,6 +36,12 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
           >
             Logout
           </button>
+          <button 
+            className={`px-2 ${currentPage === 'settings' ? 'font-semibold' : ''}`}
+            onClick={() => onNavigate('settings')}
+          >
+            Settings
+          </button>
         </div>
       </nav>
       

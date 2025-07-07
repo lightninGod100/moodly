@@ -15,6 +15,7 @@ import ErrorScreen from './components/ErrorScreen';
 import { moodApiService } from './services/MoodService';
 // Define a type for mood entries with timestamps
 import PrivacyAndTermsPage from './components/PrivacyAndTermsPage';
+import SettingsPage from './components/SettingsPage';
 
 
 //Helper function to check if timestamp is within 10 minutes
@@ -180,7 +181,9 @@ function App() {
           
         return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} />;
       }
-      
+      if(currentPage === 'settings') {
+        return <SettingsPage />;
+      }
       const currentMood = getCurrentMood();
       
       // Check if user has recent mood (within 10 minutes)
