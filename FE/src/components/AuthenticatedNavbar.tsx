@@ -25,10 +25,10 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
             Globe
           </button>
           <button 
-            className={`px-2 ${currentPage === 'you' ? 'font-semibold' : ''}`}
-            onClick={() => onNavigate('you')}
+            className={`px-2 ${currentPage === 'dashboard' ? 'font-semibold' : ''}`}
+            onClick={() => onNavigate('dashboard')}
           >
-            You
+            Dashboard
           </button>
           <button 
             className={`px-2`}

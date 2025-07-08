@@ -174,7 +174,7 @@ function App() {
       );
     } else {
       // Authenticated users logic with 10-minute rule
-      if (currentPage === 'you') {
+      if (currentPage === 'dashboard') {
         const currentMood = getCurrentMood();
         const hasRecentMood = currentMood && currentMoodData ? 
           isWithin10Minutes(currentMoodData.timestamp) : false;
