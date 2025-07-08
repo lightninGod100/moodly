@@ -1,25 +1,13 @@
 // src/components/SettingsPage.tsx
-import React, { useState } from 'react';
-
-interface UserData {
-  username: string;
-  email: string;
-  gender: string;
-  country: string;
-  lastCountryChange?: number; // UNIX timestamp
-  profilePhoto?: string; // base64 or URL
-}
+import { settingsApiService } from '../services/SettingsService';
+import React, { useState, useEffect } from 'react';
+import type { UserSettings, PasswordChangeRequest, CountryUpdateRequest, PhotoUploadRequest, AccountDeletionRequest } from '../services/SettingsService';
 
 const SettingsPage: React.FC = () => {
-  // User data state (mock data for now)
-  const [userData, setUserData] = useState<UserData>({
-    username: 'User123',
-    email: 'user@example.com',
-    gender: 'Male',
-    country: 'United States of America',
-    lastCountryChange: Date.now() - (20 * 24 * 60 * 60 * 1000), // 20 days ago
-    profilePhoto: undefined
-  });
+  // User data state - now using API data
+  const [userData, setUserData] = useState<UserSettings | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [dataError, setDataError] = useState<string>('');
 
   // Form states
   const [passwords, setPasswords] = useState({
@@ -27,14 +15,34 @@ const SettingsPage: React.FC = () => {
     new: '',
     confirm: ''
   });
-  const [selectedCountry, setSelectedCountry] = useState(userData.country);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [successMessages, setSuccessMessages] = useState<{[key: string]: string}>({});
   const [showDeletionConfirm, setShowDeletionConfirm] = useState(false);
   const [deletionPassword, setDeletionPassword] = useState('');
   const [isPhotoHovered, setIsPhotoHovered] = useState(false);
+
+  // Load user settings from API
+  const loadUserSettings = async () => {
+    try {
+      setIsLoadingData(true);
+      setDataError('');
+      const settings = await settingsApiService.getUserSettings();
+      setUserData(settings);
+      setSelectedCountry(settings.country); // Set initial country
+    } catch (error) {
+      console.error('Failed to load user settings:', error);
+      setDataError(error instanceof Error ? error.message : 'Failed to load settings');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    loadUserSettings();
+  }, []);
 
   // Countries list
   const countries = [
@@ -66,42 +74,57 @@ const SettingsPage: React.FC = () => {
     'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
   ];
 
+  // Show loading state if data is still loading
+  if (isLoadingData) {
+    return (
+      <div style={{ backgroundColor: 'white', minHeight: '100vh', padding: '2rem' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', paddingTop: '2rem' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', color: 'black' }}>
+            Account Settings
+          </h1>
+          <p style={{ color: '#6b7280' }}>Loading your settings...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if failed to load data
+  if (dataError || !userData) {
+    return (
+      <div style={{ backgroundColor: 'white', minHeight: '100vh', padding: '2rem' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', paddingTop: '2rem' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', color: 'black' }}>
+            Account Settings
+          </h1>
+          <div style={{ padding: '1rem', border: '1px solid #dc2626', borderRadius: '8px', backgroundColor: '#fef2f2' }}>
+            <p style={{ color: '#dc2626', marginBottom: '1rem' }}>
+              {dataError || 'Failed to load your settings'}
+            </p>
+            <button 
+              onClick={loadUserSettings}
+              style={{ 
+                padding: '0.5rem 1rem', 
+                backgroundColor: '#3b82f6', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px' 
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Helper functions
-  const canChangeCountry = (): boolean => {
-    if (!userData.lastCountryChange) return true;
-    const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
-    return (Date.now() - userData.lastCountryChange) >= oneMonthMs;
-  };
-
-  const getNextCountryChangeDate = (): string => {
-    if (!userData.lastCountryChange) return 'Available now';
-    const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
-    const nextChangeDate = new Date(userData.lastCountryChange + oneMonthMs);
-    return nextChangeDate.toLocaleDateString();
-  };
-
   const clearMessages = () => {
     setErrors({});
     setSuccessMessages({});
   };
 
-  // Validate photo file
-  const validatePhotoFile = (file: File): string | null => {
-    const maxSize = 100 * 1024; // 100KB
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-    
-    if (!allowedTypes.includes(file.type)) {
-      return 'Only PNG and JPEG files are allowed';
-    }
-    
-    if (file.size > maxSize) {
-      return `File size must be less than 100KB. Current: ${Math.round(file.size / 1024)}KB`;
-    }
-    
-    return null;
-  };
-
-  // Handle password change
+  // Handle password change with real API
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     clearMessages();
@@ -116,29 +139,31 @@ const SettingsPage: React.FC = () => {
       return;
     }
 
-    if (passwords.new.length < 6) {
-      setErrors({ password: 'Password must be at least 6 characters long' });
-      return;
-    }
-
     try {
       setIsLoading(true);
-      // TODO: API call to change password
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
       
-      setSuccessMessages({ password: 'Password changed successfully!' });
+      const passwordData: PasswordChangeRequest = {
+        currentPassword: passwords.current,
+        newPassword: passwords.new
+      };
+      
+      const message = await settingsApiService.updatePassword(passwordData);
+      setSuccessMessages({ password: message });
       setPasswords({ current: '', new: '', confirm: '' });
     } catch (error) {
-      setErrors({ password: 'Failed to change password' });
+      setErrors({ password: error instanceof Error ? error.message : 'Failed to change password' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle country change
+  // Handle country change with real API
   const handleCountryChange = async () => {
-    if (!canChangeCountry()) {
-      setErrors({ country: `Country can only be changed once per month. Next change: ${getNextCountryChangeDate()}` });
+    if (!userData.canChangeCountry) {
+      const nextDate = userData.nextCountryChangeDate 
+        ? new Date(userData.nextCountryChangeDate).toLocaleDateString()
+        : 'Unknown';
+      setErrors({ country: `Country can only be changed once per month. Next change: ${nextDate}` });
       return;
     }
 
@@ -151,66 +176,80 @@ const SettingsPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      // TODO: API call to update country
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
       
-      setUserData(prev => ({
+      const countryData: CountryUpdateRequest = {
+        country: selectedCountry
+      };
+      
+      const response = await settingsApiService.updateCountry(countryData);
+      
+      // Update local state with new data
+      setUserData(prev => prev ? {
         ...prev,
-        country: selectedCountry,
-        lastCountryChange: Date.now()
-      }));
+        country: response.country,
+        lastCountryChangeAt: response.lastCountryChangeAt,
+        canChangeCountry: false
+      } : null);
       
-      setSuccessMessages({ country: 'Country updated successfully!' });
+      setSuccessMessages({ country: response.message });
     } catch (error) {
-      setErrors({ country: 'Failed to update country' });
+      setErrors({ country: error instanceof Error ? error.message : 'Failed to update country' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle photo upload
+  // Handle photo upload with real API
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     clearMessages();
-    
-    const error = validatePhotoFile(file);
-    if (error) {
-      setErrors({ photo: error });
-      return;
+
+    try {
+      setIsLoading(true);
+      
+      // Use service validation
+      const base64Data = await settingsApiService.validateImageFile(file);
+      
+      const photoData: PhotoUploadRequest = {
+        photoData: base64Data
+      };
+      
+      const message = await settingsApiService.uploadProfilePhoto(photoData);
+      
+      // Update local state
+      setUserData(prev => prev ? { ...prev, profilePhoto: base64Data } : null);
+      setSuccessMessages({ photo: message });
+      
+    } catch (error) {
+      setErrors({ photo: error instanceof Error ? error.message : 'Failed to upload photo' });
+    } finally {
+      setIsLoading(false);
     }
-
-    // Check dimensions
-    const img = new Image();
-    img.onload = async () => {
-      if (img.width > 259 || img.height > 259) {
-        setErrors({ photo: `Image dimensions must be 256x256px or smaller. Current: ${img.width}x${img.height}` });
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        
-        // Convert to base64
-        const reader = new FileReader();
-        reader.onload = () => {
-          setUserData(prev => ({ ...prev, profilePhoto: reader.result as string }));
-          setSuccessMessages({ photo: 'Profile photo updated successfully!' });
-          setIsLoading(false);
-        };
-        reader.readAsDataURL(file);
-        
-      } catch (error) {
-        setErrors({ photo: 'Failed to upload photo' });
-        setIsLoading(false);
-      }
-    };
-    img.src = URL.createObjectURL(file);
-    setSelectedFile(file);
   };
 
-  // Handle account deletion
+  // Handle photo removal with real API
+  const handlePhotoRemoval = async () => {
+    clearMessages();
+
+    try {
+      setIsLoading(true);
+      
+      const message = await settingsApiService.removeProfilePhoto();
+      
+      // Update local state
+      setUserData(prev => prev ? { ...prev, profilePhoto: null } : null);
+      setSuccessMessages({ photo: message });
+      
+    } catch (error) {
+      setErrors({ photo: error instanceof Error ? error.message : 'Failed to remove photo' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle account deletion with real API
   const handleAccountDeletion = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -221,15 +260,22 @@ const SettingsPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      // TODO: API call to delete account
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Mock delay
       
-      alert('Your account will be deleted soon. You will receive a confirmation email.');
+      const accountData: AccountDeletionRequest = {
+        password: deletionPassword
+      };
+      
+      const message = await settingsApiService.deleteAccount(accountData);
+      
+      alert(message);
       setShowDeletionConfirm(false);
       setDeletionPassword('');
       
+      // Reload user settings to update markForDeletion status
+      await loadUserSettings();
+      
     } catch (error) {
-      setErrors({ deletion: 'Failed to delete account' });
+      setErrors({ deletion: error instanceof Error ? error.message : 'Failed to delete account' });
     } finally {
       setIsLoading(false);
     }
@@ -275,7 +321,7 @@ const SettingsPage: React.FC = () => {
                   />
                   {/* Delete Icon - Top Right - Only visible on hover */}
                   <button
-                    onClick={() => setUserData(prev => ({ ...prev, profilePhoto: undefined }))}
+                    onClick={handlePhotoRemoval}
                     style={{ 
                       position: 'absolute', 
                       top: '0', 
@@ -387,29 +433,6 @@ const SettingsPage: React.FC = () => {
             Basic Information
           </h3>
           
-          {/* Username - Read Only */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
-              Username
-            </label>
-            <input
-              type="text"
-              value={userData.username}
-              disabled
-              style={{ 
-                width: '100%', 
-                padding: '0.5rem', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px', 
-                backgroundColor: '#f9fafb', 
-                color: '#6b7280' 
-              }}
-            />
-            <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
-              Username cannot be changed
-            </p>
-          </div>
-
           {/* Email - Read Only */}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
@@ -469,14 +492,14 @@ const SettingsPage: React.FC = () => {
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              disabled={!canChangeCountry()}
+              disabled={!userData.canChangeCountry}
               style={{ 
                 width: '100%', 
                 padding: '0.5rem', 
                 border: '1px solid #ccc', 
                 borderRadius: '4px',
-                backgroundColor: canChangeCountry() ? 'white' : '#f9fafb',
-                color: canChangeCountry() ? 'black' : '#6b7280'
+                backgroundColor: userData.canChangeCountry ? 'white' : '#f9fafb',
+                color: userData.canChangeCountry ? 'black' : '#6b7280'
               }}
             >
               {countries.map((country) => (
@@ -484,13 +507,13 @@ const SettingsPage: React.FC = () => {
               ))}
             </select>
             
-            {!canChangeCountry() && (
+            {!userData.canChangeCountry && userData.nextCountryChangeDate && (
               <p style={{ fontSize: '0.875rem', color: '#f59e0b', marginTop: '0.5rem' }}>
-                Next change available: {getNextCountryChangeDate()}
+                Next change available: {new Date(userData.nextCountryChangeDate).toLocaleDateString()}
               </p>
             )}
             
-            {canChangeCountry() && selectedCountry !== userData.country && (
+            {userData.canChangeCountry && selectedCountry !== userData.country && (
               <button
                 onClick={handleCountryChange}
                 disabled={isLoading}
@@ -585,7 +608,13 @@ const SettingsPage: React.FC = () => {
             Danger Zone
           </h3>
           
-          {!showDeletionConfirm ? (
+          {userData.markForDeletion ? (
+            <div>
+              <p style={{ fontSize: '0.875rem', color: '#dc2626', marginBottom: '1rem', fontWeight: 'bold' }}>
+                ⚠️ Your account is marked for deletion. You will receive a confirmation email soon.
+              </p>
+            </div>
+          ) : !showDeletionConfirm ? (
             <div>
               <p style={{ fontSize: '0.875rem', color: 'black', marginBottom: '1rem' }}>
                 Once you delete your account, there is no going back. Please be certain.
