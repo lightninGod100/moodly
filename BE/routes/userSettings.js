@@ -55,7 +55,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     const userResult = await pool.query(
-      'SELECT id, email, country, gender, profile_photo, last_country_change_at, created_at FROM users WHERE id = $1',
+      'SELECT id, email, country, gender, profile_photo, last_country_change_at, mark_for_deletion, created_at FROM users WHERE id = $1',
       [userId]
     );
 
@@ -67,12 +67,19 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // Calculate next country change date
-    const nextCountryChangeDate = canChangeCountry(user.last_country_change_at) 
-      ? null 
-      : new Date(user.last_country_change_at + (30 * 24 * 60 * 60 * 1000));
+    // Calculate next country change date with proper validation
+    let nextCountryChangeDate = null;
+    if (!canChangeCountry(user.last_country_change_at) && user.last_country_change_at) {
+      const nextChangeTimestamp = user.last_country_change_at + (30 * 24 * 60 * 60 * 1000);
+      if (nextChangeTimestamp && !isNaN(nextChangeTimestamp)) {
+        const dateObj = new Date(nextChangeTimestamp);
+        if (!isNaN(dateObj.getTime())) {
+          nextCountryChangeDate = dateObj.toISOString();
+        }
+      }
+    }
 
-    res.json({
+    return res.json({
       message: 'User settings retrieved successfully',
       settings: {
         id: user.id,
@@ -82,13 +89,14 @@ router.get('/', authenticateToken, async (req, res) => {
         profilePhoto: user.profile_photo,
         lastCountryChangeAt: user.last_country_change_at,
         canChangeCountry: canChangeCountry(user.last_country_change_at),
-        nextCountryChangeDate: nextCountryChangeDate ? nextCountryChangeDate.toISOString() : null
+        nextCountryChangeDate: nextCountryChangeDate,
+        markForDeletion: user.mark_for_deletion
       }
     });
 
   } catch (error) {
     console.error('Get user settings error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error while retrieving user settings'
     });
   }
@@ -144,13 +152,13 @@ router.put('/password', authenticateToken, async (req, res) => {
       [newPasswordHash, userId]
     );
 
-    res.json({
+    return res.json({
       message: 'Password changed successfully'
     });
 
   } catch (error) {
     console.error('Change password error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error while changing password'
     });
   }
@@ -192,7 +200,8 @@ router.put('/country', authenticateToken, async (req, res) => {
 
     // Check 30-day restriction
     if (!canChangeCountry(currentUser.last_country_change_at)) {
-      const nextChangeDate = new Date(currentUser.last_country_change_at + (30 * 24 * 60 * 60 * 1000));
+      const nextChangeTimestamp = currentUser.last_country_change_at + (30 * 24 * 60 * 60 * 1000);
+      const nextChangeDate = new Date(nextChangeTimestamp);
       return res.status(429).json({
         error: 'Country can only be changed once per month',
         nextChangeDate: nextChangeDate.toISOString(),
@@ -207,7 +216,7 @@ router.put('/country', authenticateToken, async (req, res) => {
       [country.trim(), now, userId]
     );
 
-    res.json({
+    return res.json({
       message: 'Country updated successfully',
       country: country.trim(),
       lastCountryChangeAt: now
@@ -215,7 +224,7 @@ router.put('/country', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Update country error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error while updating country'
     });
   }
@@ -248,13 +257,13 @@ router.put('/photo', authenticateToken, async (req, res) => {
       [photoData, userId]
     );
 
-    res.json({
+    return res.json({
       message: 'Profile photo updated successfully'
     });
 
   } catch (error) {
     console.error('Update profile photo error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error while updating profile photo'
     });
   }
@@ -271,13 +280,13 @@ router.delete('/photo', authenticateToken, async (req, res) => {
       [userId]
     );
 
-    res.json({
+    return res.json({
       message: 'Profile photo removed successfully'
     });
 
   } catch (error) {
     console.error('Remove profile photo error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error while removing profile photo'
     });
   }
@@ -296,9 +305,9 @@ router.delete('/account', authenticateToken, async (req, res) => {
       });
     }
 
-    // Get user's password hash and email
+    // Get user's password hash, email, and deletion status
     const userResult = await pool.query(
-      'SELECT password_hash, email FROM users WHERE id = $1',
+      'SELECT password_hash, email, mark_for_deletion FROM users WHERE id = $1',
       [userId]
     );
 
@@ -308,8 +317,17 @@ router.delete('/account', authenticateToken, async (req, res) => {
       });
     }
 
+    const user = userResult.rows[0];
+
+    // Check if account is already marked for deletion
+    if (user.mark_for_deletion) {
+      return res.status(400).json({
+        error: 'Account is already marked for deletion'
+      });
+    }
+
     // Verify password
-    const validPassword = await bcrypt.compare(password, userResult.rows[0].password_hash);
+    const validPassword = await bcrypt.compare(password, user.password_hash);
     
     if (!validPassword) {
       return res.status(400).json({
@@ -317,35 +335,20 @@ router.delete('/account', authenticateToken, async (req, res) => {
       });
     }
 
-    // TODO: In production, you might want to:
-    // 1. Mark account for deletion instead of immediate deletion
-    // 2. Send confirmation email
-    // 3. Clean up related data
-    // 4. Add a grace period for account recovery
+    // Mark account for deletion instead of immediate deletion
+    await pool.query(
+      'UPDATE users SET mark_for_deletion = TRUE WHERE id = $1',
+      [userId]
+    );
 
-    // For now, we'll just delete the user and related data
-    // Delete user's moods first (foreign key constraint)
-    await pool.query('DELETE FROM moods WHERE user_id = $1', [userId]);
-    
-    // Delete user account
-    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
-
-    res.json({
-      message: 'Account deleted successfully. You will receive a confirmation email.'
+    return res.json({
+      message: 'Account marked for deletion. You will receive a confirmation email shortly.'
     });
 
   } catch (error) {
     console.error('Delete account error:', error);
-    
-    // Handle foreign key constraint errors
-    if (error.code === '23503') {
-      return res.status(400).json({
-        error: 'Cannot delete account due to related data'
-      });
-    }
-
-    res.status(500).json({
-      error: 'Internal server error while deleting account'
+    return res.status(500).json({
+      error: 'Internal server error while processing account deletion'
     });
   }
 });
