@@ -3,6 +3,7 @@
 // Types for API responses and requests
 export interface UserSettings {
     id: number;
+    username: string;
     email: string;
     country: string;
     gender: string;
@@ -101,6 +102,7 @@ export interface UserSettings {
         }
   
         const data: UserSettingsResponse = await response.json();
+        console.log(data.settings);
         return data.settings;
       } catch (error) {
         console.error('Error fetching user settings:', error);

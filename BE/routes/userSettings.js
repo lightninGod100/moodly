@@ -55,7 +55,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     const userResult = await pool.query(
-      'SELECT id, email, country, gender, profile_photo, last_country_change_at, mark_for_deletion, created_at FROM users WHERE id = $1',
+      'SELECT id, username, email, country, gender, profile_photo, last_country_change_at, mark_for_deletion, created_at FROM users WHERE id = $1',
       [userId]
     );
 
@@ -68,21 +68,36 @@ router.get('/', authenticateToken, async (req, res) => {
     const user = userResult.rows[0];
 
     // Calculate next country change date with proper validation
-    let nextCountryChangeDate = null;
-    if (!canChangeCountry(user.last_country_change_at) && user.last_country_change_at) {
-      const nextChangeTimestamp = user.last_country_change_at + (30 * 24 * 60 * 60 * 1000);
-      if (nextChangeTimestamp && !isNaN(nextChangeTimestamp)) {
-        const dateObj = new Date(nextChangeTimestamp);
-        if (!isNaN(dateObj.getTime())) {
-          nextCountryChangeDate = dateObj.toISOString();
-        }
-      }
-    }
+// Calculate next country change date with proper validation
+// Calculate next country change date with proper validation
+let nextCountryChangeDate = null;
+if (user.last_country_change_at && !canChangeCountry(user.last_country_change_at)) {
+  const nextChangeTimestamp = parseInt(user.last_country_change_at) + (30 * 24 * 60 * 60 * 1000);
+  console.log('nextChangeTimestamp calculated:', nextChangeTimestamp);
+  const dateObj = new Date(nextChangeTimestamp);
+  console.log('dateObj:', dateObj);
+  console.log('dateObj.getTime():', dateObj.getTime());
+  console.log('isNaN check:', !isNaN(dateObj.getTime()));
+  if (!isNaN(dateObj.getTime())) {
+    nextCountryChangeDate = dateObj.toISOString();
+    console.log('Final nextCountryChangeDate:', nextCountryChangeDate);
+  }
+}
+// After the user query, add these logs:
+console.log('=== COUNTRY CHANGE DEBUG ===');
+console.log('user.last_country_change_at:', user.last_country_change_at);
+console.log('canChangeCountry result:', canChangeCountry(user.last_country_change_at));
+
+// After the nextCountryChangeDate calculation:
+console.log('nextCountryChangeDate calculated:', nextCountryChangeDate);
+console.log('=== END DEBUG ===');
+
 
     return res.json({
       message: 'User settings retrieved successfully',
       settings: {
         id: user.id,
+        username: user.username,
         email: user.email,
         country: user.country,
         gender: user.gender,

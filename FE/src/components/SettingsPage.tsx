@@ -433,6 +433,30 @@ const SettingsPage: React.FC = () => {
             Basic Information
           </h3>
           
+            {/*username*/}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+              Username
+            </label>
+            <input
+              type="text"
+              value={userData.username}
+              disabled
+              style={{ 
+                width: '100%', 
+                padding: '0.5rem', 
+                border: '1px solid #ccc', 
+                borderRadius: '4px', 
+                backgroundColor: '#f9fafb', 
+                color: '#6b7280' 
+              }}
+            />
+            <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+              Username cannot be changed
+            </p>
+          </div>
+
+
           {/* Email - Read Only */}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
@@ -509,7 +533,7 @@ const SettingsPage: React.FC = () => {
             
             {!userData.canChangeCountry && userData.nextCountryChangeDate && (
               <p style={{ fontSize: '0.875rem', color: '#f59e0b', marginTop: '0.5rem' }}>
-                Next change available: {new Date(userData.nextCountryChangeDate).toLocaleDateString()}
+                Next change available: {new Date(userData.nextCountryChangeDate).toLocaleDateString('en-GB')}
               </p>
             )}
             
