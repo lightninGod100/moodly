@@ -173,9 +173,10 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
                   required
                 >
                   <option value="">Select a reason</option>
-                  <option value="Issues">App Related Issues</option>
-                  <option value="Suggestion">Suggestion</option>
-                  <option value="Account Deletion">Account Deletion</option>
+                  <option value="Signup-login Issues">SignUp/Login Issues</option>
+                  <option value="Suggestions">Suggestions</option>
+                  <option value="Bug Report">Report a Bug</option>
+                  <option value="Others">Others</option>
                 </select>
               </div>
 
