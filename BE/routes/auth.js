@@ -9,13 +9,13 @@ const router = express.Router();
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, country } = req.body;
+    const { username, email, password, country, gender  } = req.body;
 
     // Validation
-    if (!email || !password || !country) {
+    if (!username || !email || !password || !country || !gender) {
       return res.status(400).json({
         error: 'All fields are required',
-        required: ['email', 'password', 'country']
+        required: ['username', 'email', 'password', 'country', 'gender']
       });
     }
 
@@ -26,14 +26,37 @@ router.post('/register', async (req, res) => {
         error: 'Invalid email format'
       });
     }
-
+    
+    // Username validation
+if (username.length < 3 || username.length > 16) {
+  return res.status(400).json({
+    error: 'Username must be between 3 and 16 characters'
+  });
+}
+// Username format validation (alphanumeric and underscores only)
+const usernameRegex = /^[a-zA-Z0-9_]+$/;
+if (!usernameRegex.test(username)) {
+  return res.status(400).json({
+    error: 'Username can only contain letters, numbers, and underscores'
+  });
+}
     // Password strength validation
     if (password.length < 6) {
       return res.status(400).json({
         error: 'Password must be at least 6 characters long'
       });
     }
+// Check if username already exists
+const existingUsername = await pool.query(
+  'SELECT id FROM users WHERE username = $1',
+  [username.toLowerCase()]
+);
 
+if (existingUsername.rows.length > 0) {
+  return res.status(409).json({
+    error: 'Username is already taken'
+  });
+}
     // Check if user already exists
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1',
@@ -53,8 +76,8 @@ router.post('/register', async (req, res) => {
    // Create user - ADD: UNIX timestamp for created_at
     const now = Date.now(); // UNIX timestamp in milliseconds
     const newUser = await pool.query(
-     'INSERT INTO users (email, password_hash, country, created_at, created_at_utc) VALUES ($1, $2, $3, $4, to_timestamp($4::bigint/1000.0)) RETURNING id, email, country, created_at, created_at_utc, test_user',
-     [email.toLowerCase(), passwordHash, country, now]
+      'INSERT INTO users (username, email, password_hash, country, gender, created_at, created_at_utc, last_country_change_at) VALUES ($1, $2, $3, $4, $5, $6, to_timestamp($6::bigint/1000.0), $6) RETURNING id, username, email, country, gender, created_at, created_at_utc, test_user, last_country_change_at',
+      [username.toLowerCase(), email.toLowerCase(), passwordHash, country, gender.toLowerCase(), now]
     );
 
     // Generate JWT token

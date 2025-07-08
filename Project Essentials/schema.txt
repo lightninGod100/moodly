@@ -10,7 +10,8 @@ CREATE TABLE users (
   profile_photo text,
   gender character varying(20),
   last_country_change_at bigint,
-  mark_for_deletion bool
+  mark_for_deletion bool,
+username
 );
 
 -- Moods table
