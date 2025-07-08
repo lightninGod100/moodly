@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const { pool, testConnection } = require('./config/database');
 const userStatsRoutes = require('./routes/userStats');
+const userSettingsRoutes = require('./routes/userSettings');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -24,7 +25,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use('/api/user-settings', userSettingsRoutes);
 // Test route
 app.get('/', (req, res) => {
   res.json({
