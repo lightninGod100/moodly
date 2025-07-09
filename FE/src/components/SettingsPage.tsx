@@ -17,12 +17,13 @@ const SettingsPage: React.FC = () => {
   });
   const [selectedCountry, setSelectedCountry] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{[key: string]: string}>({});
-  const [successMessages, setSuccessMessages] = useState<{[key: string]: string}>({});
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [successMessages, setSuccessMessages] = useState<{ [key: string]: string }>({});
   const [showDeletionConfirm, setShowDeletionConfirm] = useState(false);
   const [deletionPassword, setDeletionPassword] = useState('');
   const [isPhotoHovered, setIsPhotoHovered] = useState(false);
-
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   // Load user settings from API
   const loadUserSettings = async () => {
     try {
@@ -46,31 +47,31 @@ const SettingsPage: React.FC = () => {
 
   // Countries list
   const countries = [
-    'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina', 
-    'Armenia', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 
-    'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 
-    'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Canada', 
-    'Cape Verde', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 
-    'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Democratic Republic of the Congo', 
-    'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt', 'El Salvador', 
-    'Equatorial Guinea', 'Eritrea', 'Estonia', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon', 
-    'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 
-    'Guyana', 'Haiti', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 
-    'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Kuwait', 
-    'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 
-    'Lithuania', 'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 
-    'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 
-    'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nauru', 'Nepal', 
-    'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 
-    'Norway', 'Oman', 'Pakistan', 'Palau', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 
-    'Philippines', 'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 
-    'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe', 
-    'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 
-    'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan', 'Spain', 
-    'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan', 
-    'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 
-    'Turkmenistan', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 
-    'United States of America', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela', 
+    'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina',
+    'Armenia', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados',
+    'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan', 'Bolivia', 'Bosnia and Herzegovina', 'Botswana',
+    'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Canada',
+    'Cape Verde', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo',
+    'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Democratic Republic of the Congo',
+    'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt', 'El Salvador',
+    'Equatorial Guinea', 'Eritrea', 'Estonia', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon',
+    'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau',
+    'Guyana', 'Haiti', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
+    'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Kuwait',
+    'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein',
+    'Lithuania', 'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta',
+    'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco',
+    'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nauru', 'Nepal',
+    'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'North Macedonia',
+    'Norway', 'Oman', 'Pakistan', 'Palau', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru',
+    'Philippines', 'Poland', 'Portugal', 'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis',
+    'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe',
+    'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia',
+    'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan', 'Spain',
+    'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan',
+    'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey',
+    'Turkmenistan', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom',
+    'United States of America', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela',
     'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
   ];
 
@@ -100,14 +101,14 @@ const SettingsPage: React.FC = () => {
             <p style={{ color: '#dc2626', marginBottom: '1rem' }}>
               {dataError || 'Failed to load your settings'}
             </p>
-            <button 
+            <button
               onClick={loadUserSettings}
-              style={{ 
-                padding: '0.5rem 1rem', 
-                backgroundColor: '#3b82f6', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px' 
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px'
               }}
             >
               Try Again
@@ -141,12 +142,12 @@ const SettingsPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      
+
       const passwordData: PasswordChangeRequest = {
         currentPassword: passwords.current,
         newPassword: passwords.new
       };
-      
+
       const message = await settingsApiService.updatePassword(passwordData);
       setSuccessMessages({ password: message });
       setPasswords({ current: '', new: '', confirm: '' });
@@ -160,7 +161,7 @@ const SettingsPage: React.FC = () => {
   // Handle country change with real API
   const handleCountryChange = async () => {
     if (!userData.canChangeCountry) {
-      const nextDate = userData.nextCountryChangeDate 
+      const nextDate = userData.nextCountryChangeDate
         ? new Date(userData.nextCountryChangeDate).toLocaleDateString()
         : 'Unknown';
       setErrors({ country: `Country can only be changed once per month. Next change: ${nextDate}` });
@@ -176,13 +177,13 @@ const SettingsPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      
+
       const countryData: CountryUpdateRequest = {
         country: selectedCountry
       };
-      
+
       const response = await settingsApiService.updateCountry(countryData);
-      
+
       // Update local state with new data
       setUserData(prev => prev ? {
         ...prev,
@@ -190,7 +191,7 @@ const SettingsPage: React.FC = () => {
         lastCountryChangeAt: response.lastCountryChangeAt,
         canChangeCountry: false
       } : null);
-      
+
       setSuccessMessages({ country: response.message });
     } catch (error) {
       setErrors({ country: error instanceof Error ? error.message : 'Failed to update country' });
@@ -208,20 +209,20 @@ const SettingsPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      
+
       // Use service validation
       const base64Data = await settingsApiService.validateImageFile(file);
-      
+
       const photoData: PhotoUploadRequest = {
         photoData: base64Data
       };
-      
+
       const message = await settingsApiService.uploadProfilePhoto(photoData);
-      
+
       // Update local state
       setUserData(prev => prev ? { ...prev, profilePhoto: base64Data } : null);
       setSuccessMessages({ photo: message });
-      
+
     } catch (error) {
       setErrors({ photo: error instanceof Error ? error.message : 'Failed to upload photo' });
     } finally {
@@ -235,13 +236,13 @@ const SettingsPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      
+
       const message = await settingsApiService.removeProfilePhoto();
-      
+
       // Update local state
       setUserData(prev => prev ? { ...prev, profilePhoto: null } : null);
       setSuccessMessages({ photo: message });
-      
+
     } catch (error) {
       setErrors({ photo: error instanceof Error ? error.message : 'Failed to remove photo' });
     } finally {
@@ -252,7 +253,7 @@ const SettingsPage: React.FC = () => {
   // Handle account deletion with real API
   const handleAccountDeletion = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!deletionPassword) {
       setErrors({ deletion: 'Password is required to delete account' });
       return;
@@ -260,20 +261,20 @@ const SettingsPage: React.FC = () => {
 
     try {
       setIsLoading(true);
-      
+
       const accountData: AccountDeletionRequest = {
         password: deletionPassword
       };
-      
+
       const message = await settingsApiService.deleteAccount(accountData);
-      
+
       alert(message);
       setShowDeletionConfirm(false);
       setDeletionPassword('');
-      
+
       // Reload user settings to update markForDeletion status
       await loadUserSettings();
-      
+
     } catch (error) {
       setErrors({ deletion: error instanceof Error ? error.message : 'Failed to delete account' });
     } finally {
@@ -284,7 +285,7 @@ const SettingsPage: React.FC = () => {
   return (
     <div style={{ backgroundColor: 'white', minHeight: '100vh', padding: '2rem' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        
+
         {/* Header */}
         <h1 style={{ textAlign: 'center', fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', color: 'black' }}>
           Account Settings
@@ -295,25 +296,25 @@ const SettingsPage: React.FC = () => {
           <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black', textAlign: 'center' }}>
             Profile Photo
           </h3>
-          
+
           {/* Centered Photo Display Container */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             {/* Current Photo Display */}
-            <div 
+            <div
               style={{ position: 'relative', marginBottom: '1rem' }}
               onMouseEnter={() => setIsPhotoHovered(true)}
               onMouseLeave={() => setIsPhotoHovered(false)}
             >
               {userData.profilePhoto ? (
                 <>
-                  <img 
-                    src={userData.profilePhoto} 
-                    alt="Profile" 
-                    style={{ 
-                      width: '120px', 
-                      height: '120px', 
-                      borderRadius: '50%', 
-                      objectFit: 'cover', 
+                  <img
+                    src={userData.profilePhoto}
+                    alt="Profile"
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
                       objectPosition: 'center',
                       border: '2px solid #e5e7eb',
                       display: 'block'
@@ -322,15 +323,15 @@ const SettingsPage: React.FC = () => {
                   {/* Delete Icon - Top Right - Only visible on hover */}
                   <button
                     onClick={handlePhotoRemoval}
-                    style={{ 
-                      position: 'absolute', 
-                      top: '0', 
-                      right: '0', 
-                      width: '32px', 
-                      height: '32px', 
-                      backgroundColor: '#dc2626', 
-                      color: 'white', 
-                      border: 'none', 
+                    style={{
+                      position: 'absolute',
+                      top: '0',
+                      right: '0',
+                      width: '32px',
+                      height: '32px',
+                      backgroundColor: '#dc2626',
+                      color: 'white',
+                      border: 'none',
                       borderRadius: '50%',
                       display: 'flex',
                       alignItems: 'center',
@@ -353,32 +354,32 @@ const SettingsPage: React.FC = () => {
                   </button>
                 </>
               ) : (
-                <div style={{ 
-                  width: '120px', 
-                  height: '120px', 
-                  backgroundColor: '#f3f4f6', 
-                  borderRadius: '50%', 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <div style={{
+                  width: '120px',
+                  height: '120px',
+                  backgroundColor: '#f3f4f6',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'center',
                   border: '2px dashed #d1d5db'
                 }}>
                   <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>No Photo</span>
                 </div>
               )}
-              
+
               {/* Upload Icon - Bottom Right - Only visible on hover */}
               <button
                 onClick={() => document.getElementById('photo-upload-input')?.click()}
-                style={{ 
-                  position: 'absolute', 
-                  bottom: '0', 
-                  right: '0', 
-                  width: '36px', 
-                  height: '36px', 
-                  backgroundColor: '#3b82f6', 
-                  color: 'white', 
-                  border: 'none', 
+                style={{
+                  position: 'absolute',
+                  bottom: '0',
+                  right: '0',
+                  width: '36px',
+                  height: '36px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
@@ -398,7 +399,7 @@ const SettingsPage: React.FC = () => {
                 </svg>
               </button>
             </div>
-            
+
             {/* Hidden File Input */}
             <input
               id="photo-upload-input"
@@ -407,12 +408,12 @@ const SettingsPage: React.FC = () => {
               onChange={handlePhotoUpload}
               style={{ display: 'none' }}
             />
-            
+
             {/* Instructions */}
             <p style={{ fontSize: '0.875rem', color: '#6b7280', textAlign: 'center', marginBottom: '0.5rem' }}>
               PNG or JPEG only, max 100KB, max 256×256px
             </p>
-            
+
             {/* Error and Success Messages */}
             {errors.photo && (
               <p style={{ color: '#dc2626', fontSize: '0.875rem', textAlign: 'center' }}>
@@ -432,8 +433,8 @@ const SettingsPage: React.FC = () => {
           <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black' }}>
             Basic Information
           </h3>
-          
-            {/*username*/}
+
+          {/*username*/}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
               Username
@@ -442,13 +443,13 @@ const SettingsPage: React.FC = () => {
               type="text"
               value={userData.username}
               disabled
-              style={{ 
-                width: '100%', 
-                padding: '0.5rem', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px', 
-                backgroundColor: '#f9fafb', 
-                color: '#6b7280' 
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                backgroundColor: '#f9fafb',
+                color: '#6b7280'
               }}
             />
             <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
@@ -466,13 +467,13 @@ const SettingsPage: React.FC = () => {
               type="email"
               value={userData.email}
               disabled
-              style={{ 
-                width: '100%', 
-                padding: '0.5rem', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px', 
-                backgroundColor: '#f9fafb', 
-                color: '#6b7280' 
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                backgroundColor: '#f9fafb',
+                color: '#6b7280'
               }}
             />
             <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
@@ -488,13 +489,13 @@ const SettingsPage: React.FC = () => {
               type="text"
               value={userData.gender}
               disabled
-              style={{ 
-                width: '100%', 
-                padding: '0.5rem', 
-                border: '1px solid #ccc', 
-                borderRadius: '4px', 
-                backgroundColor: '#f9fafb', 
-                color: '#6b7280' 
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                backgroundColor: '#f9fafb',
+                color: '#6b7280'
               }}
             />
             <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
@@ -508,7 +509,7 @@ const SettingsPage: React.FC = () => {
           <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black' }}>
             Country
           </h3>
-          
+
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
               Current Country
@@ -517,10 +518,10 @@ const SettingsPage: React.FC = () => {
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
               disabled={!userData.canChangeCountry}
-              style={{ 
-                width: '100%', 
-                padding: '0.5rem', 
-                border: '1px solid #ccc', 
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #ccc',
                 borderRadius: '4px',
                 backgroundColor: userData.canChangeCountry ? 'white' : '#f9fafb',
                 color: userData.canChangeCountry ? 'black' : '#6b7280'
@@ -530,23 +531,23 @@ const SettingsPage: React.FC = () => {
                 <option key={country} value={country}>{country}</option>
               ))}
             </select>
-            
+
             {!userData.canChangeCountry && userData.nextCountryChangeDate && (
               <p style={{ fontSize: '0.875rem', color: '#f59e0b', marginTop: '0.5rem' }}>
                 Next change available: {new Date(userData.nextCountryChangeDate).toLocaleDateString('en-GB')}
               </p>
             )}
-            
+
             {userData.canChangeCountry && selectedCountry !== userData.country && (
               <button
                 onClick={handleCountryChange}
                 disabled={isLoading}
-                style={{ 
-                  marginTop: '0.5rem', 
-                  padding: '0.5rem 1rem', 
-                  backgroundColor: '#3b82f6', 
-                  color: 'white', 
-                  border: 'none', 
+                style={{
+                  marginTop: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
                   borderRadius: '4px',
                   opacity: isLoading ? 0.5 : 1
                 }}
@@ -554,7 +555,7 @@ const SettingsPage: React.FC = () => {
                 {isLoading ? 'Updating...' : 'Update Country'}
               </button>
             )}
-            
+
             {errors.country && <p style={{ color: '#dc2626', fontSize: '0.875rem', marginTop: '0.5rem' }}>{errors.country}</p>}
             {successMessages.country && <p style={{ color: '#16a34a', fontSize: '0.875rem', marginTop: '0.5rem' }}>{successMessages.country}</p>}
           </div>
@@ -565,32 +566,100 @@ const SettingsPage: React.FC = () => {
           <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black' }}>
             Change Password
           </h3>
-          
+
           <form onSubmit={handlePasswordChange}>
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
                 Current Password
               </label>
-              <input
-                type="password"
-                value={passwords.current}
-                onChange={(e) => setPasswords(prev => ({ ...prev, current: e.target.value }))}
-                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
-                placeholder="Enter current password"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={passwords.current}
+                  onChange={(e) => setPasswords(prev => ({ ...prev, current: e.target.value }))}
+                  style={{ width: '100%', padding: '0.5rem', paddingRight: '3rem', border: '1px solid #ccc', borderRadius: '4px' }}
+                  placeholder="Enter current password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#6b7280',
+                    padding: '2px'
+                  }}
+                >
+                  {showCurrentPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+                      <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+                      <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+                      <path d="m2 2 20 20" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
                 New Password
               </label>
-              <input
-                type="password"
-                value={passwords.new}
-                onChange={(e) => setPasswords(prev => ({ ...prev, new: e.target.value }))}
-                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
-                placeholder="Enter new password (min 6 characters)"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  value={passwords.new}
+                  onChange={(e) => setPasswords(prev => ({ ...prev, new: e.target.value }))}
+                  style={{ width: '100%', padding: '0.5rem', paddingRight: '3rem', border: '1px solid #ccc', borderRadius: '4px' }}
+                  placeholder="Enter new password (min 6 characters)"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#6b7280',
+                    padding: '2px'
+                  }}
+                >
+                  {showNewPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+                      <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+                      <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+                      <path d="m2 2 20 20" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
@@ -612,11 +681,11 @@ const SettingsPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              style={{ 
-                padding: '0.5rem 1rem', 
-                backgroundColor: '#3b82f6', 
-                color: 'white', 
-                border: 'none', 
+              style={{
+                padding: '0.5rem 1rem',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
                 borderRadius: '4px',
                 opacity: isLoading ? 0.5 : 1
               }}
@@ -631,7 +700,7 @@ const SettingsPage: React.FC = () => {
           <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: '#dc2626' }}>
             Danger Zone
           </h3>
-          
+
           {userData.markForDeletion ? (
             <div>
               <p style={{ fontSize: '0.875rem', color: '#dc2626', marginBottom: '1rem', fontWeight: 'bold' }}>
@@ -645,12 +714,12 @@ const SettingsPage: React.FC = () => {
               </p>
               <button
                 onClick={() => setShowDeletionConfirm(true)}
-                style={{ 
-                  padding: '0.5rem 1rem', 
-                  backgroundColor: '#dc2626', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '4px' 
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px'
                 }}
               >
                 Delete Account
@@ -661,7 +730,7 @@ const SettingsPage: React.FC = () => {
               <p style={{ fontSize: '0.875rem', color: 'black', marginBottom: '1rem' }}>
                 <strong>Are you sure you want to delete your account?</strong> This action cannot be undone.
               </p>
-              
+
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
                   Enter your password to confirm:
@@ -685,12 +754,12 @@ const SettingsPage: React.FC = () => {
                     setDeletionPassword('');
                     setErrors({});
                   }}
-                  style={{ 
-                    padding: '0.5rem 1rem', 
-                    backgroundColor: '#6b7280', 
-                    color: 'white', 
-                    border: 'none', 
-                    borderRadius: '4px' 
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px'
                   }}
                 >
                   Cancel
@@ -698,11 +767,11 @@ const SettingsPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  style={{ 
-                    padding: '0.5rem 1rem', 
-                    backgroundColor: '#dc2626', 
-                    color: 'white', 
-                    border: 'none', 
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#dc2626',
+                    color: 'white',
+                    border: 'none',
                     borderRadius: '4px',
                     opacity: isLoading ? 0.5 : 1
                   }}
