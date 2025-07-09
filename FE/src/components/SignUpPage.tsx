@@ -415,13 +415,13 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onNavigate }) => {
                 />
                 <label htmlFor="terms" className="text-[0.73rem] text-gray-600">
                   By signing up you agree to our{' '}
-                  <a href="#" className="text-blue-500 underline hover:text-blue-600">
+                  <button onClick={() => onNavigate('privacy-and-terms')} className="text-blue-500 underline hover:text-blue-600">
                     Terms and conditions
-                  </a>{' '}
+                  </button>{' '}
                   and{' '}
-                  <a href="#" className="text-blue-500 underline hover:text-blue-600">
+                  <button onClick={() => onNavigate('privacy-and-terms')} className="text-blue-500 underline hover:text-blue-600">
                     Privacy policy
-                  </a>
+                  </button>
                   .
                 </label>
               </div>
