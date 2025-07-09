@@ -161,8 +161,57 @@ const GlobePage: React.FC = () => {
         {!isLoading && !error && worldStats && (
           <div className="flex flex-col pointer-events-auto" style={{ gap: '1rem' }}>
             {/* Dominant Mood Stats - Semi-transparent dark gray */}
-            <div className="text-white rounded" style={{ padding: '1rem', backgroundColor: 'rgba(31, 41, 55, 0.85)' }}>
-              <h2 className="font-bold text-center" style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Dominant Mood</h2>
+            {/* Dominant Mood Stats - Semi-transparent dark gray */}
+<div className="text-white rounded" style={{ padding: '1rem', backgroundColor: 'rgba(31, 41, 55, 0.85)' }}>
+  <div className="flex items-center justify-center" style={{ marginBottom: '1rem', position: 'relative' }}>
+    <h2 className="font-bold text-center" style={{ fontSize: '1.125rem', marginRight: '0.5rem' }}>Dominant Mood</h2>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <svg 
+        width="16" 
+        height="16" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        style={{ cursor: 'help', opacity: 0.7 }}
+        onMouseEnter={(e) => {
+          const tooltip = e.currentTarget.nextElementSibling as HTMLElement;
+          if (tooltip) tooltip.style.display = 'block';
+        }}
+        onMouseLeave={(e) => {
+          const tooltip = e.currentTarget.nextElementSibling as HTMLElement;
+          if (tooltip) tooltip.style.display = 'none';
+        }}
+      >
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+        <path d="M12 17h.01"/>
+      </svg>
+      <div 
+        style={{
+          position: 'absolute',
+          bottom: '100%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          color: 'rgb(230, 230, 230)',
+          padding: '0.75rem 0.75rem',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          whiteSpace: 'nowrap',
+          zIndex: 1000,
+          display: 'none',
+          marginBottom: '0.25rem',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          textAlign: 'center'
+        }}
+      >
+        The mood that most people around the world are <br />feeling most often in the selected timeframe.
+      </div>
+    </div>
+  </div>
               <div className="space-y-1">
   {moodOrder.map((mood, index) => (
     <div key={mood}>
@@ -192,8 +241,57 @@ const GlobePage: React.FC = () => {
             </div>
 
             {/* Top Modes Stats - Semi-transparent dark gray */}
-            <div className="text-white rounded" style={{ padding: '1rem', backgroundColor: 'rgba(31, 41, 55, 0.85)' }}>
-              <h2 className="font-bold text-center" style={{ fontSize: '1.125rem', marginBottom: '1rem' }}>Top Modes</h2>
+            {/* Top Modes Stats - Semi-transparent dark gray */}
+<div className="text-white rounded" style={{ padding: '1rem', backgroundColor: 'rgba(31, 41, 55, 0.85)' }}>
+  <div className="flex items-center justify-center" style={{ marginBottom: '1rem', position: 'relative' }}>
+    <h2 className="font-bold text-center" style={{ fontSize: '1.125rem', marginRight: '0.5rem' }}>Top Modes</h2>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <svg 
+        width="16" 
+        height="16" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        style={{ cursor: 'help', opacity: 0.7 }}
+        onMouseEnter={(e) => {
+          const tooltip = e.currentTarget.nextElementSibling as HTMLElement;
+          if (tooltip) tooltip.style.display = 'block';
+        }}
+        onMouseLeave={(e) => {
+          const tooltip = e.currentTarget.nextElementSibling as HTMLElement;
+          if (tooltip) tooltip.style.display = 'none';
+        }}
+      >
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+        <path d="M12 17h.01"/>
+      </svg>
+      <div 
+        style={{
+          position: 'absolute',
+          bottom: '100%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          color: 'rgb(230, 230, 230)',
+          padding: '0.75rem 0.75rem',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          whiteSpace: 'nowrap',
+          zIndex: 1000,
+          display: 'none',
+          marginBottom: '0.25rem',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          textAlign: 'center'
+        }}
+      >
+        Shows which moods are being logged most frequently <br/>across all users worldwide in this timeframe.
+      </div>
+    </div>
+  </div>
               <div className="space-y-1">
   {moodOrder.map((mood, index) => (
     <div key={mood}>
