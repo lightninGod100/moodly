@@ -25,11 +25,11 @@ interface WorldMapProps {
 }
 
 const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
-  const [tooltip, setTooltip] = useState<{ 
-    x: number; 
-    y: number; 
-    country: string; 
-    data: { topMood: string; userCount: number; moods?: any } 
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    country: string;
+    data: { topMood: string; userCount: number; moods?: any }
   } | null>(null);
   const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
 
@@ -48,16 +48,16 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
   const handleMoveEnd = (position: any) => {
     const [longitude, latitude] = position.coordinates;
     const zoom = position.zoom;
-  
+
     const center = [0, 0]; // <-- MAKE SURE this is your true map center (e.g., [lng, lat])
-  
+
     // Define the threshold for snapping back to center
     const longitudeThreshold = 180;
     const latitudeThreshold = 90;
-  
+
     const isOutOfBounds =
       Math.abs(longitude) > longitudeThreshold || Math.abs(latitude) > latitudeThreshold;
-  
+
     if (isOutOfBounds) {
       setPosition({
         coordinates: center,
@@ -71,7 +71,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
       });
     }
   };
-  
+
   // Get country color based on dominant mood
   const getCountryColor = (countryName: string): string => {
     const data = countryData[countryName];
@@ -84,15 +84,15 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
     // Use the correct property name (lowercase 'name')
     const countryName = geo.properties.name || geo.properties.NAME || geo.properties.ADMIN;
     const data = countryData[countryName];
-    
+
     if (countryName) {
       setTooltip({
         x: event.clientX,
         y: event.clientY,
         country: countryName,
-        data: data || { 
-          topMood: 'No Data', 
-          userCount: 0, 
+        data: data || {
+          topMood: 'No Data',
+          userCount: 0,
           moods: { Happy: 0, Excited: 0, Calm: 0, Tired: 0, Sad: 0, Angry: 0, Anxious: 0 }
         }
       });
@@ -111,6 +111,14 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
         y: event.clientY
       } : null);
     }
+  };
+  // Add helper function to get top 3 moods
+  const getTop3Moods = (moods: any) => {
+    if (!moods) return [];
+    return Object.entries(moods)
+      .map(([mood, percentage]) => ({ mood, percentage: percentage as number }))
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 3);
   };
 
   return (
@@ -144,66 +152,88 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
           onMoveEnd={handleMoveEnd}
         >
           <Geographies geography="https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json">
-          {({ geographies }) =>
-            geographies.map((geo) => {
-              const countryName = geo.properties.name || geo.properties.NAME || geo.properties.ADMIN;
-              const hasData = !!countryData[countryName];
-              
-              return (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  onMouseEnter={(event) => handleMouseEnter(geo, event)}
-                  onMouseLeave={handleMouseLeave}
-                  style={{
-                    default: {
-                      fill: getCountryColor(countryName),
-                      stroke: '#1f2937',
-                      strokeWidth: 0.5,
-                      outline: 'none',
-                      opacity: hasData ? 1 : 0.3
-                    },
-                    hover: {
-                      fill: getCountryColor(countryName),
-                      stroke: '#e5e7eb',
-                      strokeWidth: 2,
-                      outline: 'none',
-                      opacity: 1,
-                      cursor: 'pointer'
-                    },
-                    pressed: {
-                      fill: getCountryColor(countryName),
-                      stroke: '#e5e7eb',
-                      strokeWidth: 2,
-                      outline: 'none'
-                    }
-                  }}
-                />
-              );
-            })
-          }
+            {({ geographies }) =>
+              geographies.map((geo) => {
+                const countryName = geo.properties.name || geo.properties.NAME || geo.properties.ADMIN;
+                const hasData = !!countryData[countryName];
+
+                return (
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    onMouseEnter={(event) => handleMouseEnter(geo, event)}
+                    onMouseLeave={handleMouseLeave}
+                    style={{
+                      default: {
+                        fill: getCountryColor(countryName),
+                        stroke: '#1f2937',
+                        strokeWidth: 0.5,
+                        outline: 'none',
+                        opacity: hasData ? 1 : 0.3
+                      },
+                      hover: {
+                        fill: getCountryColor(countryName),
+                        stroke: '#e5e7eb',
+                        strokeWidth: 2,
+                        outline: 'none',
+                        opacity: 1,
+                        cursor: 'pointer'
+                      },
+                      pressed: {
+                        fill: getCountryColor(countryName),
+                        stroke: '#e5e7eb',
+                        strokeWidth: 2,
+                        outline: 'none'
+                      }
+                    }}
+                  />
+                );
+              })
+            }
           </Geographies>
         </ZoomableGroup>
       </ComposableMap>
 
       {/* Tooltip */}
+
+
+      {/* Enhanced Tooltip */}
       {tooltip && (
         <div
-          className="absolute z-10 bg-gray-900 border border-gray-700 text-white p-3 rounded shadow-lg pointer-events-none max-w-xs"
+          className="absolute z-10 bg-gray-100 border border-gray-300 text-black p-4 rounded-lg shadow-lg pointer-events-none"
           style={{
-            left: Math.min(tooltip.x + 10, window.innerWidth - 250),
-            top: tooltip.y - 80,
+            left: Math.min(tooltip.x + 10, window.innerWidth - 280),
+            top: tooltip.y - 120,
+            minWidth: '260px'
           }}
         >
-          <div className="font-bold text-lg mb-1">{tooltip.country}</div>
-          <div className="text-sm space-y-1">
-            <div>
-              <span className="font-medium">Top Mood:</span> {tooltip.data.topMood}
+          <div className="font-bold text-lg mb-3 pb-2 border-b-2 border-black ">{tooltip.country}</div>
+          {/* Check if no data available */}
+          {tooltip.data.userCount === 0 ? (
+            <div className="text-sm text-gray-700 italic">
+              No Data Available
             </div>
-            <div>
-              <span className="font-medium">Users:</span> {tooltip.data.userCount.toLocaleString()}
-            </div>
-          </div>
+          ) :
+            (
+              <div className="space-y-2">
+                {getTop3Moods(tooltip.data.moods).map(({ mood, percentage }) => (
+                  <div key={mood} className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">{mood}</span>
+                      <span className="text-sm font-bold">{percentage}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${percentage}%`,
+                          backgroundColor: moodColors[mood] || moodColors.default
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>)}
         </div>
       )}
 
