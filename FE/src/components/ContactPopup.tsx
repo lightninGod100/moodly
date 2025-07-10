@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 interface ContactPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (reason: string, message: string, email?: string) => void;
+  onSubmit: (reason: string, message: string, email?: string) => Promise<void>;
 }
 
 const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }) => {
@@ -28,7 +28,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
     return emailRegex.test(email);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -49,13 +49,19 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
       }
     }
 
-    // Call the onSubmit function with the form data
-    // For authenticated users, email will be undefined (pulled from backend)
-    // For non-authenticated users, pass the email from form
-    onSubmit(selectedReason, message, isAuthenticated ? undefined : email.trim());
-    
-    // Show success screen instead of closing
-    setIsSubmitted(true);
+    try {
+      // Call the onSubmit function with the form data
+      // For authenticated users, email will be undefined (pulled from backend)
+      // For non-authenticated users, pass the email from form
+      await onSubmit(selectedReason, message, isAuthenticated ? undefined : email.trim());
+      
+      // Show success screen only if API call succeeds
+      setIsSubmitted(true);
+    } catch (error) {
+      // Error is already handled in LandingPage (alert shown)
+      // Don't show success screen, keep form open for retry
+      console.log('Contact form submission failed, keeping form open for retry');
+    }
   };
 
   const handleCancel = () => {
