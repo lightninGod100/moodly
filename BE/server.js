@@ -10,6 +10,7 @@ const userSettingsRoutes = require('./routes/userSettings');
 const authRoutes = require('./routes/auth');
 const MoodsRoutes = require('./routes/moods');
 const worldStatsRoutes = require('./routes/worldStats');
+const contactRoutes = require('./routes/email');
 
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
@@ -25,7 +26,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/api/user-settings', userSettingsRoutes);
+
 // Test route
 app.get('/', (req, res) => {
   res.json({
@@ -78,6 +79,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/moods', MoodsRoutes);
 app.use('/api/world-stats', worldStatsRoutes);
 app.use('/api/user-stats', userStatsRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/user-settings', userSettingsRoutes);
 
 // Protected route example (requires authentication)
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
