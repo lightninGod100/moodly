@@ -1,16 +1,32 @@
 // src/components/ContactPopup.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface ContactPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (reason: string, message: string) => void;
+  onSubmit: (reason: string, message: string, email?: string) => void;
 }
 
 const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }) => {
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [message, setMessage] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  // Check authentication status when component mounts or isOpen changes
+  useEffect(() => {
+    if (isOpen) {
+      const token = localStorage.getItem('authToken');
+      setIsAuthenticated(!!token);
+    }
+  }, [isOpen]);
+
+  // Email validation function
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,8 +37,22 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
       return;
     }
 
+    // Email validation for non-authenticated users
+    if (!isAuthenticated) {
+      if (!email.trim()) {
+        alert('Please enter your email address');
+        return;
+      }
+      if (!validateEmail(email.trim())) {
+        alert('Please enter a valid email address');
+        return;
+      }
+    }
+
     // Call the onSubmit function with the form data
-    onSubmit(selectedReason, message);
+    // For authenticated users, email will be undefined (pulled from backend)
+    // For non-authenticated users, pass the email from form
+    onSubmit(selectedReason, message, isAuthenticated ? undefined : email.trim());
     
     // Show success screen instead of closing
     setIsSubmitted(true);
@@ -32,6 +62,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
     // Reset all states
     setSelectedReason('');
     setMessage('');
+    setEmail('');
     setIsSubmitted(false);
     onClose();
   };
@@ -40,6 +71,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
     // Reset all states
     setSelectedReason('');
     setMessage('');
+    setEmail('');
     setIsSubmitted(false);
     onClose();
   };
@@ -119,7 +151,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
                 marginBottom: '1rem',
                 color: '#1f2937'
               }}>
-                Delievered!
+                Delivered!
               </h3>
               
               {/* Success Message */}
@@ -155,10 +187,48 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
           ) : (
             /* Original Form */
             <form onSubmit={handleSubmit}>
+              {/* Authentication Status Info (Optional Display) */}
+              {isAuthenticated && (
+                <div style={{ 
+                  marginBottom: '1rem', 
+                  padding: '0.5rem', 
+                  backgroundColor: '#e1f5fe', 
+                  borderRadius: '4px',
+                  fontSize: '0.875rem',
+                  color: '#0277bd',
+                  textAlign: 'center'
+                }}>
+                  📧 We'll use your account email for correspondence
+                </div>
+              )}
+
+              {/* Email Field - Only for Non-Authenticated Users */}
+              {!isAuthenticated && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+                    Email Address: <span style={{ color: 'red' }}>*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your.email@example.com"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem',
+                      border: '1px solid #ccc',
+                      borderRadius: '4px',
+                      fontSize: '1rem'
+                    }}
+                    required
+                  />
+                </div>
+              )}
+
               {/* Reason Dropdown */}
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Reason for Contact:
+                  Reason for Contact: <span style={{ color: 'red' }}>*</span>
                 </label>
                 <select
                   value={selectedReason}
@@ -183,7 +253,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
               {/* Message Textarea */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  Message:
+                  Message: <span style={{ color: 'red' }}>*</span>
                 </label>
                 <textarea
                   value={message}

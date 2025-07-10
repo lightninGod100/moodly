@@ -19,7 +19,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
     setShowContactPopup(false);
   };
 
-  const handleContactSubmit = (reason: string, message: string) => {
+  const handleContactSubmit = (reason: string, message: string, email?: string) => {
     console.log('Contact Form Submitted:');
     console.log('Reason:', reason);
     console.log('Message:', message);
