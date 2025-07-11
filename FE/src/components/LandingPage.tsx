@@ -19,11 +19,44 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
     setShowContactPopup(false);
   };
 
-  const handleContactSubmit = (reason: string, message: string, email?: string) => {
-    console.log('Contact Form Submitted:');
-    console.log('Reason:', reason);
-    console.log('Message:', message);
-    // TODO: Implement email sending functionality later
+  const handleContactSubmit = async (reason: string, message: string, email?: string) => {
+    try {
+      // Prepare headers
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+  
+      // Add authorization header if user is authenticated
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+  
+      // Make API call to backend
+      const response = await fetch('http://localhost:5000/api/contact', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          reason,
+          message,
+          email
+        })
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message');
+      }
+  
+      console.log('✅ Message sent successfully:', data.message);
+      console.log('📧 Submission ID:', data.submissionId);
+  
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      alert(`Failed to send message: ${error instanceof Error ? error.message : 'Please try again later'}`);
+      throw error;
+    }
   };
   const [showSupportPopup, setShowSupportPopup] = useState(false);
 

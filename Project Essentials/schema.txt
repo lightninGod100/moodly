@@ -22,3 +22,15 @@ CREATE TABLE moods (
   created_at BIGINT NOT NULL,
   created_at_utc TIMESTAMPTZ DEFAULT NOW()
 );
+
+--contact_submissions
+
+CREATE TABLE contact_submissions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,  -- Nullable for non-authenticated users (NULL = guest)
+  subject VARCHAR(255) NOT NULL,                            -- Reason for contact
+  body TEXT NOT NULL,                                       -- User's message
+  email VARCHAR(255),                                       -- User's email (from form or DB)
+  created_at_utc BIGINT NOT NULL,                          -- UNIX timestamp
+  status VARCHAR(50) NOT NULL DEFAULT 'pending'            -- 'pending', 'sent', 'failed', 'processed'
+);
