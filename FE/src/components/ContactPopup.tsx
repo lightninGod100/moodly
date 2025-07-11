@@ -13,6 +13,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
   const [email, setEmail] = useState<string>('');
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Check authentication status when component mounts or isOpen changes
   useEffect(() => {
@@ -50,6 +51,8 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
     }
 
     try {
+      setIsLoading(true); // Start loading
+      
       // Call the onSubmit function with the form data
       // For authenticated users, email will be undefined (pulled from backend)
       // For non-authenticated users, pass the email from form
@@ -57,10 +60,16 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
       
       // Show success screen only if API call succeeds
       setIsSubmitted(true);
+      // Clear form data after successful submission
+      setSelectedReason('');
+      setMessage('');
+      setEmail('');
     } catch (error) {
       // Error is already handled in LandingPage (alert shown)
       // Don't show success screen, keep form open for retry
       console.log('Contact form submission failed, keeping form open for retry');
+    } finally {
+      setIsLoading(false); // Stop loading
     }
   };
 
@@ -70,15 +79,14 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
     setMessage('');
     setEmail('');
     setIsSubmitted(false);
+    setIsLoading(false);
     onClose();
   };
 
   const handleClose = () => {
-    // Reset all states
-    setSelectedReason('');
-    setMessage('');
-    setEmail('');
+    // Only reset loading and submission states, keep form data
     setIsSubmitted(false);
+    setIsLoading(false);
     onClose();
   };
 
@@ -283,37 +291,70 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
                 <button
                   type="button"
                   onClick={handleCancel}
+                  disabled={isLoading}
                   style={{
                     padding: '0.5rem 1rem',
-                    backgroundColor: '#f3f4f6',
-                    color: 'black',
+                    backgroundColor: isLoading ? '#e5e7eb' : '#f3f4f6',
+                    color: isLoading ? '#9ca3af' : 'black',
                     border: '1px solid #d1d5db',
                     borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '1rem'
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    fontSize: '1rem',
+                    opacity: isLoading ? 0.6 : 1
                   }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  disabled={isLoading}
                   style={{
                     padding: '0.5rem 1rem',
-                    backgroundColor: '#3b82f6',
+                    backgroundColor: isLoading ? '#9ca3af' : '#3b82f6',
                     color: 'white',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '1rem'
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    minWidth: '100px'
                   }}
                 >
-                  Submit
+                  {isLoading ? (
+                    <>
+                      {/* Spinner */}
+                      <div
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          border: '2px solid transparent',
+                          borderTop: '2px solid white',
+                          borderRadius: '50%',
+                          animation: 'spin 1s linear infinite'
+                        }}
+                      />
+                      Sending...
+                    </>
+                  ) : (
+                    'Submit'
+                  )}
                 </button>
               </div>
             </form>
           )}
         </div>
       </div>
+      
+      {/* CSS Animation for Spinner */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   );
 };
