@@ -147,6 +147,9 @@ function App() {
     if (currentPage === 'globe') {
       return <GlobePage />;
     }
+    if (currentPage === 'privacy-and-terms') {
+      return <PrivacyAndTermsPage onNavigate={handleNavigate} />;
+    }
     if (!isAuthenticated) {
       // NEW: Show LandingPage component for landing page
       if (currentPage === 'landing') {
@@ -161,9 +164,7 @@ function App() {
       if (currentPage === 'login') {
         return <LoginPage onNavigate={handleNavigate} />;
       }
-      if (currentPage === 'privacy-and-terms') {
-        return <PrivacyAndTermsPage onNavigate={handleNavigate} />;
-      }
+      
   
       // For other unimplemented pages, show placeholder
       return (

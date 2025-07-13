@@ -5,7 +5,12 @@ interface PrivacyAndTermsPageProps {
   onNavigate: (page: string) => void;
 }
 
+
 const PrivacyAndTermsPage: React.FC<PrivacyAndTermsPageProps> = ({ onNavigate }) => {
+  const handleBackToHome = () => {
+    const isAuth = !!localStorage.getItem('authToken');
+    onNavigate(isAuth ? 'home' : 'landing');
+  };
   return (
     <div style={{ backgroundColor: 'rgb(240,240,240)', minHeight: '100vh', color: 'black' }}>
       {/* Content Container */}
@@ -303,7 +308,7 @@ const PrivacyAndTermsPage: React.FC<PrivacyAndTermsPageProps> = ({ onNavigate })
             Back to Top
           </button>
           <button
-            onClick={() => onNavigate('landing')}
+            onClick={() => handleBackToHome()}
             style={{
               backgroundColor: '#3b82f6',
               color: 'white',
