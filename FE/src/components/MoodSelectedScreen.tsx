@@ -54,28 +54,72 @@ const getStatMessage = (mood: string): string => {
 // Short mood-related phrases for left side bubbles
 const getMoodPhrases = (mood: string): string[] => {
   const phrases: Record<MoodType, string[]> = {
-    'Happy': ["Joy spreads", "Smile bright", "Feel good", "Positive vibes", "Cheerful heart"],
-    'Excited': ["Energy flows", "Dreams alive", "Adventure awaits", "Passion ignites", "Thrilling moment"],
-    'Calm': ["Peace within", "Breathe deep", "Serenity now", "Gentle waves", "Quiet mind"],
-    'Tired': ["Rest needed", "Recharge time", "Gentle pause", "Recovery mode", "Peaceful rest"],
-    'Anxious': ["Stay strong", "You've got this", "Courage grows", "Fears fade", "Hope rises"],
-    'Angry': ["Let it go", "Find peace", "Calm returns", "Strength builds", "Balance restored"],
-    'Sad': ["This too passes", "Healing comes", "Light returns", "Hope endures", "Tomorrow's better"]
+    'Happy': ["Keep it going", "Smile bright", "Feel good", "Positive vibes", "Cheerful heart"],
+    'Excited': ["Yippee!", "Bring it on", "Let’s gooo", "So pumped!", "Energy unlocked"],
+    'Calm': ["Stay centered", "Breathe easy", "Peace within", "Still waters", "Quiet strength"],
+    'Tired': ["Rest is power", "Time to recharge", "You've earned a break", "Listen to your body", "Slow it down"],
+    'Anxious': ["It’s okay to pause", "You're safe now", "Deep breaths", "One step at a time", "Be kind to your mind"],
+    'Angry': ["Take a deep breath", "Let it go", "Cool it down", "You're in control", "Anger is a signal"],
+    'Sad': ["This too shall pass", "Feel it, heal it", "You’re not alone", "Crying is okay", "Healing takes time"]
   };
-  return phrases[mood as MoodType] || ["Stay strong", "Keep going", "You matter", "Hope lives", "Peace comes"];
+  return phrases[mood as MoodType] || ["Stay strong", "You matter", "Hope lives", "Peace comes"];
 };
 
 // Main inspirational quotes for right side bubbles
-const getMainQuotes = (): string[] => {
-  return [
-    "The only way to do great work is to love what you do.",
-    "Life is what happens to you while you're busy making other plans.",
-    "The future belongs to those who believe in the beauty of their dreams.",
-    "It is during our darkest moments that we must focus to see the light.",
-    "The way to get started is to quit talking and begin doing.",
-    "The greatest glory in living lies not in never falling, but in rising every time we fall.",
-    "In the end, we will remember not the words of our enemies, but the silence of our friends."
-  ];
+// Main inspirational quotes for right side bubbles - mood specific
+const getMainQuotes = (mood: string): string[] => {
+  const quotes: Record<MoodType, string[]> = {
+    'Happy': [
+      "Happiness is not something ready made. It comes from your own actions. — Dalai Lama",
+      "The most simple things can bring the most happiness. — Izabella Scorupco",
+      "Happiness depends upon ourselves. — Aristotle",
+      "The only joy in the world is to begin. — Cesare Pavese",
+      "Very little is needed to make a happy life; it is all within yourself. — Marcus Aurelius"
+    ],
+    'Excited': [
+      "The more you praise and celebrate your life, the more there is in life to celebrate. — Oprah Winfrey",
+      "Enthusiasm moves the world. — Arthur Balfour",
+      "Life is either a daring adventure or nothing at all. — Helen Keller",
+      "The excitement of learning separates youth from old age. — Ezra Pound",
+      "Act enthusiastic and you will be enthusiastic. — Dale Carnegie"
+    ],
+    'Calm': [
+      "He who is of a calm and happy nature will hardly feel the pressure of age. — Plato",
+      "Peace comes from within. Do not seek it without. — Buddha",
+      "Nothing can bring you peace but yourself. — Ralph Waldo Emerson",
+      "The nearer a man comes to a calm mind, the closer he is to strength. — Marcus Aurelius",
+      "Be like a tree and let the dead leaves drop. — Rumi"
+    ],
+    'Tired': [
+      "There is virtue in work and there is virtue in rest. Use both and overlook neither. — Alan Cohen",
+      "Rest and be thankful. — William Wordsworth",
+      "Sometimes the most productive thing you can do is relax. — Mark Black",
+      "Your mind will answer most questions if you learn to relax and wait for the answer. — William S. Burroughs",
+      "Take rest; a field that has rested gives a bountiful crop. — Ovid"
+    ],
+    'Anxious': [
+      "Do not let your difficulties fill you with anxiety, after all it is only in the darkest nights that stars shine more brightly. — Ali ibn Abi Talib",
+      "You don't have to control your thoughts. You just have to stop letting them control you. — Dan Millman",
+      "Anxiety does not empty tomorrow of its sorrows, but only empties today of its strength. — Charles Spurgeon",
+      "Feelings come and go like clouds in a windy sky. Conscious breathing is my anchor. — Thích Nhất Hạnh",
+      "Nothing diminishes anxiety faster than action. — Walter Anderson"
+    ],
+    'Angry': [
+      "You will not be punished for your anger; you will be punished by your anger. — Buddha",
+      "Speak when you are angry and you will make the best speech you will ever regret. — Ambrose Bierce",
+      "For every minute you remain angry, you give up sixty seconds of peace of mind. — Ralph Waldo Emerson",
+      "The greatest remedy for anger is delay. — Seneca",
+      "Anger is never without a reason, but seldom with a good one. — Benjamin Franklin"
+    ],
+    'Sad': [
+      "The wound is the place where the Light enters you. — Rumi",
+      "Every man has his secret sorrows which the world knows not. — Henry Wadsworth Longfellow",
+      "Tears come from the heart and not from the brain. — Leonardo da Vinci",
+      "To weep is to make less the depth of grief. — William Shakespeare",
+      "Sadness flies away on the wings of time. — Jean de La Fontaine"
+    ]
+  };
+  return quotes[mood as MoodType] || quotes['Happy']; // Default to Happy quotes if mood not found
 };
 
 interface MoodSelectedScreenProps {
@@ -156,7 +200,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
   const horizontalPositionsLeft = ['20%', '30%'];
   const horizontalPositionsRight = ['60%', '70%'];
   const moodPhrases = getMoodPhrases(currentMood);
-  const quotes = getMainQuotes();
+  const quotes = getMainQuotes(currentMood);
 
   return (
     <div ref={vantaRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
@@ -282,10 +326,10 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 padding: '1rem',
                 backdropFilter: 'blur(8px)',
                 fontSize: '0.75rem',
-                fontWeight: '500',
+                fontWeight: 'bold',
                 textAlign: 'center',
-                width: '90px',
-                height: '90px',
+                width: '110px',
+                height: '110px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -365,7 +409,31 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                   `
                 }}
               >
-                {quotes[index % quotes.length]}
+                {(() => {
+  const fullQuote = quotes[index % quotes.length];
+  const parts = fullQuote.split(' — ');
+  const quoteText = parts[0];
+  const author = parts[1] || '';
+  
+  return (
+    <div>
+      <div style={{ marginBottom: '0.5rem' }}>
+        {quoteText}
+      </div>
+      {author && (
+        <div style={{ 
+          fontSize: '0.65rem', 
+          fontStyle: 'italic', 
+          opacity: 0.9,
+          marginTop: '0.5rem',
+          fontWeight: 'bold'
+        }}>
+          — {author}
+        </div>
+      )}
+    </div>
+  );
+})()}
               </div>
               {/* Fragment bubbles for realistic burst */}
               {[1, 2, 3, 4].map(fragIndex => (
