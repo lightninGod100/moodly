@@ -10,14 +10,14 @@ import type { CountryStats } from '../services/GlobalStatsService';
 
 // Mood color mapping
 export const moodColors: { [key: string]: string } = {
-  Happy: '#22c55e',    // Green
-  Excited: '#f59e0b',  // Amber  
-  Calm: '#3b82f6',     // Blue
-  Tired: '#8b5cf6',    // Purple
-  Sad: '#6366f1',      // Indigo
-  Angry: '#ef4444',    // Red
-  Anxious: '#f97316',  // Orange
-  default: '#4b5563'   // Gray for no data
+  Happy: '#9EFD00',    // Vibrant Green
+  Excited: '#E6E600',  // Yellow  
+  Calm: '#1E90FF',     // Vibrant Blue
+  Tired: '#33414A',    // 
+  Sad: '#651e58',      // 
+  Angry: '#FF0000',    // Red
+  Anxious: '#448184',  // 
+  default: '#2B2B2B'   // Gray for no data
 };
 
 interface WorldMapProps {
@@ -122,7 +122,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
   };
 
   return (
-    <div className="relative w-full h-full bg-black">
+    <div className="relative w-full h-full"style={{ backgroundColor: '#111' }}>
       <style>{`
         .rsm-zoomable-group {
           touch-action: none;
@@ -166,15 +166,15 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
                     style={{
                       default: {
                         fill: getCountryColor(countryName),
-                        stroke: '#1f2937',
+                        stroke: '#000000',
                         strokeWidth: 0.5,
                         outline: 'none',
-                        opacity: hasData ? 1 : 0.3
+                        opacity: hasData ? 1 : 1
                       },
                       hover: {
                         fill: getCountryColor(countryName),
-                        stroke: '#e5e7eb',
-                        strokeWidth: 2,
+                        stroke: '#FFFFFF',
+                        strokeWidth: 1,
                         outline: 'none',
                         opacity: 1,
                         cursor: 'pointer'

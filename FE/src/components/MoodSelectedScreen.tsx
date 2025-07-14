@@ -8,13 +8,13 @@ type MoodType = 'Happy' | 'Excited' | 'Calm' | 'Tired' | 'Anxious' | 'Angry' | '
 
 // Mood color mapping (hex to Vanta-compatible format)
 export const moodColors: { [key: string]: string } = {
-  Happy: '#22c55e',    // Green
-  Excited: '#f59e0b',  // Amber  
-  Calm: '#3b82f6',     // Blue
-  Tired: '#8b5cf6',    // Purple
-  Sad: '#6366f1',      // Indigo
-  Angry: '#ef4444',    // Red
-  Anxious: '#f97316',  // Orange
+  Happy: '#136025',    // Green
+  Excited: '#686a1b',  // Amber  
+  Calm: '#221f83',     // Blue
+  Tired: '#2B373F',    // Purple
+  Sad: '#400f36',      // Indigo
+  Angry: '#8a1212',    // Red
+  Anxious: '#7473e',  // Orange
   default: '#4b5563'   // Gray for no data
 };
 
