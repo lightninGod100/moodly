@@ -55,19 +55,18 @@ const getStatMessage = (mood: string): string => {
 const getMoodPhrases = (mood: string): string[] => {
   const phrases: Record<MoodType, string[]> = {
     'Happy': ["Keep it going", "Smile bright", "Feel good", "Positive vibes", "Cheerful heart"],
-    'Excited': ["Yippee!", "Bring it on", "Let’s gooo", "So pumped!", "Energy unlocked"],
+    'Excited': ["Yippee!", "Bring it on", "Let's gooo", "So pumped!", "Energy unlocked"],
     'Calm': ["Stay centered", "Breathe easy", "Peace within", "Still waters", "Quiet strength"],
     'Tired': ["Rest is power", "Time to recharge", "You've earned a break", "Listen to your body", "Slow it down"],
-    'Anxious': ["It’s okay to pause", "You're safe now", "Deep breaths", "One step at a time", "Be kind to your mind"],
+    'Anxious': ["It's okay to pause", "You're safe now", "Deep breaths", "One step at a time", "Be kind to your mind"],
     'Angry': ["Take a deep breath", "Let it go", "Cool it down", "You're in control", "Anger is a signal"],
-    'Sad': ["This too shall pass", "Feel it, heal it", "You’re not alone", "Crying is okay", "Healing takes time"]
+    'Sad': ["This too shall pass", "Feel it, heal it", "You're not alone", "Crying is okay", "Healing takes time"]
   };
   return phrases[mood as MoodType] || ["Stay strong", "You matter", "Hope lives", "Peace comes"];
 };
 
-// Main inspirational quotes for right side bubbles
 // Main inspirational quotes for right side bubbles - mood specific
-const getMainQuotes = (mood: string): string[] => {
+const getMoodSpecificQuotes = (mood: string): string[] => {
   const quotes: Record<MoodType, string[]> = {
     'Happy': [
       "Happiness is not something ready made. It comes from your own actions. — Dalai Lama",
@@ -198,9 +197,8 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
 
   // Working bubble positions from the sample code
   const horizontalPositionsLeft = ['20%', '30%'];
-  const horizontalPositionsRight = ['60%', '70%'];
   const moodPhrases = getMoodPhrases(currentMood);
-  const quotes = getMainQuotes(currentMood);
+  const quotes = getMoodSpecificQuotes(currentMood);
 
   return (
     <div ref={vantaRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
@@ -300,85 +298,91 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
           </div>
         </div>
       </div>
-
+   
       {/* Left bubbles - Realistic styling with working animations */}
-      <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
-        {horizontalPositionsLeft.map((left, index) => (
-          <React.Fragment key={`left-bubble-group-${index}`}>
-            <div
-              key={`left-${index}`}
-              style={{
-                position: 'absolute',
-                bottom: '-150px',
-                left,
-                animation: `floatUpLeft 12s linear ${index * 6}s infinite`,
-                color: 'rgba(0, 0, 0, 0.8)',
-                background: `
-                  radial-gradient(circle at 30% 30%, 
-                    rgba(255, 255, 255, 0.8) 0%, 
-                    rgba(255, 255, 255, 0.4) 30%, 
-                    rgba(255, 255, 255, 0.1) 70%, 
-                    rgba(255, 255, 255, 0.05) 100%
-                  )
-                `,
-                borderRadius: '50%',
-                border: '1px solid rgba(255, 255, 255, 0.6)',
-                padding: '1rem',
-                backdropFilter: 'blur(8px)',
-                fontSize: '0.75rem',
-                fontWeight: 'bold',
-                textAlign: 'center',
-                width: '110px',
-                height: '110px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: `
-                  inset -10px -10px 20px rgba(255, 255, 255, 0.3),
-                  inset 10px 10px 20px rgba(0, 0, 0, 0.1),
-                  0 5px 15px rgba(0, 0, 0, 0.2)
-                `
-              }}
-            >
-              {moodPhrases[index % moodPhrases.length]}
-            </div>
-            {[1, 2, 3, 4].map(fragIndex => (
-              <div
-                key={`left-fragment-${fragIndex}-${index}`}
-                style={{
-                  position: 'absolute',
-                  bottom: '-150px',
-                  left,
-                  animation: `fragmentBurstLeft${fragIndex} 12s linear ${index * 6}s infinite`,
-                  color: 'rgba(0, 0, 0, 0.6)',
-                  background: 'radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 100%)',
-                  borderRadius: '50%',
-                  border: '1px solid rgba(255, 255, 255, 0.5)',
-                  backdropFilter: 'blur(4px)',
-                  width: '20px',
-                  height: '20px',
-                  opacity: 0,
-                  boxShadow: 'inset -3px -3px 6px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.1)'
-                }}
-              />
-            ))}
-          </React.Fragment>
-        ))}
-      </div>
-
- {/* Right bubbles - Realistic styling with working animations */}
- <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
-        {horizontalPositionsRight.map((left, index) => {
-          const bubbleSize = 170 + (index * 15); // Variable sizes
+{/* Left bubbles - Updated to show all 5 phrases */}
+<div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
+ {[...Array(5)].map((_, index) => {
+   const bubbleSize = 110 + moodPhrases[index].length/5;
+   return (
+     <React.Fragment key={`left-bubble-group-${index}`}>
+       <div
+         key={`left-${index}`}
+         style={{
+           position: 'absolute',
+           bottom: '-30px',
+           left: index % 2 === 0 ? '20%' : '30%',
+           opacity: 0,
+           animation: `floatUpLeft 20s linear ${index * 4}s infinite`,
+           color: 'rgba(0, 0, 0, 0.8)',
+           background: `
+             radial-gradient(circle at 30% 30%, 
+               rgba(255, 255, 255, 0.8) 0%, 
+               rgba(255, 255, 255, 0.4) 30%, 
+               rgba(255, 255, 255, 0.1) 70%, 
+               rgba(255, 255, 255, 0.05) 100%
+             )
+           `,
+           borderRadius: '50%',
+           border: '1px solid rgba(255, 255, 255, 0.6)',
+           padding: '1rem',
+           backdropFilter: 'blur(8px)',
+           fontSize: '1rem',
+           fontWeight: '500',
+           textAlign: 'center',
+           width: `${bubbleSize}px`,
+           height: `${bubbleSize}px`,
+           display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'center',
+           boxShadow: `
+             inset -10px -10px 20px rgba(255, 255, 255, 0.3),
+             inset 10px 10px 20px rgba(0, 0, 0, 0.1),
+             0 5px 15px rgba(0, 0, 0, 0.2)
+           `
+         }}
+       >
+         {moodPhrases[index]}
+       </div>
+       {[1, 2, 3, 4].map(fragIndex => (
+         <div
+           key={`left-fragment-${fragIndex}-${index}`}
+           style={{
+             position: 'absolute',
+             bottom: '-30px',
+             left: index % 2 === 0 ? '20%' : '30%',
+             animation: `fragmentBurstLeft${fragIndex} 20s linear ${index * 4}s infinite`,
+             color: 'rgba(0, 0, 0, 0.6)',
+             background: 'radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 100%)',
+             borderRadius: '50%',
+             border: '1px solid rgba(255, 255, 255, 0.5)',
+             backdropFilter: 'blur(4px)',
+             width: '20px',
+             height: '20px',
+             opacity: 0,
+             boxShadow: 'inset -3px -3px 6px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.1)'
+           }}
+         />
+       ))}
+     </React.Fragment>
+   );
+ })}
+</div>
+   
+      {/* Right bubbles - Sequential approach with alternating positions */}
+      <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
+        {[...Array(5)].map((_, index) => {
+          const bubbleSize = 170 + quotes[index].length/5;
           return (
             <React.Fragment key={`right-bubble-group-${index}`}>
               <div
                 key={`right-${index}`}
                 style={{
                   position: 'absolute',
-                  bottom: '-200px',
-                  left,
-                  animation: `floatUpRight 12s linear ${index * 6}s infinite`,
+                  bottom: '-30px',
+                  left: index % 2 === 0 ? '60%' : '70%',
+                  opacity: 0,
+                  animation: `floatUpRight 20s linear ${index * 4}s infinite`,
                   color: 'rgba(0, 0, 0, 0.8)',
                   background: `
                     radial-gradient(circle at 25% 25%, 
@@ -410,30 +414,30 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 }}
               >
                 {(() => {
-  const fullQuote = quotes[index % quotes.length];
-  const parts = fullQuote.split(' — ');
-  const quoteText = parts[0];
-  const author = parts[1] || '';
-  
-  return (
-    <div>
-      <div style={{ marginBottom: '0.5rem' }}>
-        {quoteText}
-      </div>
-      {author && (
-        <div style={{ 
-          fontSize: '0.65rem', 
-          fontStyle: 'italic', 
-          opacity: 0.9,
-          marginTop: '0.5rem',
-          fontWeight: 'bold'
-        }}>
-          — {author}
-        </div>
-      )}
-    </div>
-  );
-})()}
+                  const fullQuote = quotes[index];
+                  const parts = fullQuote.split(' — ');
+                  const quoteText = parts[0];
+                  const author = parts[1] || '';
+                  
+                  return (
+                    <div>
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        {quoteText}
+                      </div>
+                      {author && (
+                        <div style={{ 
+                          fontSize: '0.65rem', 
+                          fontStyle: 'italic', 
+                          opacity: 0.9,
+                          marginTop: '0.5rem',
+                          fontWeight: 'bold'
+                        }}>
+                          — {author}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               {/* Fragment bubbles for realistic burst */}
               {[1, 2, 3, 4].map(fragIndex => (
@@ -442,8 +446,8 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                   style={{
                     position: 'absolute',
                     bottom: '-200px',
-                    left,
-                    animation: `fragmentBurstRight${fragIndex} 12s linear ${index * 6}s infinite`,
+                    left: index % 2 === 0 ? '65%' : '75%',
+                    animation: `fragmentBurstRight${fragIndex} 12s linear ${index * 2.4}s infinite`,
                     color: 'rgba(0, 0, 0, 0.6)',
                     background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 100%)',
                     borderRadius: '50%',
@@ -461,89 +465,93 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
         })}
       </div>
         
-      {/* Working animations from sample code with realistic styling */}
+      {/* Working animations with immediate start */}
       <style>
         {`
-@keyframes floatUpLeft {
-  0% { transform: translateY(100vh) scale(1); opacity: 0; }
-  10% { opacity: 1; }
-  82% { opacity: 1; transform: translateY(-82vh) scale(1); }
-  86% { opacity: 1; transform: translateY(-86vh) scale(1.1) rotate(2deg); }
-  90% { opacity: 1; transform: translateY(-90vh) scale(1.3) rotate(-1deg); }
-  93% { opacity: 0.8; transform: translateY(-93vh) scale(1.6) rotate(1deg); }
-  96% { opacity: 0.4; transform: translateY(-96vh) scale(2.2) rotate(0deg); }
-  100% { opacity: 0; transform: translateY(-100vh) scale(0.1) rotate(5deg); }
-}
-
-@keyframes floatUpRight {
-  0% { transform: translateY(100vh) scale(1); opacity: 0; }
-  10% { opacity: 1; }
-  82% { opacity: 1; transform: translateY(-82vh) scale(1); }
-  86% { opacity: 1; transform: translateY(-86vh) scale(1.1) rotate(-2deg); }
-  90% { opacity: 1; transform: translateY(-90vh) scale(1.4) rotate(1deg); }
-  93% { opacity: 0.7; transform: translateY(-93vh) scale(1.8) rotate(-1deg); }
-  96% { opacity: 0.3; transform: translateY(-96vh) scale(2.5) rotate(0deg); }
-  100% { opacity: 0; transform: translateY(-100vh) scale(0.05) rotate(-5deg); }
-}
-  /* Fragment burst animations for left bubbles */
-@keyframes fragmentBurstLeft1 {
-  0%, 92% { opacity: 0; transform: translateY(100vh) translateX(0) scale(0); }
-  93% { opacity: 0; transform: translateY(-93vh) translateX(-20px) scale(1); }
-  96% { opacity: 0; transform: translateY(-96vh) translateX(-35px) scale(0.8); }
-  100% { opacity: 1; transform: translateY(-100vh) translateX(-50px) scale(1); }
-}
-
-@keyframes fragmentBurstLeft2 {
-  0%, 92% { opacity: 0; transform: translateY(100vh) translateX(0) scale(0); }
-  93% { opacity: 0; transform: translateY(-93vh) translateX(20px) scale(1); }
-  96% { opacity: 0; transform: translateY(-96vh) translateX(40px) scale(0.7); }
-  100% { opacity: 1; transform: translateY(-100vh) translateX(60px) scale(1); }
-}
-
-@keyframes fragmentBurstLeft3 {
-  0%, 92% { opacity: 0; transform: translateY(100vh) translateX(0) scale(0); }
-  93% { opacity: 0; transform: translateY(-93vh) translateX(-10px) scale(1); }
-  96% { opacity: 0; transform: translateY(-98vh) translateX(-15px) scale(0.6); }
-  100% { opacity: 1; transform: translateY(-105vh) translateX(-20px) scale(1); }
-}
-
-@keyframes fragmentBurstLeft4 {
-  0%, 92% { opacity: 0; transform: translateY(100vh) translateX(0) scale(0); }
-  93% { opacity: 0; transform: translateY(-93vh) translateX(15px) scale(1); }
-  96% { opacity: 0; transform: translateY(-98vh) translateX(25px) scale(0.5); }
-  100% { opacity: 1; transform: translateY(-105vh) translateX(35px) scale(1); }
-}
-
-/* Fragment burst animations for right bubbles */
-@keyframes fragmentBurstRight1 {
-  0%, 92% { opacity: 0; transform: translateY(100vh) translateX(0) scale(0); }
-  93% { opacity: 0; transform: translateY(-93vh) translateX(-20px) scale(1); }
-  96% { opacity: 0; transform: translateY(-96vh) translateX(-35px) scale(0.8); }
-  100% { opacity: 1; transform: translateY(-100vh) translateX(-50px) scale(1); }
-}
-
-@keyframes fragmentBurstRight2 {
-  0%, 92% { opacity: 0; transform: translateY(100vh) translateX(0) scale(0); }
-  93% { opacity: 0; transform: translateY(-93vh) translateX(20px) scale(1); }
-  96% { opacity: 0; transform: translateY(-96vh) translateX(40px) scale(0.7); }
-  100% { opacity: 1; transform: translateY(-100vh) translateX(60px) scale(1); }
-}
-
-@keyframes fragmentBurstRight3 {
-  0%, 92% { opacity: 0; transform: translateY(100vh) translateX(0) scale(0); }
-  93% { opacity: 0; transform: translateY(-93vh) translateX(-10px) scale(1); }
-  96% { opacity: 0; transform: translateY(-98vh) translateX(-15px) scale(0.6); }
-  100% { opacity: 1; transform: translateY(-105vh) translateX(-20px) scale(1); }
-}
-
-@keyframes fragmentBurstRight4 {
-  0%, 92% { opacity: 0; transform: translateY(100vh) translateX(0) scale(0); }
-  93% { opacity: 0; transform: translateY(-93vh) translateX(15px) scale(1); }
-  96% { opacity: 0; transform: translateY(-98vh) translateX(25px) scale(0.5); }
-  100% { opacity: 1; transform: translateY(-105vh) translateX(35px) scale(1); }
-}
-
-
+ @keyframes floatUpLeft {
+    0% { transform: translateY(5vh) scale(0.5); opacity: 1; }
+    30% { opacity: 1; transform: translateY(-5vh) scale(0.7); }
+    60% { opacity: 1; transform: translateY(-10vh) scale(0.8); }
+    72% { opacity: 1; transform: translateY(-50vh) scale(1.2); }
+    74% { opacity: 1; transform: translateY(-60vh) scale(1.4) rotate(-2deg); }
+    78% { opacity: 1; transform: translateY(-70vh) scale(1.6) rotate(3deg); }
+    81% { opacity: 0.7; transform: translateY(-76vh) scale(2) rotate(-3deg); }
+    84% { opacity: 0; transform: translateY(-82vh) scale(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(-100vh) scale(0) rotate(0deg); }
+   }
+   
+   @keyframes floatUpRight {
+    0% { transform: translateY(5vh) scale(0.5); opacity: 1; }
+    10% { transform: translateY(0vh) scale(0.6); opacity: 1; }
+    20% { transform: translateY(-2vh) scale(0.65); opacity: 1; }
+    30% { opacity: 1; transform: translateY(-5vh) scale(0.7); }
+    60% { opacity: 1; transform: translateY(-10vh) scale(0.8); }
+    72% { opacity: 1; transform: translateY(-50vh) scale(1.2); }
+    74% { opacity: 1; transform: translateY(-60vh) scale(1.4) rotate(-2deg); }
+    78% { opacity: 1; transform: translateY(-70vh) scale(1.6) rotate(3deg); }
+    81% { opacity: 0.7; transform: translateY(-76vh) scale(2) rotate(-3deg); }
+    84% { opacity: 0; transform: translateY(-82vh) scale(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(-100vh) scale(0) rotate(0deg); }
+   }
+   
+   /* Fragment burst animations for left bubbles */
+   @keyframes fragmentBurstLeft1 {
+    0%, 92% { opacity: 0; transform: translateY(5vh) translateX(0) scale(0); }
+    93% { opacity: 0; transform: translateY(-91vh) translateX(-20px) scale(1); }
+    96% { opacity: 0; transform: translateY(-94vh) translateX(-35px) scale(0.8); }
+    100% { opacity: 1; transform: translateY(-100vh) translateX(-50px) scale(1); }
+   }
+   
+   @keyframes fragmentBurstLeft2 {
+    0%, 92% { opacity: 0; transform: translateY(5vh) translateX(0) scale(0); }
+    93% { opacity: 0; transform: translateY(-91vh) translateX(20px) scale(1); }
+    96% { opacity: 0; transform: translateY(-94vh) translateX(40px) scale(0.7); }
+    100% { opacity: 1; transform: translateY(-100vh) translateX(60px) scale(1); }
+   }
+   
+   @keyframes fragmentBurstLeft3 {
+    0%, 92% { opacity: 0; transform: translateY(5vh) translateX(0) scale(0); }
+    93% { opacity: 0; transform: translateY(-91vh) translateX(-10px) scale(1); }
+    96% { opacity: 0; transform: translateY(-96vh) translateX(-15px) scale(0.6); }
+    100% { opacity: 1; transform: translateY(-103vh) translateX(-20px) scale(1); }
+   }
+   
+   @keyframes fragmentBurstLeft4 {
+    0%, 92% { opacity: 0; transform: translateY(5vh) translateX(0) scale(0); }
+    93% { opacity: 0; transform: translateY(-91vh) translateX(15px) scale(1); }
+    96% { opacity: 0; transform: translateY(-96vh) translateX(25px) scale(0.5); }
+    100% { opacity: 1; transform: translateY(-103vh) translateX(35px) scale(1); }
+   }
+   
+   /* Fragment burst animations for right bubbles */
+   @keyframes fragmentBurstRight1 {
+    0%, 92% { opacity: 0; transform: translateY(5vh) translateX(0) scale(0); }
+    93% { opacity: 0; transform: translateY(-91vh) translateX(-20px) scale(1); }
+    96% { opacity: 0; transform: translateY(-94vh) translateX(-35px) scale(0.8); }
+    100% { opacity: 1; transform: translateY(-100vh) translateX(-50px) scale(1); }
+   }
+   
+   @keyframes fragmentBurstRight2 {
+    0%, 92% { opacity: 0; transform: translateY(5vh) translateX(0) scale(0); }
+    93% { opacity: 0; transform: translateY(-91vh) translateX(20px) scale(1); }
+    96% { opacity: 0; transform: translateY(-94vh) translateX(40px) scale(0.7); }
+    100% { opacity: 1; transform: translateY(-100vh) translateX(60px) scale(1); }
+   }
+   
+   @keyframes fragmentBurstRight3 {
+    0%, 92% { opacity: 0; transform: translateY(5vh) translateX(0) scale(0); }
+    93% { opacity: 0; transform: translateY(-91vh) translateX(-10px) scale(1); }
+    96% { opacity: 0; transform: translateY(-96vh) translateX(-15px) scale(0.6); }
+    100% { opacity: 1; transform: translateY(-103vh) translateX(-20px) scale(1); }
+   }
+   
+   @keyframes fragmentBurstRight4 {
+    0%, 92% { opacity: 0; transform: translateY(5vh) translateX(0) scale(0); }
+    93% { opacity: 0; transform: translateY(-91vh) translateX(15px) scale(1); }
+    96% { opacity: 0; transform: translateY(-96vh) translateX(25px) scale(0.5); }
+    100% { opacity: 1; transform: translateY(-103vh) translateX(35px) scale(1); }
+   }
+   
           @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -557,7 +565,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
         `}
       </style>
     </div>
-  );
+   );
 };
 
 export default MoodSelectedScreen;
