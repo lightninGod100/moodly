@@ -196,109 +196,330 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
   }, [currentMood]);
 
   // Working bubble positions from the sample code
-  const horizontalPositionsLeft = ['20%', '30%'];
   const moodPhrases = getMoodPhrases(currentMood);
   const quotes = getMoodSpecificQuotes(currentMood);
 
   return (
     <div ref={vantaRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       
-      {/* Main Content - Centered */}
-      <div style={{ 
+     {/* Enhanced Professional Main Content */}
+     <div style={{ 
         position: 'absolute', 
-        top: '50%', 
+        top: '53%', 
         left: '50%', 
         transform: 'translate(-50%, -50%)', 
         zIndex: 5, 
-        textAlign: 'center', 
         color: 'white',
-        width: '40%'
+        width: '85%',
+        maxWidth: '1000px'
       }}>
-        {/* Title */}
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '2rem' }}>
-          Your Current Mood
-        </h1>
         
-        {/* Enhanced Mood Display */}
-        <div style={{ marginBottom: '2rem' }}>
-          <div style={{ position: 'relative' }}>
-            {/* Glow Effect */}
-            <div style={{
-              position: 'absolute',
-              inset: '0',
-              background: 'rgba(255, 255, 255, 0.3)',
-              borderRadius: '50%',
-              filter: 'blur(1rem)',
-              transform: 'scale(1.25)',
-              animation: 'pulse 2s infinite'
-            }}></div>
-            
-            {/* Main Mood Container */}
-            <div style={{
-              position: 'relative',
-              border: '3px solid white',
-              background: 'rgba(255, 255, 255, 0.25)',
-              backdropFilter: 'blur(15px)',
-              padding: '2rem',
-              borderRadius: '1rem',
-              boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)'
-            }}>
-              <div style={{ fontSize: '4rem', marginBottom: '0.5rem', animation: 'bounce 2s infinite' }}>
-                {moodEmoji}
+        {/* Hero Section - Current Mood Display */}
+        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          {/* Title */}
+          <h1 style={{ 
+            fontSize: '2.5rem', 
+            fontWeight: '700', 
+            marginBottom: '1rem',
+            fontFamily: 'var(--font-family)',
+            letterSpacing: '-0.025em'
+          }}>
+            Current Mood
+          </h1>
+          
+          {/* Enhanced Mood Display */}
+          <div style={{ marginBottom: '0.8rem' }}>
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              {/* Glow Effect */}
+              <div style={{
+                position: 'absolute',
+                inset: '0',
+                background: 'rgba(255, 255, 255, 0.3)',
+                borderRadius: '1.5rem',
+                filter: 'blur(1.5rem)',
+                transform: 'scale(1.3)',
+                animation: 'pulse 3s infinite'
+              }}></div>
+              
+              {/* Main Mood Container */}
+              <div style={{
+                position: 'relative',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                background: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(20px)',
+                padding: '2.5rem 3rem',
+                paddingBottom: '1rem',
+                borderRadius: '1.5rem',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                minWidth: '600px'
+              }}>
+                <div style={{ 
+                  fontSize: '5rem', 
+                  marginBottom: '0rem', 
+                  animation: 'bounce 2s infinite',
+                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+                }}>
+                  {moodEmoji}
+                </div>
+                <div style={{ 
+                  fontSize: '2rem', 
+                  fontWeight: '600', 
+                  letterSpacing: '0.05em',
+                  textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                }}>
+                  {currentMood}
+                </div>
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '0.05em' }}>
-                {currentMood}
+            </div>
+          </div>
+          
+          {/* Enhanced Mood Message */}
+          <div style={{ marginBottom: '0rem' }}>
+            <p style={{ 
+              fontSize: '1.35rem', 
+              fontWeight: '500', 
+              lineHeight: '1.6',
+              maxWidth: '600px',
+              margin: '0 auto',
+              textShadow: '0 1px 2px rgba(0,0,0,0.2)'
+            }}>
+              {getMoodDependentMessage(currentMood)}
+            </p>
+          </div>
+        </div>
+
+        {/* Global Connection - Moved Above Grid */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{
+            border: '1px solid rgba(255, 255, 255, 0.25)',
+            background: 'rgba(255, 255, 255, 0.08)',
+            backdropFilter: 'blur(15px)',
+            padding: '1.5rem 2.5rem',
+            borderRadius: '1rem',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.15)',
+            textAlign: 'center',
+            maxWidth: '500px',
+        
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
+              <div style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🌍</div>
+              <h3 style={{ 
+                fontWeight: '600', 
+                fontSize: '1rem', 
+                margin: 0,
+                color: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                Global Connection
+              </h3>
+            </div>
+            <p style={{ 
+              fontSize: '0.9rem', 
+              margin: 0,
+              color: 'rgba(255, 255, 255, 0.8)',
+              lineHeight: '1.4'
+            }}>
+              {getStatMessage(currentMood)}
+            </p>
+          </div>
+        </div>
+
+        {/* Professional Insights Grid - 2x2 Layout */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: '1rem',
+          marginBottom: '2.5rem'
+    
+        }}>
+          
+          {/* Mood Transition Card */}
+          <div style={{
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            padding: '1rem',
+            borderRadius: '1rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🔄</div>
+              <h3 style={{ 
+                fontWeight: '600', 
+                fontSize: '1.1rem', 
+                margin: 0,
+                color: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                Mood Transition
+              </h3>
+            </div>
+            <div style={{ 
+              fontSize: '0.95rem', 
+              lineHeight: '1.5',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              <div style={{ marginBottom: '0rem' }}>Previous: <span style={{ fontWeight: '500' }}>Tired</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', fontSize: '1rem' }}>
+                <span>😴</span>
+                <span style={{ margin: '0 0.5rem', fontSize: '1.2rem' }}>→</span>
+                <span>{moodEmoji}</span>
+                <span style={{ marginLeft: '0.5rem', fontWeight: '500' }}>{currentMood}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Weekly Sentiment Card */}
+          <div style={{
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            padding: '1rem',
+            borderRadius: '1rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>📊</div>
+              <h3 style={{ 
+                fontWeight: '600', 
+                fontSize: '1.1rem', 
+                margin: 0,
+                color: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                Weekly Sentiment
+              </h3>
+            </div>
+            <div style={{ 
+              fontSize: '0.95rem', 
+              lineHeight: '1.5',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              <div style={{ marginBottom: '0.5rem' }}>
+                You felt <span style={{ fontWeight: '500', color: '#4ade80' }}>positive</span> this week
+              </div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
+                5th time feeling {currentMood}
+              </div>
+            </div>
+          </div>
+
+          {/* Achievements Card */}
+          <div style={{
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            padding: '1rem',
+            borderRadius: '1rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🏆</div>
+              <h3 style={{ 
+                fontWeight: '600', 
+                fontSize: '1.1rem', 
+                margin: 0,
+                color: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                Achievements
+              </h3>
+            </div>
+            <div style={{ 
+              fontSize: '0.95rem', 
+              lineHeight: '1.5',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              <div style={{ marginBottom: '0.5rem' }}>
+                🎯 <span style={{ fontWeight: '500' }}>7-day streak</span> active
+              </div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
+                45 moods tracked this month
+              </div>
+            </div>
+          </div>
+
+          {/* Recommendations Card */}
+          <div style={{
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            padding: '1rem',
+            borderRadius: '1rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>💡</div>
+              <h3 style={{ 
+                fontWeight: '600', 
+                fontSize: '1.1rem', 
+                margin: 0,
+                color: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                Recommendations
+              </h3>
+            </div>
+            <div style={{ 
+              fontSize: '0.95rem', 
+              lineHeight: '1.5',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              <div style={{ marginBottom: '0.5rem' }}>
+                Try a <span style={{ fontWeight: '500' }}>5-minute walk</span>
+              </div>
+              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
+                to maintain your {currentMood.toLowerCase()} mood
               </div>
             </div>
           </div>
         </div>
-        
-        {/* Enhanced Mood Message */}
-        <div style={{ marginBottom: '2rem' }}>
-          <p style={{ fontSize: '1.25rem', fontWeight: '500', lineHeight: '1.6' }}>
-            {getMoodDependentMessage(currentMood)}
-          </p>
-        </div>
-        
-        {/* Compact Stats Section */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', maxWidth: '24rem', margin: '0 auto' }}>
+
+       
           
-          {/* Enhanced Stats Card */}
-          <div style={{
-            border: '2px solid white',
-            background: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(15px)',
-            padding: '1rem',
-            borderRadius: '0.75rem',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🌍</div>
-            <h3 style={{ fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Global Connection</h3>
-            <p style={{ fontSize: '0.75rem' }}>
-              {getStatMessage(currentMood)}
-            </p>
-          </div>
-          
-          {/* Enhanced Inspiration Card */}
-          <div style={{
-            border: '2px solid white',
-            background: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(15px)',
-            padding: '1rem',
-            borderRadius: '0.75rem',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.25)',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>✨</div>
-            <h3 style={{ fontWeight: 'bold', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Mood Captured</h3>
-            <p style={{ fontSize: '0.75rem' }}>
-              Thank you for sharing your feelings!
-            </p>
-          </div>
-        </div>
+           
+           
+      
       </div>
-   
       {/* Left bubbles - Realistic styling with working animations */}
 {/* Left bubbles - Updated to show all 5 phrases */}
 <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
