@@ -25,16 +25,12 @@ const hexToVantaColor = (hex: string): number => {
 
 // Helper functions outside component (better performance)
 const getMoodDependentMessage = (mood: string): string => {
-  const messages: Record<MoodType, string> = {
-    'Happy': 'Glad To hear ! You are Feeling Happy Right Now',
-    'Excited': 'Amazing ! You are Feeling Excited Right Now',
-    'Calm': 'Wonderful ! You are Feeling Calm Right Now',
-    'Tired': 'Take some rest ! You are Feeling Tired Right Now',
-    'Anxious': 'Take deep breaths ! You are Feeling Anxious Right Now',
-    'Angry': 'Take it easy ! You are Feeling Angry Right Now',
-    'Sad': 'Hope you feel better ! You are Feeling Sad Right Now'
-  };
-  return messages[mood as MoodType] || `You are Feeling ${mood} Right Now`;
+  const quotes = moodQuotes[mood as MoodType];
+  if (quotes && quotes.length > 0) {
+    const randomIndex = Math.floor(Math.random() * quotes.length);
+    return quotes[randomIndex];
+  }
+  return "Interesting, Something seems off";
 };
 
 const getStatMessage = (mood: string): string => {
@@ -119,6 +115,58 @@ const getMoodSpecificQuotes = (mood: string): string[] => {
     ]
   };
   return quotes[mood as MoodType] || quotes['Happy']; // Default to Happy quotes if mood not found
+};
+
+const moodQuotes = {
+  "Happy": [
+    "Keep that smile going—it's contagious!",
+    "You're glowing from the inside out.",
+    "Joy suits you beautifully.",
+    "Let the good vibes flow.",
+    "Happiness looks natural on you."
+  ],
+  "Excited": [
+    "You're buzzing with life!",
+    "Big things are coming—hold on tight!",
+    "Your spark is catching fire.",
+    "Ride that wave of thrill!",
+    "Your energy is electric."
+  ],
+  "Calm": [
+    "Peace surrounds you like a soft breeze.",
+    "Stillness is your superpower.",
+    "You're the calm in the chaos.",
+    "Serenity is strength in silence.",
+    "Your quiet is comforting."
+  ],
+  "Sad": [
+    "It's okay to not be okay.",
+    "This feeling won't last forever.",
+    "You're not alone in this moment.",
+    "Crying is healing too.",
+    "Be gentle with yourself today."
+  ],
+  "Tired": [
+    "You've done enough—rest now.",
+    "Even machines need to recharge.",
+    "Your body is whispering for a pause.",
+    "Slow down, you're allowed to.",
+    "Exhaustion means you tried."
+  ],
+  "Anxious": [
+    "One breath at a time—you've got this.",
+    "It's not as bad as your brain says.",
+    "Let go of what you can't control.",
+    "You're safe in this moment.",
+    "Anxiety lies—truth is quieter."
+  ],
+  "Angry": [
+    "Your anger has a message—listen.",
+    "It's okay to feel fire, not to feed it.",
+    "Let it out in ways that don't burn you.",
+    "Take space before you speak.",
+    "You're bigger than the rage."
+  ]
 };
 
 interface MoodSelectedScreenProps {
@@ -251,7 +299,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 paddingBottom: '1rem',
                 borderRadius: '1.5rem',
                 boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-                minWidth: '600px'
+                minWidth: '1000px'
               }}>
                 <div style={{ 
                   fontSize: '5rem', 
