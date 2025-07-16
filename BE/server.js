@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const MoodsRoutes = require('./routes/moods');
 const worldStatsRoutes = require('./routes/worldStats');
 const contactRoutes = require('./routes/email');
+const moodSelectedStatsRoutes = require('./routes/moodSelectedStats');
 
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
@@ -81,6 +82,7 @@ app.use('/api/world-stats', worldStatsRoutes);
 app.use('/api/user-stats', userStatsRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/user-settings', userSettingsRoutes);
+app.use('/api/mood-selected-stats', moodSelectedStatsRoutes);
 
 // Protected route example (requires authentication)
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
