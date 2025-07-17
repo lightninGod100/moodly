@@ -72,6 +72,237 @@ const getFrequencyMessage = (currentMood, count, weekSentiment) => {
   return getRandomMessage(messages[scenario]);
 };
 
+// Helper function to group moods by local date
+const groupMoodsByLocalDate = (moods, timezone) => {
+  const grouped = {};
+  moods.forEach(mood => {
+    const localDate = new Date(mood.created_at).toLocaleDateString('en-CA', { 
+      timeZone: timezone 
+    });
+    if (!grouped[localDate]) {
+      grouped[localDate] = [];
+    }
+    grouped[localDate].push(mood);
+  });
+  return grouped;
+};
+
+// Helper function to get today's date in user timezone
+const getTodayInTimezone = (timezone) => {
+  return new Date().toLocaleDateString('en-CA', { timeZone: timezone });
+};
+
+// Helper function to calculate current consecutive streak
+const calculateCurrentConsecutiveStreak = (moods, timezone) => {
+  if (moods.length === 0) return 0;
+  
+  const moodsByDate = groupMoodsByLocalDate(moods, timezone);
+  const today = getTodayInTimezone(timezone);
+  
+  let streak = 0;
+  let currentDate = new Date();
+  
+  // Set to today in user's timezone
+  const todayParts = today.split('-');
+  currentDate = new Date(parseInt(todayParts[0]), parseInt(todayParts[1]) - 1, parseInt(todayParts[2]));
+  
+  while (true) {
+    const dateString = currentDate.toLocaleDateString('en-CA', { timeZone: timezone });
+    
+    if (moodsByDate[dateString] && moodsByDate[dateString].length > 0) {
+      streak++;
+      currentDate.setDate(currentDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  
+  return streak;
+};
+
+// Calculate anniversary achievement
+const calculateAnniversaryAchievement = (userCreatedAt) => {
+  const daysSinceSignup = Math.floor((Date.now() - userCreatedAt) / (24 * 60 * 60 * 1000));
+  
+  if (daysSinceSignup >= 365) {
+    return { name: "Moodly Master", message: "1 year with Moodly - What an incredible journey together!" };
+  }
+  if (daysSinceSignup >= 180) {
+    return { name: "Moodly Veteran", message: "6 months with Moodly - Thank you for the journey!" };
+  }
+  if (daysSinceSignup >= 90) {
+    return { name: "Moodly Regular", message: "3 months with Moodly - Building great habits!" };
+  }
+  if (daysSinceSignup >= 30) {
+    return { name: "Moodly Newbie", message: "1 month with Moodly - You're getting the hang of it!" };
+  }
+  
+  return null;
+};
+
+// Calculate first mood of day achievement
+const calculateFirstMoodTodayAchievement = (moods, timezone) => {
+  const today = getTodayInTimezone(timezone);
+  const moodsByDate = groupMoodsByLocalDate(moods, timezone);
+  
+  if (moodsByDate[today] && moodsByDate[today].length > 0) {
+    return { name: "Let's Go", message: "Let's Go - First mood of the day recorded!" };
+  }
+  
+  return null;
+};
+
+// Calculate streak achievement
+const calculateStreakAchievement = (moods, timezone) => {
+  const currentStreak = calculateCurrentConsecutiveStreak(moods, timezone);
+  
+  if (currentStreak >= 30) {
+    return { 
+      name: "Consistency Champion", 
+      message: `Consistency Champion (30+ days) - ${currentStreak} day streak active!` 
+    };
+  }
+  if (currentStreak >= 7) {
+    return { 
+      name: "Week Warrior", 
+      message: `Week Warrior (7+ days) - ${currentStreak} day streak active!` 
+    };
+  }
+  if (currentStreak >= 3) {
+    return { 
+      name: "Getting Started", 
+      message: `Getting Started (3+ days) - ${currentStreak} day streak active!` 
+    };
+  }
+  
+  return null;
+};
+
+// Calculate expert logger achievement (5 moods in a day)
+const calculateExpertLoggerAchievement = (moods, timezone) => {
+  const moodsByDate = groupMoodsByLocalDate(moods, timezone);
+  
+  for (const [date, dayMoods] of Object.entries(moodsByDate)) {
+    if (dayMoods.length >= 5) {
+      return { name: "Expert Logger", message: "Expert Logger - 5 moods in a day recorded!" };
+    }
+  }
+  
+  return null;
+};
+
+// Calculate rainbow achievement (all 7 moods in one day)
+const calculateRainbowAchievement = (moods, timezone) => {
+  const moodsByDate = groupMoodsByLocalDate(moods, timezone);
+  
+  for (const [date, dayMoods] of Object.entries(moodsByDate)) {
+    const uniqueMoodsInDay = new Set(dayMoods.map(mood => mood.mood));
+    if (uniqueMoodsInDay.size === 7) {
+      return { name: "Rainbow", message: "Rainbow - All 7 moods in one day!" };
+    }
+  }
+  
+  return null;
+};
+
+// Calculate Dora achievement (all moods unlocked)
+const calculateDoraAchievement = (moods) => {
+  const uniqueMoods = new Set(moods.map(mood => mood.mood));
+  
+  if (uniqueMoods.size === 7) {
+    return { name: "Dora the Explorer", message: "Dora the Explorer - All moods unlocked!" };
+  }
+  
+  return null;
+};
+
+// Calculate mood count milestone
+const calculateMoodCountMilestone = (totalMoods) => {
+  if (totalMoods >= 1000) {
+    return { name: "Mood Legend", message: "Mood Legend - 1000 moods recorded!" };
+  }
+  if (totalMoods >= 500) {
+    return { name: "The Elite", message: "The Elite - 500 moods recorded!" };
+  }
+  if (totalMoods >= 250) {
+    return { name: "Quarter Master", message: "Quarter Master - 250 moods recorded!" };
+  }
+  if (totalMoods >= 100) {
+    return { name: "The Centurion", message: "The Centurion - 100 moods recorded!" };
+  }
+  if (totalMoods >= 50) {
+    return { name: "Half Century", message: "Half Century - 50 moods recorded!" };
+  }
+  
+  return null;
+};
+
+// GET /api/mood-selected-stats/achievements
+router.get('/achievements', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userTimezone = req.headers['timezone'] || 'UTC';
+    
+    // Get user creation date (timezone-independent)
+    const userResult = await pool.query(
+      'SELECT created_at FROM users WHERE id = $1',
+      [userId]
+    );
+    const userCreatedAt = userResult.rows[0].created_at;
+    
+    // Get all user moods
+    const moodResult = await pool.query(
+      'SELECT mood, created_at FROM moods WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    );
+    const moods = moodResult.rows;
+    const totalMoods = moods.length;
+    
+    // Calculate all achievements (in priority order)
+    const achievements = [
+      // 1. Anniversary (highest priority)
+      calculateAnniversaryAchievement(userCreatedAt),
+      
+      // 2. First mood of day
+      calculateFirstMoodTodayAchievement(moods, userTimezone),
+      
+      // 3. Streaks
+      calculateStreakAchievement(moods, userTimezone),
+      
+      // 4. Expert Logger (5 moods in a day)
+      calculateExpertLoggerAchievement(moods, userTimezone),
+      
+      // 5. Rainbow (all 7 moods in one day)
+      calculateRainbowAchievement(moods, userTimezone),
+      
+      // 6. Dora the Explorer (all moods unlocked)
+      calculateDoraAchievement(moods),
+      
+      // 7. Mood count milestones (lowest priority)
+      calculateMoodCountMilestone(totalMoods)
+    ].filter(achievement => achievement !== null);
+    
+    // Return highest priority achievement or fallback message
+    if (achievements.length > 0) {
+      return res.json({
+        hasAchievement: true,
+        achievements: achievements // All achievements in priority order
+      });
+    } else {
+      return res.json({
+        hasAchievement: false,
+        message: "Keep using Moodly to unlock achievements and milestones"
+      });
+    }
+    
+  } catch (error) {
+    console.error('Achievements calculation error:', error);
+    res.status(500).json({
+      error: 'Moodly Seems to be tired rn, please come back later'
+    });
+  }
+});
+
 router.get('/weekly-sentiment', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
