@@ -116,6 +116,65 @@ const getMoodSpecificQuotes = (mood: string): string[] => {
   };
   return quotes[mood as MoodType] || quotes['Happy']; // Default to Happy quotes if mood not found
 };
+// Add after getMoodSpecificQuotes function
+const moodRecommendations = {
+  Happy: [
+    "Don't let this fade away, try to maintain it.",
+    "Capture the moment—take a photo or write a journal entry.",
+    "Celebrate yourself, even in small ways."
+  ],
+  Excited: [
+    "Channel your energy into a project or hobby.",
+    "Take a short walk to calm and center your body.",
+    "Practice grounding to stay focused amid the buzz."
+  ],
+  Calm: [
+    "Meditate for 5–10 minutes to deepen that peace.",
+    "Sit outside and just observe your surroundings.",
+    "Enjoy a warm drink with no distractions.",
+    "Reflect or journal about what's bringing you peace."
+  ],
+  Sad: [
+    "Talk to someone you trust—even a short text helps.",
+    "Journal your feelings without judgment.",
+    "Watch or listen to something gentle and comforting.",
+    "Take a slow walk in nature if possible.",
+    "Let yourself cry if you need to—it's a release, not a weakness."
+  ],
+  Tired: [
+    "Take a power nap (10–20 minutes).",
+    "Stretch your body gently—relieves built-up tension.",
+    "Reduce screen time for a bit and rest your eyes.",
+    "Drink water or have a light, nutritious snack.",
+    "Write a 'done list' instead of a to-do list—it's encouraging."
+  ],
+  Anxious: [
+    "Try a grounding technique (e.g., 5-4-3-2-1 senses).",
+    "Step away from the trigger—go for a short walk.",
+    "Listen to calming nature sounds or soft music.",
+    "Practice box breathing (4-in, 4-hold, 4-out, 4-hold).",
+    "Limit caffeine and sugar intake if possible."
+  ],
+  Angry: [
+    "Do a physical release—like squeezing a stress ball or exercising.",
+    "Write down what made you angry—then tear it up or delete it.",
+    "Take a cool-down break—10 minutes away can shift everything.",
+    "Practice non-judgmental observation: \"I feel anger, and that's okay.\"",
+    "Talk to someone objective if possible, not someone who fuels it."
+  ]
+};
+
+const getRandomRecommendations = (mood: string, count: number = 3): string[] => {
+  const recommendations = moodRecommendations[mood as MoodType];
+  if (!recommendations || recommendations.length === 0) {
+    return ["Keep tracking your mood for personalized insights."];
+  }
+  
+  // Shuffle array and take first 'count' to avoid repetition
+  const shuffled = [...recommendations].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+};
+
 
 const moodQuotes = {
   "Happy": [
@@ -518,48 +577,48 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
           </div>
 
           {/* Recommendations Card */}
-          <div style={{
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            padding: '1rem',
-            borderRadius: '1rem',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            cursor: 'pointer'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>💡</div>
-              <h3 style={{ 
-                fontWeight: '600', 
-                fontSize: '1.1rem', 
-                margin: 0,
-                color: 'rgba(255, 255, 255, 0.95)'
-              }}>
-                Recommendations
-              </h3>
-            </div>
-            <div style={{ 
-              fontSize: '0.95rem', 
-              lineHeight: '1.5',
-              color: 'rgba(255, 255, 255, 0.8)'
-            }}>
-              <div style={{ marginBottom: '0.5rem' }}>
-                Try a <span style={{ fontWeight: '500' }}>5-minute walk</span>
-              </div>
-              <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-                to maintain your {currentMood.toLowerCase()} mood
-              </div>
-            </div>
-          </div>
+          {/* Recommendations Card */}
+<div style={{
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  background: 'rgba(255, 255, 255, 0.1)',
+  backdropFilter: 'blur(20px)',
+  padding: '1rem',
+  borderRadius: '1rem',
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+  cursor: 'pointer'
+}}
+onMouseEnter={(e) => {
+  e.currentTarget.style.transform = 'translateY(-4px)';
+  e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+}}
+onMouseLeave={(e) => {
+  e.currentTarget.style.transform = 'translateY(0)';
+  e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+}}>
+  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+    <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>💡</div>
+    <h3 style={{ 
+      fontWeight: '600', 
+      fontSize: '1.1rem', 
+      margin: 0,
+      color: 'rgba(255, 255, 255, 0.95)'
+    }}>
+      Recommendations
+    </h3>
+  </div>
+  <div style={{ 
+    fontSize: '0.95rem', 
+    lineHeight: '1.5',
+    color: 'rgba(255, 255, 255, 0.8)'
+  }}>
+    {getRandomRecommendations(currentMood, 3).map((recommendation, index) => (
+      <div key={index} style={{ marginBottom: '0.5rem' }}>
+        • {recommendation}
+      </div>
+    ))}
+  </div>
+</div>
         </div>
 
        
