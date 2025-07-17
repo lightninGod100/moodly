@@ -205,11 +205,26 @@ const calculateRainbowAchievement = (moods, timezone) => {
   return null;
 };
 
-// Calculate Dora achievement (all moods unlocked)
-const calculateDoraAchievement = (moods) => {
-  const uniqueMoods = new Set(moods.map(mood => mood.mood));
+const calculateDoraAchievement = (moods, timezone) => {
+  // Check if user has all 7 moods total
+  const allTimeMoods = new Set(moods.map(mood => mood.mood));
+  if (allTimeMoods.size !== 7) {
+    return null; // Doesn't have all 7 moods yet
+  }
   
-  if (uniqueMoods.size === 7) {
+  // Get today's date
+  const today = getTodayInTimezone(timezone);
+  
+  // Check if user had all 7 moods BEFORE today
+  const moodsBeforeToday = moods.filter(mood => {
+    const moodDate = new Date(mood.created_at).toLocaleDateString('en-CA', { timeZone: timezone });
+    return moodDate !== today;
+  });
+  
+  const uniqueMoodsBeforeToday = new Set(moodsBeforeToday.map(mood => mood.mood));
+  
+  // If user had fewer than 7 unique moods before today, then completed today
+  if (uniqueMoodsBeforeToday.size < 7) {
     return { name: "Dora the Explorer", message: "Dora the Explorer - All moods unlocked!" };
   }
   
@@ -218,19 +233,19 @@ const calculateDoraAchievement = (moods) => {
 
 // Calculate mood count milestone
 const calculateMoodCountMilestone = (totalMoods) => {
-  if (totalMoods >= 1000) {
+  if (totalMoods == 1000) {
     return { name: "Mood Legend", message: "Mood Legend - 1000 moods recorded!" };
   }
-  if (totalMoods >= 500) {
+  if (totalMoods == 500) {
     return { name: "The Elite", message: "The Elite - 500 moods recorded!" };
   }
-  if (totalMoods >= 250) {
+  if (totalMoods == 250) {
     return { name: "Quarter Master", message: "Quarter Master - 250 moods recorded!" };
   }
-  if (totalMoods >= 100) {
+  if (totalMoods == 100) {
     return { name: "The Centurion", message: "The Centurion - 100 moods recorded!" };
   }
-  if (totalMoods >= 50) {
+  if (totalMoods == 50) {
     return { name: "Half Century", message: "Half Century - 50 moods recorded!" };
   }
   
