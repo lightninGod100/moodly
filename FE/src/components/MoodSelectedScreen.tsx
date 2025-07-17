@@ -2,6 +2,8 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
+// Add this import with your other imports
+import { moodSelectedStatsApiService } from '../services/MoodSelectedStatsService';
 
 // Define valid mood types
 type MoodType = 'Happy' | 'Excited' | 'Calm' | 'Tired' | 'Anxious' | 'Angry' | 'Sad';
@@ -302,6 +304,85 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
     }
   }, [currentMood]);
 
+  // Add this useEffect for testing the service layer
+useEffect(() => {
+  const testMoodSelectedStatsService = async () => {
+    try {
+      console.log('🧪 Testing MoodSelectedStats Service...');
+      console.log('Current mood for testing:', currentMood);
+      
+      // Test 1: Mood Transition
+      console.log('\n📊 Testing Mood Transition...');
+      const moodTransition = await moodSelectedStatsApiService.getMoodTransition();
+      console.log('✅ Mood Transition Result:', moodTransition);
+      
+      // Test 2: Global Percentage
+      console.log('\n🌍 Testing Global Percentage...');
+      const globalPercentage = await moodSelectedStatsApiService.getGlobalPercentage(currentMood);
+      console.log('✅ Global Percentage Result:', globalPercentage);
+      
+      // Test 3: Weekly Sentiment
+      console.log('\n📈 Testing Weekly Sentiment...');
+      const weeklySentiment = await moodSelectedStatsApiService.getWeeklySentiment();
+      console.log('✅ Weekly Sentiment Result:', weeklySentiment);
+      
+      // Test 4: Achievements
+      // Test 4: Achievements (Enhanced Logging)
+console.log('\n🏆 Testing Achievements...');
+const achievements = await moodSelectedStatsApiService.getAchievements();
+console.log('✅ Achievements Raw Response:', achievements);
+
+// Enhanced achievements logging
+if (achievements.hasAchievement && achievements.achievements) {
+  console.log('\n🎯 ACHIEVEMENTS DETAILS:');
+  console.log(`📊 Total Achievements Unlocked: ${achievements.achievements.length}`);
+  
+  achievements.achievements.forEach((achievement, index) => {
+    console.log(`\n🏅 Achievement ${index + 1}:`);
+    console.log(`   Name: ${achievement.name}`);
+    console.log(`   Message: ${achievement.message}`);
+  });
+  
+  console.log('\n📋 All Achievement Names:', achievements.achievements.map(a => a.name));
+  console.log('📝 All Achievement Messages:', achievements.achievements.map(a => a.message));
+  
+} else {
+  console.log('\n❌ No Achievements Found');
+  console.log('Fallback Message:', achievements.message);
+}
+      
+      // Test 5: Combined Call (Promise.all)
+      console.log('\n🚀 Testing Combined API Call...');
+      const allStats = await moodSelectedStatsApiService.getAllMoodSelectedStats(currentMood);
+      console.log('✅ All Stats Combined Result:', allStats);
+      
+      console.log('\n🎉 All MoodSelectedStats service tests completed successfully!');
+      console.log('📋 Summary:');
+      console.log('  - Mood Transition:', moodTransition.message);
+      console.log('  - Global Percentage:', globalPercentage.message);
+      console.log('  - Weekly Sentiment:', weeklySentiment.hasData ? weeklySentiment.sentimentMessage : weeklySentiment.message);
+      console.log('  - Achievements:', achievements.hasAchievement ? `${achievements.achievements?.length} achievements` : achievements.message);
+
+      
+      
+    } catch (error) {
+      console.error('❌ MoodSelectedStats service test failed:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        currentMood: currentMood,
+        timestamp: new Date().toISOString()
+      });
+    }
+  };
+  
+  // Only run test if we have a current mood and after component is fully mounted
+  if (currentMood) {
+    console.log('⏳ Starting MoodSelectedStats service test in 2 seconds...');
+    const timer = setTimeout(testMoodSelectedStatsService, 2000);
+    
+    return () => clearTimeout(timer); // Cleanup timer on unmount
+  }
+}, [currentMood]); // Re-run test if mood changes
   // Working bubble positions from the sample code
   const moodPhrases = getMoodPhrases(currentMood);
   const quotes = getMoodSpecificQuotes(currentMood);
