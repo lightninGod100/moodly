@@ -476,15 +476,15 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
       
      {/* Enhanced Professional Main Content */}
      <div style={{ 
-        position: 'absolute', 
-        top: '53%', 
-        left: '50%', 
-        transform: 'translate(-50%, -50%)', 
-        zIndex: 5, 
-        color: 'white',
-        width: '85%',
-        maxWidth: '1000px'
-      }}>
+  position: 'absolute', 
+  top: '1.1rem',                   // ← Fixed top position
+  left: '50%', 
+  transform: 'translateX(-50%)', // ← Only X centering
+  zIndex: 5, 
+  color: 'white',
+  width: '85%',
+  maxWidth: '1050px'
+}}>
         
         {/* Hero Section - Current Mood Display */}
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
@@ -606,11 +606,11 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
 
         {/* Professional Insights Grid - 2x2 Layout WITH REAL API DATA */}
         <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: '1rem',
-          marginBottom: '2.5rem'
-        }}>
+  display: 'grid', 
+  gridTemplateColumns: '12fr 13fr',  // ← This creates 40-60 split
+  gap: '1rem',
+  marginBottom: '2.5rem'
+}}>
           
           {/* Mood Transition Card - NOW WITH REAL API DATA */}
           <div style={{
@@ -839,8 +839,8 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
              </h3>
            </div>
            <div style={{ 
-             fontSize: '0.95rem', 
-             lineHeight: '1.5',
+             fontSize: '0.94rem', 
+             lineHeight: '1.4',
              color: 'rgba(255, 255, 255, 0.8)'
            }}>
              {getRandomRecommendations(currentMood, 3).map((recommendation, index) => (
