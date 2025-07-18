@@ -146,7 +146,7 @@ const calculateFirstMoodTodayAchievement = (moods, timezone) => {
   const moodsByDate = groupMoodsByLocalDate(moods, timezone);
   
   if (moodsByDate[today] && moodsByDate[today].length > 0) {
-    return { name: "Let's Go", message: "Let's Go - First mood of the day recorded!" };
+    return { name: "Let's Go", message: "First mood of the day recorded!" };
   }
   
   return null;
@@ -158,20 +158,20 @@ const calculateStreakAchievement = (moods, timezone) => {
   
   if (currentStreak >= 30) {
     return { 
-      name: "Consistency Champion", 
-      message: `Consistency Champion (30+ days) - ${currentStreak} day streak active!` 
+      name: "Consistency Champion (30+ days)", 
+      message: `${currentStreak} day streak active!` 
     };
   }
   if (currentStreak >= 7) {
     return { 
-      name: "Week Warrior", 
-      message: `Week Warrior (7+ days) - ${currentStreak} day streak active!` 
+      name: "Week Warrior (7+ days)", 
+      message: `${currentStreak} day streak active!` 
     };
   }
   if (currentStreak >= 3) {
     return { 
-      name: "Getting Started", 
-      message: `Getting Started (3+ days) - ${currentStreak} day streak active!` 
+      name: "Getting Started (3+ days)", 
+      message: `${currentStreak} day streak active!` 
     };
   }
   
@@ -184,7 +184,7 @@ const calculateExpertLoggerAchievement = (moods, timezone) => {
   
   for (const [date, dayMoods] of Object.entries(moodsByDate)) {
     if (dayMoods.length >= 5) {
-      return { name: "Expert Logger", message: "Expert Logger - 5 moods in a day recorded!" };
+      return { name: "Expert Logger", message: "5 moods in a day recorded!" };
     }
   }
   
@@ -198,7 +198,7 @@ const calculateRainbowAchievement = (moods, timezone) => {
   for (const [date, dayMoods] of Object.entries(moodsByDate)) {
     const uniqueMoodsInDay = new Set(dayMoods.map(mood => mood.mood));
     if (uniqueMoodsInDay.size === 7) {
-      return { name: "Rainbow", message: "Rainbow - All 7 moods in one day!" };
+      return { name: "Rainbow", message: "All 7 moods in one day!" };
     }
   }
   
@@ -225,7 +225,7 @@ const calculateDoraAchievement = (moods, timezone) => {
   
   // If user had fewer than 7 unique moods before today, then completed today
   if (uniqueMoodsBeforeToday.size < 7) {
-    return { name: "Dora the Explorer", message: "Dora the Explorer - All moods unlocked!" };
+    return { name: "Dora the Explorer", message: "All moods unlocked!" };
   }
   
   return null;
@@ -234,19 +234,19 @@ const calculateDoraAchievement = (moods, timezone) => {
 // Calculate mood count milestone
 const calculateMoodCountMilestone = (totalMoods) => {
   if (totalMoods == 1000) {
-    return { name: "Mood Legend", message: "Mood Legend - 1000 moods recorded!" };
+    return { name: "Mood Legend", message: "1000 moods recorded!" };
   }
   if (totalMoods == 500) {
-    return { name: "The Elite", message: "The Elite - 500 moods recorded!" };
+    return { name: "The Elite", message: "500 moods recorded!" };
   }
   if (totalMoods == 250) {
-    return { name: "Quarter Master", message: "Quarter Master - 250 moods recorded!" };
+    return { name: "Quarter Master", message: "250 moods recorded!" };
   }
   if (totalMoods == 100) {
-    return { name: "The Centurion", message: "The Centurion - 100 moods recorded!" };
+    return { name: "The Centurion", message: "Centurion - 100 moods recorded!" };
   }
   if (totalMoods == 50) {
-    return { name: "Half Century", message: "Half Century - 50 moods recorded!" };
+    return { name: "Half Century", message: "50 moods recorded!" };
   }
   
   return null;

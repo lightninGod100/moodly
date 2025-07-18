@@ -523,7 +523,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 paddingBottom: '1rem',
                 borderRadius: '1.5rem',
                 boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-                minWidth: '1000px'
+                minWidth: '1050px'
               }}>
                 <div style={{ 
                   fontSize: '5rem', 
@@ -651,7 +651,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
               {isLoadingTransition ? (
                 <div>
                   <LoadingSkeleton height="1rem" />
-                  <div style={{ marginTop: '0.5rem' }}>
+                  <div style={{ marginTop: '0.5rem'}}>
                     <LoadingSkeleton height="1rem" />
                   </div>
                 </div>
@@ -659,8 +659,8 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 "Moodly seems to be tired, come back later"
               ) : moodTransition ? (
                 <div>
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    {moodTransition.message}
+                  <div style={{ marginBottom: '0.5rem',marginLeft: '0.5rem' }}>
+                  •  {moodTransition.message}
                   </div>
                  
                 </div>
@@ -726,6 +726,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                        {weeklySentiment.frequencyMessage}
                      </div>
                    )}
+                  
                  </div>
                ) : (
                  <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
@@ -757,7 +758,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
            e.currentTarget.style.transform = 'translateY(0)';
            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
          }}>
-           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🏆</div>
              <h3 style={{ 
                fontWeight: '600', 
@@ -774,39 +775,38 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
              color: 'rgba(255, 255, 255, 0.8)'
            }}>
              {isLoadingAchievements ? (
-               <div>
-                 <LoadingSkeleton height="1rem" />
-                 <div style={{ marginTop: '0.5rem' }}>
-                   <LoadingSkeleton height="0.8rem" />
-                 </div>
-               </div>
-             ) : achievementsError ? (
-               "Moodly seems to be tired, come back later"
-             ) : achievements ? (
-               achievements.hasAchievement && achievements.achievements ? (
-                 <div>
-                   <div style={{ marginBottom: '0.5rem' }}>
-                     🎯 <span style={{ fontWeight: '500' }}>{achievements.achievements[0].name}</span>
-                   </div>
-                   <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-                     {achievements.achievements[0].message}
-                   </div>
-                   {achievements.achievements.length > 1 && (
-                     <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.6 }}>
-                       +{achievements.achievements.length - 1} more achievements
-                     </div>
-                   )}
-                 </div>
-               ) : (
-                 <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
-                   {achievements.message}
-                 </div>
-               )
-             ) : (
-               "Loading achievements..."
-             )}
-           </div>
-         </div>
+  <div>
+    <LoadingSkeleton height="1rem" />
+    <div style={{ marginTop: '0.5rem' }}>
+      <LoadingSkeleton height="0.8rem" />
+    </div>
+  </div>
+) : achievementsError ? (
+  "Moodly seems to be tired, come back later"
+) : achievements ? (
+  achievements.hasAchievement && achievements.achievements && achievements.achievements.length > 0 ? (
+    <div>
+      {achievements.achievements.map((achievement, index) => (
+  <div key={index} style={{ 
+    marginBottom: index < achievements.achievements!.length - 1 ? '0.5rem' : '0',
+    fontSize: '0.95rem',
+    lineHeight: '1.4'
+    
+  }}>
+    🎯 <span style={{ fontWeight: '500' }}>{achievement.name}</span> : {achievement.message}
+  </div>
+))}
+    </div>
+  ) : (
+    <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
+      {achievements.message || "No achievements yet"}
+    </div>
+  )
+) : (
+  "Loading achievements..."
+)}
+</div>
+</div>
 
          {/* Recommendations Card - UNCHANGED (static recommendations) */}
          <div style={{
@@ -864,7 +864,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                style={{
                  position: 'absolute',
                  bottom: '-30px',
-                 left: index % 2 === 0 ? '20%' : '30%',
+                 left: index % 2 === 0 ? '15%' : '25%',
                  opacity: 0,
                  animation: `floatUpLeft 20s linear ${index * 4}s infinite`,
                  color: 'rgba(0, 0, 0, 0.8)',
@@ -933,7 +933,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                style={{
                  position: 'absolute',
                  bottom: '-30px',
-                 left: index % 2 === 0 ? '60%' : '70%',
+                 left: index % 2 === 0 ? '63%' : '73%',
                  opacity: 0,
                  animation: `floatUpRight 20s linear ${index * 4}s infinite`,
                  color: 'rgba(0, 0, 0, 0.8)',
