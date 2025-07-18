@@ -462,10 +462,19 @@ router.get('/mood-transition', authenticateToken, async (req, res) => {
       const currentMood = moods[0].mood;
       const previousMood = moods[1].mood;
       
-      return res.json({
-        transition: true,
-        message: `Your mood changed from ${previousMood} to ${currentMood}`
-      });
+      if (currentMood === previousMood) {
+        // Same mood - no transition
+        return res.json({
+          transition: false,
+          message: `You are still feeling ${currentMood}`
+        });
+      } else {
+        // Different mood - actual transition
+        return res.json({
+          transition: true,
+          message: `Your mood changed from ${previousMood} to ${currentMood}`
+        });
+      }
     } else if (moods.length === 1) {
       // First mood case
       const currentMood = moods[0].mood;
