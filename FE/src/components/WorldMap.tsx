@@ -31,7 +31,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
     country: string;
     data: { topMood: string; userCount: number; moods?: any }
   } | null>(null);
-  const [position, setPosition] = useState({ coordinates: [0, 20], zoom: 1 });
+  const [position, setPosition] = useState({ coordinates: [0, 3], zoom: 1.4 });
 
 
   // Handle zoom

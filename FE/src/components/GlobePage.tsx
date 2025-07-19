@@ -212,8 +212,10 @@ const GlobePage: React.FC = () => {
       </div>
     </div>
   </div>
-              <div className="space-y-1">
-  {moodOrder.map((mood, index) => (
+  <div className="space-y-1">
+  {Object.entries(worldStats.frequency)
+    .sort(([, percentageA], [, percentageB]) => (percentageB || 0) - (percentageA || 0))
+    .map(([mood, percentage], index, sortedArray) => (
     <div key={mood}>
       <div className="flex justify-between items-center" style={{ paddingTop: '0.125rem', paddingBottom: '0.125rem' }}>
         <div className="flex items-center" style={{ gap: '0.5rem' }}>
@@ -227,9 +229,9 @@ const GlobePage: React.FC = () => {
           />
           <span style={{ fontSize: '0.875rem' }}>{mood}</span>
         </div>
-        <span style={{ fontSize: '0.875rem' }}>{worldStats.global[mood as keyof GlobalMoodStats] || 0}% Users</span>
+        <span style={{ fontSize: '0.875rem' }}>{percentage || 0}% Times</span>
       </div>
-      {index < moodOrder.length - 1 && (
+      {index < sortedArray.length - 1 && (
         <div 
           className="border-t border-white" 
           style={{ marginLeft: '0.05rem', marginRight: '0.05rem', marginTop: '0.25rem', marginBottom: '0.25rem' , opacity: 0.5}}
@@ -292,8 +294,10 @@ const GlobePage: React.FC = () => {
       </div>
     </div>
   </div>
-              <div className="space-y-1">
-  {moodOrder.map((mood, index) => (
+  <div className="space-y-1">
+  {Object.entries(worldStats.frequency)
+    .sort(([, percentageA], [, percentageB]) => (percentageB || 0) - (percentageA || 0))
+    .map(([mood, percentage], index, sortedArray) => (
     <div key={mood}>
       <div className="flex justify-between items-center" style={{ paddingTop: '0.125rem', paddingBottom: '0.125rem' }}>
         <div className="flex items-center" style={{ gap: '0.5rem' }}>
@@ -307,9 +311,9 @@ const GlobePage: React.FC = () => {
           />
           <span style={{ fontSize: '0.875rem' }}>{mood}</span>
         </div>
-        <span style={{ fontSize: '0.875rem' }}>{worldStats.frequency[mood as keyof GlobalMoodStats] || 0}% Times</span>
+        <span style={{ fontSize: '0.875rem' }}>{percentage || 0}% Times</span>
       </div>
-      {index < moodOrder.length - 1 && (
+      {index < sortedArray.length - 1 && (
         <div 
           className="border-t border-white" 
           style={{ marginLeft: '0.05rem', marginRight: '0.05rem', marginTop: '0.25rem', marginBottom: '0.25rem' , opacity: 0.5}}
