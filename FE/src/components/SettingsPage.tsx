@@ -2,12 +2,12 @@
 import { settingsApiService } from '../services/SettingsService';
 import React, { useState, useEffect } from 'react';
 import type { UserSettings, PasswordChangeRequest, CountryUpdateRequest, PhotoUploadRequest, AccountDeletionRequest } from '../services/SettingsService';
+import { useUser } from '../contexts/UserContext';
 
 const SettingsPage: React.FC = () => {
   // User data state - now using API data
-  const [userData, setUserData] = useState<UserSettings | null>(null);
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [dataError, setDataError] = useState<string>('');
+  const { user, dispatch } = useUser();
+  
 
   // Form states
   const [passwords, setPasswords] = useState({
@@ -25,25 +25,18 @@ const SettingsPage: React.FC = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   // Load user settings from API
-  const loadUserSettings = async () => {
-    try {
-      setIsLoadingData(true);
-      setDataError('');
-      const settings = await settingsApiService.getUserSettings();
-      setUserData(settings);
-      setSelectedCountry(settings.country); // Set initial country
-    } catch (error) {
-      console.error('Failed to load user settings:', error);
-      setDataError(error instanceof Error ? error.message : 'Failed to load settings');
-    } finally {
-      setIsLoadingData(false);
-    }
-  };
+// Initialize form with context data
+const initializeForm = () => {
+  if (user) {
+    setSelectedCountry(user.country);
+  }
+};
 
   // Load data on component mount
+  // Initialize form when user data is available
   useEffect(() => {
-    loadUserSettings();
-  }, []);
+    initializeForm();
+  }, [user]);
 
   // Countries list
   const countries = [
@@ -75,22 +68,10 @@ const SettingsPage: React.FC = () => {
     'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
   ];
 
-  // Show loading state if data is still loading
-  if (isLoadingData) {
-    return (
-      <div style={{ backgroundColor: 'white', minHeight: '100vh', padding: '2rem' }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', paddingTop: '2rem' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', color: 'black' }}>
-            Account Settings
-          </h1>
-          <p style={{ color: '#6b7280' }}>Loading your settings...</p>
-        </div>
-      </div>
-    );
-  }
+
 
   // Show error state if failed to load data
-  if (dataError || !userData) {
+  if (!user) {
     return (
       <div style={{ backgroundColor: 'white', minHeight: '100vh', padding: '2rem' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', paddingTop: '2rem' }}>
@@ -99,20 +80,8 @@ const SettingsPage: React.FC = () => {
           </h1>
           <div style={{ padding: '1rem', border: '1px solid #dc2626', borderRadius: '8px', backgroundColor: '#fef2f2' }}>
             <p style={{ color: '#dc2626', marginBottom: '1rem' }}>
-              {dataError || 'Failed to load your settings'}
+              {'Failed to load your settings'}
             </p>
-            <button
-              onClick={loadUserSettings}
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px'
-              }}
-            >
-              Try Again
-            </button>
           </div>
         </div>
       </div>
@@ -160,15 +129,15 @@ const SettingsPage: React.FC = () => {
 
   // Handle country change with real API
   const handleCountryChange = async () => {
-    if (!userData.canChangeCountry) {
-      const nextDate = userData.nextCountryChangeDate
-        ? new Date(userData.nextCountryChangeDate).toLocaleDateString()
+    if (!user.canChangeCountry) {
+      const nextDate = user.nextCountryChangeDate
+        ? new Date(user.nextCountryChangeDate).toLocaleDateString()
         : 'Unknown';
       setErrors({ country: `Country can only be changed once per month. Next change: ${nextDate}` });
       return;
     }
 
-    if (selectedCountry === userData.country) {
+    if (selectedCountry === user.country) {
       setErrors({ country: 'Please select a different country' });
       return;
     }
@@ -185,12 +154,14 @@ const SettingsPage: React.FC = () => {
       const response = await settingsApiService.updateCountry(countryData);
 
       // Update local state with new data
-      setUserData(prev => prev ? {
-        ...prev,
-        country: response.country,
-        lastCountryChangeAt: response.lastCountryChangeAt,
-        canChangeCountry: false
-      } : null);
+      // Update context state
+      dispatch({ 
+        type: 'UPDATE_COUNTRY', 
+        payload: { 
+          country: response.country, 
+          lastCountryChangeAt: response.lastCountryChangeAt 
+        }
+      });
 
       setSuccessMessages({ country: response.message });
     } catch (error) {
@@ -220,7 +191,11 @@ const SettingsPage: React.FC = () => {
       const message = await settingsApiService.uploadProfilePhoto(photoData);
 
       // Update local state
-      setUserData(prev => prev ? { ...prev, profilePhoto: base64Data } : null);
+      // Update context state
+      dispatch({ 
+        type: 'UPDATE_PROFILE_PHOTO', 
+        payload: { profilePhoto: base64Data }
+      });
       setSuccessMessages({ photo: message });
 
     } catch (error) {
@@ -240,7 +215,12 @@ const SettingsPage: React.FC = () => {
       const message = await settingsApiService.removeProfilePhoto();
 
       // Update local state
-      setUserData(prev => prev ? { ...prev, profilePhoto: null } : null);
+     // Update context state
+     dispatch({ 
+      type: 'UPDATE_PROFILE_PHOTO', 
+      payload: { profilePhoto: null }
+    });
+
       setSuccessMessages({ photo: message });
 
     } catch (error) {
@@ -273,7 +253,7 @@ const SettingsPage: React.FC = () => {
       setDeletionPassword('');
 
       // Reload user settings to update markForDeletion status
-      await loadUserSettings();
+      
 
     } catch (error) {
       setErrors({ deletion: error instanceof Error ? error.message : 'Failed to delete account' });
@@ -283,6 +263,7 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
+    <div>
     <div style={{ backgroundColor: 'white', minHeight: '100vh', padding: '2rem' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
@@ -305,10 +286,10 @@ const SettingsPage: React.FC = () => {
               onMouseEnter={() => setIsPhotoHovered(true)}
               onMouseLeave={() => setIsPhotoHovered(false)}
             >
-              {userData.profilePhoto ? (
+              {user.profilePhoto ? (
                 <>
                   <img
-                    src={userData.profilePhoto}
+                    src={user.profilePhoto}
                     alt="Profile"
                     style={{
                       width: '120px',
@@ -441,7 +422,7 @@ const SettingsPage: React.FC = () => {
             </label>
             <input
               type="text"
-              value={userData.username}
+              value={user.username}
               disabled
               style={{
                 width: '100%',
@@ -465,7 +446,7 @@ const SettingsPage: React.FC = () => {
             </label>
             <input
               type="email"
-              value={userData.email}
+              value={user.email}
               disabled
               style={{
                 width: '100%',
@@ -487,7 +468,7 @@ const SettingsPage: React.FC = () => {
             </label>
             <input
               type="text"
-              value={userData.gender}
+              value={user.gender}
               disabled
               style={{
                 width: '100%',
@@ -517,14 +498,14 @@ const SettingsPage: React.FC = () => {
             <select
               value={selectedCountry}
               onChange={(e) => setSelectedCountry(e.target.value)}
-              disabled={!userData.canChangeCountry}
+              disabled={!user.canChangeCountry}
               style={{
                 width: '100%',
                 padding: '0.5rem',
                 border: '1px solid #ccc',
                 borderRadius: '4px',
-                backgroundColor: userData.canChangeCountry ? 'white' : '#f9fafb',
-                color: userData.canChangeCountry ? 'black' : '#6b7280'
+                backgroundColor: user.canChangeCountry ? 'white' : '#f9fafb',
+                color: user.canChangeCountry ? 'black' : '#6b7280'
               }}
             >
               {countries.map((country) => (
@@ -532,13 +513,13 @@ const SettingsPage: React.FC = () => {
               ))}
             </select>
 
-            {!userData.canChangeCountry && userData.nextCountryChangeDate && (
+            {!user.canChangeCountry && user.nextCountryChangeDate && (
               <p style={{ fontSize: '0.875rem', color: '#f59e0b', marginTop: '0.5rem' }}>
-                Next change available: {new Date(userData.nextCountryChangeDate).toLocaleDateString('en-GB')}
+                Next change available: {new Date(user.nextCountryChangeDate).toLocaleDateString('en-GB')}
               </p>
             )}
 
-            {userData.canChangeCountry && selectedCountry !== userData.country && (
+            {user.canChangeCountry && selectedCountry !== user.country && (
               <button
                 onClick={handleCountryChange}
                 disabled={isLoading}
@@ -701,7 +682,7 @@ const SettingsPage: React.FC = () => {
             Danger Zone
           </h3>
 
-          {userData.markForDeletion ? (
+          {user.markForDeletion ? (
             <div>
               <p style={{ fontSize: '0.875rem', color: '#dc2626', marginBottom: '1rem', fontWeight: 'bold' }}>
                 ⚠️ Your account is marked for deletion. You will receive a confirmation email soon.
@@ -784,6 +765,10 @@ const SettingsPage: React.FC = () => {
         </div>
 
       </div>
+    </div>
+
+
+   
     </div>
   );
 };

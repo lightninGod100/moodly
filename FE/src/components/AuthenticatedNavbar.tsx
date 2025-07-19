@@ -1,10 +1,50 @@
 // src/components/AuthenticatedNavbar.tsx
 import React, { useState, useRef, useEffect } from 'react';
+import { useUser } from '../contexts/UserContext';
 
 interface AuthNavbarProps {
   onNavigate: (page: string) => void;
   currentPage: string;
 }
+// Profile Photo Component
+const ProfilePhoto: React.FC = () => {
+  const { user } = useUser();
+
+  const profileStyle: React.CSSProperties = {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+    border: '2px solid #e5e7eb'
+  };
+
+  if (user?.profilePhoto) {
+    // User has profile photo
+    return (
+      <div 
+        style={{
+          ...profileStyle,
+          backgroundImage: `url(${user.profilePhoto})`
+        }}
+      />
+    );
+  } else {
+    // Use default profile photo from CSS variable
+    return (
+      <div 
+        style={{
+          ...profileStyle,
+          backgroundImage: 'var(--default-pp)'
+        }}
+      />
+    );
+  }
+};
 
 const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPage }) => {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -84,28 +124,13 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
           
           {/* Account Dropdown */}
           <div className="relative" ref={dropdownRef}>
-            <button
+          <button
               className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 rounded transition-colors"
               onClick={handleDropdownToggle}
               onMouseEnter={() => setShowDropdown(true)}
             >
               {/* Profile Circle */}
-              <div 
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  backgroundColor: '#e91e63',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: '14px',
-                  fontWeight: '600'
-                }}
-              >
-                A
-              </div>
+              <ProfilePhoto />
               
               {/* Account Text */}
               <span>Account</span>

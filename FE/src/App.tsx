@@ -17,6 +17,8 @@ import { moodApiService } from './services/MoodService';
 import PrivacyAndTermsPage from './components/PrivacyAndTermsPage';
 import SettingsPage from './components/SettingsPage';
 
+import { UserProvider, useUser } from './contexts/UserContext';
+import { settingsApiService } from './services/SettingsService';
 
 //Helper function to check if timestamp is within 10 minutes
 const isWithin10Minutes = (timestamp: number): boolean => {
@@ -39,9 +41,16 @@ const getMoodEmoji = (mood: string): string => {
   return moodEmojis[mood] || '😐';
 };
 
-
-
 function App() {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
+  );
+}
+
+function AppContent() {
+  const { user, dispatch } = useUser();
   // ADDED: API status tracking for error handling and loading states
   const [apiStatus, setApiStatus] = useState<'loading' | 'healthy' | 'error'>('loading');
   // Authentication state
@@ -52,7 +61,7 @@ function App() {
   const [currentMoodData, setCurrentMoodData] = useState<{mood: string, timestamp: number} | null>(null);
 
   // Load mood history from localStorage on initial render
-    useEffect(() => {
+  useEffect(() => {
     const initializeApp = async () => {
       
       // Check for auth state using token
@@ -61,8 +70,12 @@ function App() {
         setIsAuthenticated(true);
         setCurrentPage('home');
         
-        // ADDED: Fetch last mood from API for authenticated users
         try {
+          // Load user profile data first
+          const userSettings = await settingsApiService.getUserSettings();
+          dispatch({ type: 'SET_USER', payload: userSettings });
+          
+          // Then fetch last mood from API for authenticated users
           const lastMood = await moodApiService.getLastMood();
           if (lastMood) {
             setCurrentMoodData({
@@ -73,7 +86,7 @@ function App() {
           // ADDED: Mark API as healthy after successful call
           setApiStatus('healthy');
         } catch (error) {
-          console.error('Failed to fetch last mood:', error);
+          console.error('Failed to fetch user data:', error);
           // ADDED: Mark API as error if initial mood fetch fails
           setApiStatus('error');
         }
@@ -84,9 +97,9 @@ function App() {
         setApiStatus('healthy');
       }
     };
-
+  
     initializeApp();
-  }, []);
+  }, [dispatch]);
 
   // Handle navigation
   const handleNavigate = (page: string) => {
