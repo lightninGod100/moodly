@@ -1,6 +1,8 @@
 // src/components/AuthenticatedNavbar.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
+import ContactPopup from './ContactPopup';
+
 
 interface AuthNavbarProps {
   onNavigate: (page: string) => void;
@@ -48,6 +50,7 @@ const ProfilePhoto: React.FC = () => {
 
 const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPage }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showSupportPopup, setShowSupportPopup] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside to close dropdown
@@ -76,8 +79,7 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
         onNavigate('settings');
         break;
       case 'support':
-        console.log('Support clicked - placeholder (no action)');
-        // Complete placeholder - nothing happens
+        setShowSupportPopup(true);
         break;
       case 'privacy':
         onNavigate('privacy-and-terms');
@@ -88,15 +90,52 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
     }
   };
 
-  // Remove this function - not needed anymore
-  // const handleContactSubmit = async (reason: string, message: string, email?: string) => {
-  //   console.log('Contact form submitted (placeholder):', { reason, message, email });
-  // };
+// Support popup handlers
+const handleSupportClose = () => {
+  setShowSupportPopup(false);
+};
 
-  // Remove this function - not needed anymore  
-  // const handleContactClose = () => {
-  //   setShowContactPopup(false);
-  // };
+const handleSupportSubmit = async (reason: string, message: string, email?: string) => {
+  try {
+    // Prepare headers
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    };
+
+    // Add authorization header if user is authenticated
+    const authToken = localStorage.getItem('authToken');
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    // Make API call to backend
+    const response = await fetch('http://localhost:5000/api/contact', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        reason,
+        message,
+        email
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send message');
+    }
+
+    console.log('✅ Support message sent successfully:', data.message);
+    console.log('📧 Submission ID:', data.submissionId);
+
+  } catch (error) {
+    console.error('❌ Error sending support message:', error);
+    alert(`Failed to send message: ${error instanceof Error ? error.message : 'Please try again later'}`);
+    throw error;
+  }
+};
+
+
 
   return (
     <>
@@ -258,6 +297,12 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
           </div>
         </div>
       </nav>
+      {/* Support Popup */}
+      <ContactPopup
+        isOpen={showSupportPopup}
+        onClose={handleSupportClose}
+        onSubmit={handleSupportSubmit}
+      />
     </>
   );
 };
