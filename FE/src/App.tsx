@@ -193,7 +193,7 @@ function AppContent() {
         const hasRecentMood = currentMood && currentMoodData ? 
           isWithin10Minutes(currentMoodData.timestamp) : false;
           
-        return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} />;
+        return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} onNavigate={handleNavigate}/>;
       }
       if(currentPage === 'settings') {
         return <SettingsPage />;
