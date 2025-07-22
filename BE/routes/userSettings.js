@@ -17,7 +17,7 @@ const validateBase64Image = (base64String) => {
     // Extract image type
     const imageType = base64String.split(';')[0].split('/')[1];
     const allowedTypes = ['png', 'jpeg', 'jpg'];
-    
+
     if (!allowedTypes.includes(imageType.toLowerCase())) {
       return { valid: false, error: 'Only PNG and JPEG images are allowed' };
     }
@@ -28,9 +28,9 @@ const validateBase64Image = (base64String) => {
     const maxSizeBytes = 100 * 1024; // 100KB
 
     if (sizeInBytes > maxSizeBytes) {
-      return { 
-        valid: false, 
-        error: `Image size must be less than 100KB. Current size: ${Math.round(sizeInBytes / 1024)}KB` 
+      return {
+        valid: false,
+        error: `Image size must be less than 100KB. Current size: ${Math.round(sizeInBytes / 1024)}KB`
       };
     }
 
@@ -43,7 +43,7 @@ const validateBase64Image = (base64String) => {
 // Helper function to check if country can be changed (30-day restriction)
 const canChangeCountry = (lastChangeTimestamp) => {
   if (!lastChangeTimestamp) return true;
-  
+
   const now = Date.now();
   const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
   return (now - lastChangeTimestamp) >= thirtyDaysMs;
@@ -68,29 +68,29 @@ router.get('/', authenticateToken, async (req, res) => {
     const user = userResult.rows[0];
 
     // Calculate next country change date with proper validation
-// Calculate next country change date with proper validation
-// Calculate next country change date with proper validation
-let nextCountryChangeDate = null;
-if (user.last_country_change_at && !canChangeCountry(user.last_country_change_at)) {
-  const nextChangeTimestamp = parseInt(user.last_country_change_at) + (30 * 24 * 60 * 60 * 1000);
-  console.log('nextChangeTimestamp calculated:', nextChangeTimestamp);
-  const dateObj = new Date(nextChangeTimestamp);
-  console.log('dateObj:', dateObj);
-  console.log('dateObj.getTime():', dateObj.getTime());
-  console.log('isNaN check:', !isNaN(dateObj.getTime()));
-  if (!isNaN(dateObj.getTime())) {
-    nextCountryChangeDate = dateObj.toISOString();
-    console.log('Final nextCountryChangeDate:', nextCountryChangeDate);
-  }
-}
-// After the user query, add these logs:
-console.log('=== COUNTRY CHANGE DEBUG ===');
-console.log('user.last_country_change_at:', user.last_country_change_at);
-console.log('canChangeCountry result:', canChangeCountry(user.last_country_change_at));
+    // Calculate next country change date with proper validation
+    // Calculate next country change date with proper validation
+    let nextCountryChangeDate = null;
+    if (user.last_country_change_at && !canChangeCountry(user.last_country_change_at)) {
+      const nextChangeTimestamp = parseInt(user.last_country_change_at) + (30 * 24 * 60 * 60 * 1000);
+      console.log('nextChangeTimestamp calculated:', nextChangeTimestamp);
+      const dateObj = new Date(nextChangeTimestamp);
+      console.log('dateObj:', dateObj);
+      console.log('dateObj.getTime():', dateObj.getTime());
+      console.log('isNaN check:', !isNaN(dateObj.getTime()));
+      if (!isNaN(dateObj.getTime())) {
+        nextCountryChangeDate = dateObj.toISOString();
+        console.log('Final nextCountryChangeDate:', nextCountryChangeDate);
+      }
+    }
+    // After the user query, add these logs:
+    console.log('=== COUNTRY CHANGE DEBUG ===');
+    console.log('user.last_country_change_at:', user.last_country_change_at);
+    console.log('canChangeCountry result:', canChangeCountry(user.last_country_change_at));
 
-// After the nextCountryChangeDate calculation:
-console.log('nextCountryChangeDate calculated:', nextCountryChangeDate);
-console.log('=== END DEBUG ===');
+    // After the nextCountryChangeDate calculation:
+    console.log('nextCountryChangeDate calculated:', nextCountryChangeDate);
+    console.log('=== END DEBUG ===');
 
 
     return res.json({
@@ -105,7 +105,8 @@ console.log('=== END DEBUG ===');
         lastCountryChangeAt: user.last_country_change_at,
         canChangeCountry: canChangeCountry(user.last_country_change_at),
         nextCountryChangeDate: nextCountryChangeDate,
-        markForDeletion: user.mark_for_deletion
+        markForDeletion: user.mark_for_deletion,
+        markForDeletionAt: user.mark_for_deletion_at
       }
     });
 
@@ -150,7 +151,7 @@ router.put('/password', authenticateToken, async (req, res) => {
 
     // Verify current password
     const validCurrentPassword = await bcrypt.compare(currentPassword, userResult.rows[0].password_hash);
-    
+
     if (!validCurrentPassword) {
       return res.status(400).json({
         error: 'Current password is incorrect'
@@ -343,7 +344,7 @@ router.delete('/account', authenticateToken, async (req, res) => {
 
     // Verify password
     const validPassword = await bcrypt.compare(password, user.password_hash);
-    
+
     if (!validPassword) {
       return res.status(400).json({
         error: 'Incorrect password'
@@ -351,9 +352,11 @@ router.delete('/account', authenticateToken, async (req, res) => {
     }
 
     // Mark account for deletion instead of immediate deletion
+    // Mark account for deletion with timestamp
+    const deletionRequestedAt = Date.now(); // UNIX timestamp in milliseconds
     await pool.query(
-      'UPDATE users SET mark_for_deletion = TRUE WHERE id = $1',
-      [userId]
+      'UPDATE users SET mark_for_deletion = TRUE, mark_for_deletion_at = $1 WHERE id = $2',
+      [deletionRequestedAt, userId]
     );
 
     return res.json({
