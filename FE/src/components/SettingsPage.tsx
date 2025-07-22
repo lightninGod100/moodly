@@ -248,6 +248,12 @@ const initializeForm = () => {
 
       const message = await settingsApiService.deleteAccount(accountData);
 
+      const deletionTimestamp = Date.now() + (7 * 24 * 60 * 60 * 1000);
+
+      dispatch({ 
+        type: 'MARK_FOR_DELETION', 
+        payload: { markForDeletion: true, deletionTimestamp: deletionTimestamp }
+      });
       alert(message);
       setShowDeletionConfirm(false);
       setDeletionPassword('');
@@ -685,10 +691,13 @@ const initializeForm = () => {
           {user.markForDeletion ? (
             <div>
               <p style={{ fontSize: '0.875rem', color: '#dc2626', marginBottom: '1rem', fontWeight: 'bold' }}>
-  ⚠️ Your account is marked for deletion and will be permanently deleted in 7 days.
+  ⚠️ Your account has been marked for deletion and will be permanently deleted in next 7 days.
 </p>
 <p style={{ fontSize: '0.875rem', color: '#16a34a', marginBottom: '1rem', fontWeight: 'bold' }}>
-  ✅  You can cancel this request anytime by logging into Moodly before the 7-day period expires.
+  ✅  You can cancel this request anytime by logging into Moodly before {user.deletionTimestamp ? new Date(user.deletionTimestamp).toLocaleDateString('en-GB') : 'Unknown Date'}.
+
+
+  
 </p>
             </div>
           ) : !showDeletionConfirm ? (

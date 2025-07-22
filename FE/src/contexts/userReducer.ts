@@ -31,7 +31,8 @@ export const userReducer = (state: UserState | null, action: UserAction): UserSt
       if (!state) return null;
       return {
         ...state,
-        markForDeletion: action.payload.markForDeletion
+        markForDeletion: action.payload.markForDeletion,
+        deletionTimestamp: action.payload.deletionTimestamp
       };
       
     case 'CLEAR_USER':

@@ -55,7 +55,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
 
     const userResult = await pool.query(
-      'SELECT id, username, email, country, gender, profile_photo, last_country_change_at, mark_for_deletion, created_at FROM users WHERE id = $1',
+      'SELECT id, username, email, country, gender, profile_photo, last_country_change_at, mark_for_deletion, mark_for_deletion_at, created_at FROM users WHERE id = $1',
       [userId]
     );
 
@@ -91,7 +91,11 @@ router.get('/', authenticateToken, async (req, res) => {
     // After the nextCountryChangeDate calculation:
     console.log('nextCountryChangeDate calculated:', nextCountryChangeDate);
     console.log('=== END DEBUG ===');
-
+    // Calculate deletion timestamp (UTC + 7 days)
+    let deletionTimestamp = null;
+    if (user.mark_for_deletion_at) {
+      deletionTimestamp = parseInt(user.mark_for_deletion_at) + (7 * 24 * 60 * 60 * 1000);
+    }
 
     return res.json({
       message: 'User settings retrieved successfully',
@@ -106,7 +110,7 @@ router.get('/', authenticateToken, async (req, res) => {
         canChangeCountry: canChangeCountry(user.last_country_change_at),
         nextCountryChangeDate: nextCountryChangeDate,
         markForDeletion: user.mark_for_deletion,
-        markForDeletionAt: user.mark_for_deletion_at
+        deletionTimestamp: deletionTimestamp
       }
     });
 

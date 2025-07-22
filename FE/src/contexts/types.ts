@@ -10,6 +10,7 @@ export interface UserState {
     canChangeCountry: boolean;
     nextCountryChangeDate: string | null;
     markForDeletion: boolean;
+    deletionTimestamp: number | null;
   }
   
   // Action types for reducer
@@ -18,7 +19,7 @@ export interface UserState {
     | { type: 'UPDATE_COUNTRY'; payload: { country: string; lastCountryChangeAt: number } }
     | { type: 'UPDATE_PROFILE_PHOTO'; payload: { profilePhoto: string | null } }
     | { type: 'UPDATE_PASSWORD'; payload: {} } // No state change needed for password
-    | { type: 'MARK_FOR_DELETION'; payload: { markForDeletion: boolean } }
+    | { type: 'MARK_FOR_DELETION'; payload: { markForDeletion: boolean, deletionTimestamp: number } }
     | { type: 'CLEAR_USER' };
   
   // Context interface

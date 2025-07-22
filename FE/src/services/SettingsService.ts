@@ -12,6 +12,7 @@ export interface UserSettings {
     canChangeCountry: boolean;
     nextCountryChangeDate: string | null;
     markForDeletion: boolean;
+    deletionTimestamp: number | null;
   }
   
   export interface UserSettingsResponse {
