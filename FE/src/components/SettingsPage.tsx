@@ -685,8 +685,11 @@ const initializeForm = () => {
           {user.markForDeletion ? (
             <div>
               <p style={{ fontSize: '0.875rem', color: '#dc2626', marginBottom: '1rem', fontWeight: 'bold' }}>
-                ⚠️ Your account is marked for deletion. You will receive a confirmation email soon.
-              </p>
+  ⚠️ Your account is marked for deletion and will be permanently deleted in 7 days.
+</p>
+<p style={{ fontSize: '0.875rem', color: '#16a34a', marginBottom: '1rem', fontWeight: 'bold' }}>
+  ✅  You can cancel this request anytime by logging into Moodly before the 7-day period expires.
+</p>
             </div>
           ) : !showDeletionConfirm ? (
             <div>

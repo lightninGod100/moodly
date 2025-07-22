@@ -357,7 +357,7 @@ router.delete('/account', authenticateToken, async (req, res) => {
     );
 
     return res.json({
-      message: 'Account marked for deletion. You will receive a confirmation email shortly.'
+      message: 'Account deletion request submitted successfully! Your account will be deleted in 7 days. You can cancel this request anytime by logging into Moodly before the 7-day period expires. You will receive confirmation emails shortly.'
     });
 
   } catch (error) {
