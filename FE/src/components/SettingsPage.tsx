@@ -7,7 +7,7 @@ import { useUser } from '../contexts/UserContext';
 const SettingsPage: React.FC = () => {
   // User data state - now using API data
   const { user, dispatch } = useUser();
-  
+
 
   // Form states
   const [passwords, setPasswords] = useState({
@@ -24,13 +24,15 @@ const SettingsPage: React.FC = () => {
   const [isPhotoHovered, setIsPhotoHovered] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [deletionReason, setDeletionReason] = useState('');
+  const [showFinalConfirmation, setShowFinalConfirmation] = useState(false);
   // Load user settings from API
-// Initialize form with context data
-const initializeForm = () => {
-  if (user) {
-    setSelectedCountry(user.country);
-  }
-};
+  // Initialize form with context data
+  const initializeForm = () => {
+    if (user) {
+      setSelectedCountry(user.country);
+    }
+  };
 
   // Load data on component mount
   // Initialize form when user data is available
@@ -155,11 +157,11 @@ const initializeForm = () => {
 
       // Update local state with new data
       // Update context state
-      dispatch({ 
-        type: 'UPDATE_COUNTRY', 
-        payload: { 
-          country: response.country, 
-          lastCountryChangeAt: response.lastCountryChangeAt 
+      dispatch({
+        type: 'UPDATE_COUNTRY',
+        payload: {
+          country: response.country,
+          lastCountryChangeAt: response.lastCountryChangeAt
         }
       });
 
@@ -192,8 +194,8 @@ const initializeForm = () => {
 
       // Update local state
       // Update context state
-      dispatch({ 
-        type: 'UPDATE_PROFILE_PHOTO', 
+      dispatch({
+        type: 'UPDATE_PROFILE_PHOTO',
         payload: { profilePhoto: base64Data }
       });
       setSuccessMessages({ photo: message });
@@ -215,11 +217,11 @@ const initializeForm = () => {
       const message = await settingsApiService.removeProfilePhoto();
 
       // Update local state
-     // Update context state
-     dispatch({ 
-      type: 'UPDATE_PROFILE_PHOTO', 
-      payload: { profilePhoto: null }
-    });
+      // Update context state
+      dispatch({
+        type: 'UPDATE_PROFILE_PHOTO',
+        payload: { profilePhoto: null }
+      });
 
       setSuccessMessages({ photo: message });
 
@@ -230,307 +232,466 @@ const initializeForm = () => {
     }
   };
 
+  // Handle initial form submission - show final confirmation
+const handleInitialSubmission = (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!deletionPassword || !deletionReason) {
+    setErrors({ deletion: 'Please fill all required fields' });
+    return;
+  }
+  
+  // Clear any existing errors and show final confirmation
+  setErrors({});
+  setShowFinalConfirmation(true);
+};
   // Handle account deletion with real API
-  const handleAccountDeletion = async (e: React.FormEvent) => {
-    e.preventDefault();
+// Handle account deletion with real API - UPDATED
+const handleAccountDeletion = async () => {  // Removed form parameter
+  if (!deletionPassword) {
+    setErrors({ deletion: 'Password is required to delete account' });
+    return;
+  }
 
-    if (!deletionPassword) {
-      setErrors({ deletion: 'Password is required to delete account' });
-      return;
-    }
+  try {
+    setIsLoading(true);
 
-    try {
-      setIsLoading(true);
+    const accountData: AccountDeletionRequest = {
+      password: deletionPassword,
+      reason: deletionReason  // Add the reason
+    };
 
-      const accountData: AccountDeletionRequest = {
-        password: deletionPassword
-      };
+    const message = await settingsApiService.deleteAccount(accountData);
 
-      const message = await settingsApiService.deleteAccount(accountData);
+    const deletionTimestamp = Date.now() + (7 * 24 * 60 * 60 * 1000);
 
-      const deletionTimestamp = Date.now() + (7 * 24 * 60 * 60 * 1000);
+    dispatch({
+      type: 'MARK_FOR_DELETION',
+      payload: { markForDeletion: true, deletionTimestamp: deletionTimestamp }
+    });
+    
+    alert(message);
+    
+    // Auto-logout after 2 seconds and redirect
+    setTimeout(() => {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      window.location.href = '/';
+    }, 2000);
 
-      dispatch({ 
-        type: 'MARK_FOR_DELETION', 
-        payload: { markForDeletion: true, deletionTimestamp: deletionTimestamp }
-      });
-      alert(message);
-      setShowDeletionConfirm(false);
-      setDeletionPassword('');
+    // Reset all states
+    setShowDeletionConfirm(false);
+    setShowFinalConfirmation(false);
+    setDeletionPassword('');
+    setDeletionReason('');
 
-      // Reload user settings to update markForDeletion status
-      
-
-    } catch (error) {
-      setErrors({ deletion: error instanceof Error ? error.message : 'Failed to delete account' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  } catch (error) {
+    setErrors({ deletion: error instanceof Error ? error.message : 'Failed to delete account' });
+  } finally {
+    setIsLoading(false);
+  }
+};
   return (
     <div>
-    <div style={{ backgroundColor: 'white', minHeight: '100vh', padding: '2rem' }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+      <div style={{ backgroundColor: 'white', minHeight: '100vh', padding: '2rem' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
-        {/* Header */}
-        <h1 style={{ textAlign: 'center', fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', color: 'black' }}>
-          Account Settings
-        </h1>
+          {/* Header */}
+          <h1 style={{ textAlign: 'center', fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', color: 'black' }}>
+            Account Settings
+          </h1>
 
-        {/* Profile Photo Section */}
-        <div style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black', textAlign: 'center' }}>
-            Profile Photo
-          </h3>
+          {/* Profile Photo Section */}
+          <div style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black', textAlign: 'center' }}>
+              Profile Photo
+            </h3>
 
-          {/* Centered Photo Display Container */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            {/* Current Photo Display */}
-            <div
-              style={{ position: 'relative', marginBottom: '1rem' }}
-              onMouseEnter={() => setIsPhotoHovered(true)}
-              onMouseLeave={() => setIsPhotoHovered(false)}
-            >
-              {user.profilePhoto ? (
-                <>
-                  <img
-                    src={user.profilePhoto}
-                    alt="Profile"
-                    style={{
-                      width: '120px',
-                      height: '120px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      objectPosition: 'center',
-                      border: '2px solid #e5e7eb',
-                      display: 'block'
-                    }}
+            {/* Centered Photo Display Container */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {/* Current Photo Display */}
+              <div
+                style={{ position: 'relative', marginBottom: '1rem' }}
+                onMouseEnter={() => setIsPhotoHovered(true)}
+                onMouseLeave={() => setIsPhotoHovered(false)}
+              >
+                {user.profilePhoto ? (
+                  <>
+                    <img
+                      src={user.profilePhoto}
+                      alt="Profile"
+                      style={{
+                        width: '120px',
+                        height: '120px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        objectPosition: 'center',
+                        border: '2px solid #e5e7eb',
+                        display: 'block'
+                      }}
+                    />
+                    {/* Delete Icon - Top Right - Only visible on hover */}
+                    <button
+                      onClick={handlePhotoRemoval}
+                      style={{
+                        position: 'absolute',
+                        top: '0',
+                        right: '0',
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        opacity: isPhotoHovered ? 1 : 0,
+                        transition: 'opacity 0.3s ease',
+                        pointerEvents: isPhotoHovered ? 'auto' : 'none'
+                      }}
+                      title="Delete photo"
+                    >
+                      {/* Dustbin Icon */}
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3,6 5,6 21,6"></polyline>
+                        <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                      </svg>
+                    </button>
+                  </>
+                ) : (
+                  <div style={{
+                    width: '120px',
+                    height: '120px',
+                    backgroundColor: '#f3f4f6',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px dashed #d1d5db'
+                  }}>
+                    <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>No Photo</span>
+                  </div>
+                )}
+
+                {/* Upload Icon - Bottom Right - Only visible on hover */}
+                <button
+                  onClick={() => document.getElementById('photo-upload-input')?.click()}
+                  style={{
+                    position: 'absolute',
+                    bottom: '0',
+                    right: '0',
+                    width: '36px',
+                    height: '36px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    opacity: isPhotoHovered ? 1 : 0,
+                    transition: 'opacity 0.3s ease',
+                    pointerEvents: isPhotoHovered ? 'auto' : 'none'
+                  }}
+                  title="Upload new photo"
+                >
+                  {/* Pen Icon */}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="m18.5 2.5 a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Hidden File Input */}
+              <input
+                id="photo-upload-input"
+                type="file"
+                accept=".png,.jpg,.jpeg"
+                onChange={handlePhotoUpload}
+                style={{ display: 'none' }}
+              />
+
+              {/* Instructions */}
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', textAlign: 'center', marginBottom: '0.5rem' }}>
+                PNG or JPEG only, max 100KB, max 256×256px
+              </p>
+
+              {/* Error and Success Messages */}
+              {errors.photo && (
+                <p style={{ color: '#dc2626', fontSize: '0.875rem', textAlign: 'center' }}>
+                  {errors.photo}
+                </p>
+              )}
+              {successMessages.photo && (
+                <p style={{ color: '#16a34a', fontSize: '0.875rem', textAlign: 'center' }}>
+                  {successMessages.photo}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Basic Information */}
+          <div style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black' }}>
+              Basic Information
+            </h3>
+
+            {/*username*/}
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+                Username
+              </label>
+              <input
+                type="text"
+                value={user.username}
+                disabled
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  backgroundColor: '#f9fafb',
+                  color: '#6b7280'
+                }}
+              />
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                Username cannot be changed
+              </p>
+            </div>
+
+
+            {/* Email - Read Only */}
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={user.email}
+                disabled
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  backgroundColor: '#f9fafb',
+                  color: '#6b7280'
+                }}
+              />
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                Email cannot be changed
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+                Gender
+              </label>
+              <input
+                type="text"
+                value={user.gender}
+                disabled
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  backgroundColor: '#f9fafb',
+                  color: '#6b7280'
+                }}
+              />
+              <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+                Gender cannot be changed
+              </p>
+            </div>
+          </div>
+
+          {/* Country Section */}
+          <div style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black' }}>
+              Country
+            </h3>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+                Current Country
+              </label>
+              <select
+                value={selectedCountry}
+                onChange={(e) => setSelectedCountry(e.target.value)}
+                disabled={!user.canChangeCountry}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  backgroundColor: user.canChangeCountry ? 'white' : '#f9fafb',
+                  color: user.canChangeCountry ? 'black' : '#6b7280'
+                }}
+              >
+                {countries.map((country) => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+
+              {!user.canChangeCountry && user.nextCountryChangeDate && (
+                <p style={{ fontSize: '0.875rem', color: '#f59e0b', marginTop: '0.5rem' }}>
+                  Next change available: {new Date(user.nextCountryChangeDate).toLocaleDateString('en-GB')}
+                </p>
+              )}
+
+              {user.canChangeCountry && selectedCountry !== user.country && (
+                <button
+                  onClick={handleCountryChange}
+                  disabled={isLoading}
+                  style={{
+                    marginTop: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    opacity: isLoading ? 0.5 : 1
+                  }}
+                >
+                  {isLoading ? 'Updating...' : 'Update Country'}
+                </button>
+              )}
+
+              {errors.country && <p style={{ color: '#dc2626', fontSize: '0.875rem', marginTop: '0.5rem' }}>{errors.country}</p>}
+              {successMessages.country && <p style={{ color: '#16a34a', fontSize: '0.875rem', marginTop: '0.5rem' }}>{successMessages.country}</p>}
+            </div>
+          </div>
+
+          {/* Change Password Section */}
+          <div style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black' }}>
+              Change Password
+            </h3>
+
+            <form onSubmit={handlePasswordChange}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+                  Current Password
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={passwords.current}
+                    onChange={(e) => setPasswords(prev => ({ ...prev, current: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', paddingRight: '3rem', border: '1px solid #ccc', borderRadius: '4px' }}
+                    placeholder="Enter current password"
                   />
-                  {/* Delete Icon - Top Right - Only visible on hover */}
                   <button
-                    onClick={handlePhotoRemoval}
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                     style={{
                       position: 'absolute',
-                      top: '0',
-                      right: '0',
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: '#dc2626',
-                      color: 'white',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
                       border: 'none',
-                      borderRadius: '50%',
+                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                      opacity: isPhotoHovered ? 1 : 0,
-                      transition: 'opacity 0.3s ease',
-                      pointerEvents: isPhotoHovered ? 'auto' : 'none'
+                      color: '#6b7280',
+                      padding: '2px'
                     }}
-                    title="Delete photo"
                   >
-                    {/* Dustbin Icon */}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="3,6 5,6 21,6"></polyline>
-                      <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
-                      <line x1="10" y1="11" x2="10" y2="17"></line>
-                      <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
+                    {showCurrentPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+                        <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+                        <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+                        <path d="m2 2 20 20" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
                   </button>
-                </>
-              ) : (
-                <div style={{
-                  width: '120px',
-                  height: '120px',
-                  backgroundColor: '#f3f4f6',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px dashed #d1d5db'
-                }}>
-                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>No Photo</span>
                 </div>
-              )}
+              </div>
 
-              {/* Upload Icon - Bottom Right - Only visible on hover */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+                  New Password
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={passwords.new}
+                    onChange={(e) => setPasswords(prev => ({ ...prev, new: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', paddingRight: '3rem', border: '1px solid #ccc', borderRadius: '4px' }}
+                    placeholder="Enter new password (min 6 characters)"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#6b7280',
+                      padding: '2px'
+                    }}
+                  >
+                    {showNewPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+                        <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+                        <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+                        <path d="m2 2 20 20" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwords.confirm}
+                  onChange={(e) => setPasswords(prev => ({ ...prev, confirm: e.target.value }))}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
+                  placeholder="Confirm new password"
+                />
+              </div>
+
+              {errors.password && <p style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '1rem' }}>{errors.password}</p>}
+              {successMessages.password && <p style={{ color: '#16a34a', fontSize: '0.875rem', marginBottom: '1rem' }}>{successMessages.password}</p>}
+
               <button
-                onClick={() => document.getElementById('photo-upload-input')?.click()}
-                style={{
-                  position: 'absolute',
-                  bottom: '0',
-                  right: '0',
-                  width: '36px',
-                  height: '36px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  opacity: isPhotoHovered ? 1 : 0,
-                  transition: 'opacity 0.3s ease',
-                  pointerEvents: isPhotoHovered ? 'auto' : 'none'
-                }}
-                title="Upload new photo"
-              >
-                {/* Pen Icon */}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="m18.5 2.5 a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-              </button>
-            </div>
-
-            {/* Hidden File Input */}
-            <input
-              id="photo-upload-input"
-              type="file"
-              accept=".png,.jpg,.jpeg"
-              onChange={handlePhotoUpload}
-              style={{ display: 'none' }}
-            />
-
-            {/* Instructions */}
-            <p style={{ fontSize: '0.875rem', color: '#6b7280', textAlign: 'center', marginBottom: '0.5rem' }}>
-              PNG or JPEG only, max 100KB, max 256×256px
-            </p>
-
-            {/* Error and Success Messages */}
-            {errors.photo && (
-              <p style={{ color: '#dc2626', fontSize: '0.875rem', textAlign: 'center' }}>
-                {errors.photo}
-              </p>
-            )}
-            {successMessages.photo && (
-              <p style={{ color: '#16a34a', fontSize: '0.875rem', textAlign: 'center' }}>
-                {successMessages.photo}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Basic Information */}
-        <div style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black' }}>
-            Basic Information
-          </h3>
-
-          {/*username*/}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
-              Username
-            </label>
-            <input
-              type="text"
-              value={user.username}
-              disabled
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                backgroundColor: '#f9fafb',
-                color: '#6b7280'
-              }}
-            />
-            <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
-              Username cannot be changed
-            </p>
-          </div>
-
-
-          {/* Email - Read Only */}
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
-              Email
-            </label>
-            <input
-              type="email"
-              value={user.email}
-              disabled
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                backgroundColor: '#f9fafb',
-                color: '#6b7280'
-              }}
-            />
-            <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
-              Email cannot be changed
-            </p>
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
-              Gender
-            </label>
-            <input
-              type="text"
-              value={user.gender}
-              disabled
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                backgroundColor: '#f9fafb',
-                color: '#6b7280'
-              }}
-            />
-            <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
-              Gender cannot be changed
-            </p>
-          </div>
-        </div>
-
-        {/* Country Section */}
-        <div style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black' }}>
-            Country
-          </h3>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
-              Current Country
-            </label>
-            <select
-              value={selectedCountry}
-              onChange={(e) => setSelectedCountry(e.target.value)}
-              disabled={!user.canChangeCountry}
-              style={{
-                width: '100%',
-                padding: '0.5rem',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                backgroundColor: user.canChangeCountry ? 'white' : '#f9fafb',
-                color: user.canChangeCountry ? 'black' : '#6b7280'
-              }}
-            >
-              {countries.map((country) => (
-                <option key={country} value={country}>{country}</option>
-              ))}
-            </select>
-
-            {!user.canChangeCountry && user.nextCountryChangeDate && (
-              <p style={{ fontSize: '0.875rem', color: '#f59e0b', marginTop: '0.5rem' }}>
-                Next change available: {new Date(user.nextCountryChangeDate).toLocaleDateString('en-GB')}
-              </p>
-            )}
-
-            {user.canChangeCountry && selectedCountry !== user.country && (
-              <button
-                onClick={handleCountryChange}
+                type="submit"
                 disabled={isLoading}
                 style={{
-                  marginTop: '0.5rem',
                   padding: '0.5rem 1rem',
                   backgroundColor: '#3b82f6',
                   color: 'white',
@@ -539,248 +700,297 @@ const initializeForm = () => {
                   opacity: isLoading ? 0.5 : 1
                 }}
               >
-                {isLoading ? 'Updating...' : 'Update Country'}
+                {isLoading ? 'Changing...' : 'Change Password'}
               </button>
-            )}
-
-            {errors.country && <p style={{ color: '#dc2626', fontSize: '0.875rem', marginTop: '0.5rem' }}>{errors.country}</p>}
-            {successMessages.country && <p style={{ color: '#16a34a', fontSize: '0.875rem', marginTop: '0.5rem' }}>{successMessages.country}</p>}
+            </form>
           </div>
+
+          {/* Account Deletion Section - ENHANCED */}
+<div style={{ padding: '1rem', border: '2px solid #dc2626', borderRadius: '8px', backgroundColor: '#fef2f2' }}>
+  <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: '#dc2626' }}>
+    Danger Zone
+  </h3>
+
+  {user.markForDeletion ? (
+    <div>
+      <p style={{ fontSize: '0.875rem', color: '#dc2626', marginBottom: '1rem', fontWeight: 'bold' }}>
+        ⚠️ Your account has been marked for deletion and will be permanently deleted in next 7 days.
+      </p>
+      <p style={{ fontSize: '0.875rem', color: '#16a34a', marginBottom: '1rem', fontWeight: 'bold' }}>
+        ✅ You can cancel this request anytime by logging into Moodly before {user.deletionTimestamp ? new Date(user.deletionTimestamp).toLocaleDateString('en-GB') : 'Unknown Date'}.
+      </p>
+    </div>
+  ) : !showDeletionConfirm ? (
+    <div>
+      <p style={{ fontSize: '0.875rem', color: 'black', marginBottom: '1rem' }}>
+        Once you delete your account, there is no going back. Please be certain.
+      </p>
+      <button
+        onClick={() => setShowDeletionConfirm(true)}
+        style={{
+          padding: '0.5rem 1rem',
+          backgroundColor: '#dc2626',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px'
+        }}
+      >
+        Delete Account
+      </button>
+    </div>
+  ) : showFinalConfirmation ? (
+    /* FINAL CONFIRMATION SCREEN */
+    <div style={{ 
+      backgroundColor: 'red', 
+      color: 'white',
+      border: '2px solid #dc2626', 
+      borderRadius: '8px', 
+      padding: '2rem',
+      textAlign: 'center'
+    }}>
+      <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+      <h4 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1rem' }}>
+        There is no going back after this.
+      </h4>
+      <p style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '2rem' }}>
+        Please be certain.
+      </p>
+      
+      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+        <button
+          onClick={() => setShowFinalConfirmation(false)}
+          disabled={isLoading}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: '#6b7280',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '1rem',
+            fontWeight: '500',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? 0.5 : 1
+          }}
+        >
+          ← Go Back
+        </button>
+        <button
+          onClick={handleAccountDeletion}
+          disabled={isLoading}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: '#dc2626',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '1rem',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            opacity: isLoading ? 0.5 : 1
+          }}
+        >
+          {isLoading ? (
+            <>
+              <div style={{
+                width: '16px',
+                height: '16px',
+                border: '2px solid transparent',
+                borderTop: '2px solid white',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
+              Processing...
+            </>
+          ) : (
+            '🗑️ Delete Forever'
+          )}
+        </button>
+      </div>
+    </div>
+  ) : (
+    /* ENHANCED DELETION CONFIRMATION DIALOG */
+    <div>
+      <div style={{
+        backgroundColor: 'rgba(250, 250, 250, 0.8)',
+        border: '1px solid #dc2626',
+        borderRadius: '8px',
+        padding: '1.5rem',
+        marginBottom: '1rem',
+      }}>
+        <h4 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#dc2626', marginBottom: '1rem' }}>
+          🚨 Account Deletion Request
+        </h4>
+
+        <div style={{
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '6px',
+          padding: '1rem',
+          marginBottom: '1.5rem'
+        }}>
+          <p style={{ fontSize: '1rem', fontWeight: '600', color: '#dc2626', marginBottom: '0.5rem' }}>
+            ⏰ Important Information:
+          </p>
+          <ul style={{
+            fontSize: '0.95rem',
+            color: 'black',
+            paddingLeft: '0rem',
+            lineHeight: '1.5',
+            margin: 0
+          }}>
+            <li style={{ marginBottom: '0.25rem' }}>
+              • Your account will be <strong>permanently deleted in 7 days</strong>. All your mood data and personal information will be removed.
+            </li>
+            <li style={{ marginBottom: '0.25rem' }}>
+              • You can <strong>cancel this request anytime</strong> by logging into Moodly before the 7-day period expires.
+            </li>
+            <li style={{ marginBottom: '0.25rem' }}>
+              • A confirmation email will be sent to you shortly.
+            </li>
+          </ul>
         </div>
 
-        {/* Change Password Section */}
-        <div style={{ marginBottom: '2rem', padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: 'black' }}>
-            Change Password
-          </h3>
+        <form onSubmit={handleInitialSubmission}>
+          {/* Deletion Reason Dropdown */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+              Why are you leaving us? <span style={{ color: '#dc2626' }}>*</span>
+            </label>
+            <select
+              value={deletionReason}
+              onChange={(e) => setDeletionReason(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                color: '#374151',
+                fontSize: '0.9rem',
+                fontWeight: deletionReason ? '500' : '400'
+              }}
+            >
+              <option value="">Please select a reason</option>
+              <option value="Not Useful">Not Useful</option>
+              <option value="Found Better Alternative">Found Better Alternative</option>
+              <option value="Privacy Concerns">Privacy Concerns</option>
+              <option value="Too Complicated">Too Complicated</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
 
-          <form onSubmit={handlePasswordChange}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
-                Current Password
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showCurrentPassword ? "text" : "password"}
-                  value={passwords.current}
-                  onChange={(e) => setPasswords(prev => ({ ...prev, current: e.target.value }))}
-                  style={{ width: '100%', padding: '0.5rem', paddingRight: '3rem', border: '1px solid #ccc', borderRadius: '4px' }}
-                  placeholder="Enter current password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#6b7280',
-                    padding: '2px'
-                  }}
-                >
-                  {showCurrentPassword ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
-                      <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
-                      <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
-                      <path d="m2 2 20 20" />
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
+          {/* Password Confirmation */}
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
+              Enter your password to confirm: <span style={{ color: '#dc2626' }}>*</span>
+            </label>
+            <input
+              type="password"
+              value={deletionPassword}
+              onChange={(e) => setDeletionPassword(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '0.5rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                fontSize: '0.875rem'
+              }}
+              placeholder="Enter your password"
+            />
+          </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
-                New Password
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  value={passwords.new}
-                  onChange={(e) => setPasswords(prev => ({ ...prev, new: e.target.value }))}
-                  style={{ width: '100%', padding: '0.5rem', paddingRight: '3rem', border: '1px solid #ccc', borderRadius: '4px' }}
-                  placeholder="Enter new password (min 6 characters)"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#6b7280',
-                    padding: '2px'
-                  }}
-                >
-                  {showNewPassword ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
-                      <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
-                      <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
-                      <path d="m2 2 20 20" />
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
+          {/* Error Messages */}
+          {errors.deletion && (
+            <p style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '1rem', fontWeight: '500' }}>
+              ❌ {errors.deletion}
+            </p>
+          )}
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                value={passwords.confirm}
-                onChange={(e) => setPasswords(prev => ({ ...prev, confirm: e.target.value }))}
-                style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
-                placeholder="Confirm new password"
-              />
-            </div>
-
-            {errors.password && <p style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '1rem' }}>{errors.password}</p>}
-            {successMessages.password && <p style={{ color: '#16a34a', fontSize: '0.875rem', marginBottom: '1rem' }}>{successMessages.password}</p>}
-
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
             <button
-              type="submit"
+              type="button"
+              onClick={() => {
+                setShowDeletionConfirm(false);
+                setShowFinalConfirmation(false);
+                setDeletionPassword('');
+                setDeletionReason('');
+                setErrors({});
+              }}
               disabled={isLoading}
               style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#3b82f6',
+                padding: '0.6rem 1.25rem',
+                backgroundColor: '#6b7280',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 opacity: isLoading ? 0.5 : 1
               }}
             >
-              {isLoading ? 'Changing...' : 'Change Password'}
+              Cancel
             </button>
-          </form>
-        </div>
-
-        {/* Account Deletion Section */}
-        <div style={{ padding: '1rem', border: '2px solid #dc2626', borderRadius: '8px', backgroundColor: '#fef2f2' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem', color: '#dc2626' }}>
-            Danger Zone
-          </h3>
-
-          {user.markForDeletion ? (
-            <div>
-              <p style={{ fontSize: '0.875rem', color: '#dc2626', marginBottom: '1rem', fontWeight: 'bold' }}>
-  ⚠️ Your account has been marked for deletion and will be permanently deleted in next 7 days.
-</p>
-<p style={{ fontSize: '0.875rem', color: '#16a34a', marginBottom: '1rem', fontWeight: 'bold' }}>
-  ✅  You can cancel this request anytime by logging into Moodly before {user.deletionTimestamp ? new Date(user.deletionTimestamp).toLocaleDateString('en-GB') : 'Unknown Date'}.
-
-
-  
-</p>
-            </div>
-          ) : !showDeletionConfirm ? (
-            <div>
-              <p style={{ fontSize: '0.875rem', color: 'black', marginBottom: '1rem' }}>
-                Once you delete your account, there is no going back. Please be certain.
-              </p>
-              <button
-                onClick={() => setShowDeletionConfirm(true)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#dc2626',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px'
-                }}
-              >
-                Delete Account
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleAccountDeletion}>
-              <p style={{ fontSize: '0.875rem', color: 'black', marginBottom: '1rem' }}>
-                <strong>Are you sure you want to delete your account?</strong> This action cannot be undone.
-              </p>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'black' }}>
-                  Enter your password to confirm:
-                </label>
-                <input
-                  type="password"
-                  value={deletionPassword}
-                  onChange={(e) => setDeletionPassword(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
-                  placeholder="Enter your password"
-                />
-              </div>
-
-              {errors.deletion && <p style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '1rem' }}>{errors.deletion}</p>}
-
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDeletionConfirm(false);
-                    setDeletionPassword('');
-                    setErrors({});
-                  }}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#6b7280',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#dc2626',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    opacity: isLoading ? 0.5 : 1
-                  }}
-                >
-                  {isLoading ? 'Deleting...' : 'Yes, Delete My Account'}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-
+            <button
+              type="submit"
+              disabled={isLoading || !deletionReason || !deletionPassword}
+              style={{
+                padding: '0.6rem 1.25rem',
+                backgroundColor: '#dc2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: (isLoading || !deletionReason || !deletionPassword) ? 'not-allowed' : 'pointer',
+                opacity: (isLoading || !deletionReason || !deletionPassword) ? 0.5 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <div style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid transparent',
+                    borderTop: '2px solid white',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }} />
+                  Processing...
+                </>
+              ) : (
+                '🗑️ Yes, Delete My Account'
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
+  )}
+</div>
+
+          {/* CSS Animation for Loading Spinner */}
+          <style>{`
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`}</style>
+
+        </div>
+      </div>
 
 
-   
+
     </div>
   );
 };

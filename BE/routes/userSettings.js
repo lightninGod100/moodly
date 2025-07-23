@@ -5,6 +5,8 @@ const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
+// Import email functionality
+
 
 // Helper function to validate Base64 image
 const validateBase64Image = (base64String) => {
@@ -362,7 +364,7 @@ router.delete('/account', authenticateToken, async (req, res) => {
       'UPDATE users SET mark_for_deletion = TRUE, mark_for_deletion_at = $1 WHERE id = $2',
       [deletionRequestedAt, userId]
     );
-
+    
     return res.json({
       message: 'Account deletion request submitted successfully! Your account will be deleted in 7 days. You can cancel this request anytime by logging into Moodly before the 7-day period expires. You will receive confirmation emails shortly.'
     });
