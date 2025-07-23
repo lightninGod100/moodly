@@ -52,28 +52,22 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
   const handleMoveEnd = (position: any) => {
     const [longitude, latitude] = position.coordinates;
     const zoom = position.zoom;
-
-    const center = [0, 0]; // <-- MAKE SURE this is your true map center (e.g., [lng, lat])
-
-    // Define the threshold for snapping back to center
-    const longitudeThreshold = 180;
-    const latitudeThreshold = 90;
-
-    const isOutOfBounds =
-      Math.abs(longitude) > longitudeThreshold || Math.abs(latitude) > latitudeThreshold;
-
-    if (isOutOfBounds) {
-      setPosition({
-        coordinates: center,
-        zoom,
-      });
-    } else {
-      // Stay where you are (no clamping here unless you want to)
-      setPosition({
-        coordinates: [longitude, latitude],
-        zoom,
-      });
-    }
+  
+    const defaultCenter = [0, 3];
+    
+    // Define comfortable movement bounds
+    const maxLongitude = 60;
+    const maxLatitude = 40;
+    
+    // Clamp coordinates to stay within bounds instead of snapping back
+    const clampedLongitude = Math.max(-maxLongitude, Math.min(maxLongitude, longitude));
+    const clampedLatitude = Math.max(3 - maxLatitude, Math.min(3 + maxLatitude, latitude));
+    
+    // Always update position with clamped values
+    setPosition({
+      coordinates: [clampedLongitude, clampedLatitude],
+      zoom,
+    });
   };
 
   // Get country color based on dominant mood
