@@ -9,7 +9,7 @@ const router = express.Router();
 // Register new user
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password, country, gender  } = req.body;
+    const { username, email, password, country, gender } = req.body;
 
     // Validation
     if (!username || !email || !password || !country || !gender) {
@@ -26,37 +26,37 @@ router.post('/register', async (req, res) => {
         error: 'Invalid email format'
       });
     }
-    
+
     // Username validation
-if (username.length < 3 || username.length > 16) {
-  return res.status(400).json({
-    error: 'Username must be between 3 and 16 characters'
-  });
-}
-// Username format validation (alphanumeric and underscores only)
-const usernameRegex = /^[a-zA-Z0-9_]+$/;
-if (!usernameRegex.test(username)) {
-  return res.status(400).json({
-    error: 'Username can only contain letters, numbers, and underscores'
-  });
-}
+    if (username.length < 3 || username.length > 16) {
+      return res.status(400).json({
+        error: 'Username must be between 3 and 16 characters'
+      });
+    }
+    // Username format validation (alphanumeric and underscores only)
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({
+        error: 'Username can only contain letters, numbers, and underscores'
+      });
+    }
     // Password strength validation
     if (password.length < 6) {
       return res.status(400).json({
         error: 'Password must be at least 6 characters long'
       });
     }
-// Check if username already exists
-const existingUsername = await pool.query(
-  'SELECT id FROM users WHERE username = $1',
-  [username.toLowerCase()]
-);
+    // Check if username already exists
+    const existingUsername = await pool.query(
+      'SELECT id FROM users WHERE username = $1',
+      [username.toLowerCase()]
+    );
 
-if (existingUsername.rows.length > 0) {
-  return res.status(409).json({
-    error: 'Username is already taken'
-  });
-}
+    if (existingUsername.rows.length > 0) {
+      return res.status(409).json({
+        error: 'Username is already taken'
+      });
+    }
     // Check if user already exists
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1',
@@ -73,7 +73,7 @@ if (existingUsername.rows.length > 0) {
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-   // Create user - ADD: UNIX timestamp for created_at
+    // Create user - ADD: UNIX timestamp for created_at
     const now = Date.now(); // UNIX timestamp in milliseconds
     const newUser = await pool.query(
       'INSERT INTO users (username, email, password_hash, country, gender, created_at, created_at_utc, last_country_change_at) VALUES ($1, $2, $3, $4, $5, $6, to_timestamp($6::bigint/1000.0), $6) RETURNING id, username, email, country, gender, created_at, created_at_utc, test_user, last_country_change_at',
@@ -82,9 +82,9 @@ if (existingUsername.rows.length > 0) {
 
     // Generate JWT token
     const token = jwt.sign(
-      { 
+      {
         userId: newUser.rows[0].id,
-        email: newUser.rows[0].email 
+        email: newUser.rows[0].email
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
@@ -122,8 +122,9 @@ router.post('/login', async (req, res) => {
     }
 
     // Find user
+    // Find user
     const user = await pool.query(
-      'SELECT id, email, password_hash, country, created_at FROM users WHERE email = $1',
+      'SELECT id, email, password_hash, country, created_at, mark_for_deletion FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
 
@@ -135,18 +136,25 @@ router.post('/login', async (req, res) => {
 
     // Check password
     const validPassword = await bcrypt.compare(password, user.rows[0].password_hash);
-    
+
     if (!validPassword) {
       return res.status(401).json({
         error: 'Invalid email or password'
       });
     }
 
+    // Cancel deletion request if user logs back in
+    if (user.rows[0].mark_for_deletion) {
+      await pool.query(
+        'UPDATE users SET mark_for_deletion = FALSE, mark_for_deletion_at = NULL WHERE id = $1',
+        [user.rows[0].id]
+      );
+    }
     // Generate JWT token
     const token = jwt.sign(
-      { 
+      {
         userId: user.rows[0].id,
-        email: user.rows[0].email 
+        email: user.rows[0].email
       },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }

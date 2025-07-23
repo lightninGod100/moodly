@@ -277,7 +277,7 @@ const handleAccountDeletion = async () => {  // Removed form parameter
       localStorage.removeItem('authToken');
       localStorage.removeItem('userData');
       window.location.href = '/';
-    }, 2000);
+    }, 1000);
 
     // Reset all states
     setShowDeletionConfirm(false);
