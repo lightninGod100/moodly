@@ -1,21 +1,10 @@
 // routes/contact.js
 const express = require('express');
-const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
+const { sendContactEmail } = require('../services/emailService');
 
 const router = express.Router();
-
-// Email transporter configuration
-const createEmailTransporter = () => {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_APP_PASSWORD
-    }
-  });
-};
 
 // Helper function to get user data from JWT token (optional)
 const getUserFromToken = async (authHeader) => {
@@ -98,7 +87,7 @@ router.post('/', async (req, res) => {
 
     const submissionId = submissionResult.rows[0].id;
 
-    // Create email content
+    // Prepare email content for service
     const emailContent = `
 New Contact Form Submission
 
@@ -115,18 +104,16 @@ ${message.trim()}
 This message was sent via Moodly Contact Form
     `.trim();
 
-    // Email configuration
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: process.env.EMAIL_USER, // Send to same email
+    // Prepare email data for service
+    const emailData = {
+      to: process.env.EMAIL_USER, // Send to Moodly email
       subject: subject,
-      text: emailContent
+      content: emailContent
     };
 
-    // Send email
+    // Send email using service
     try {
-      const transporter = createEmailTransporter();
-      await transporter.sendMail(mailOptions);
+      await sendContactEmail(emailData);
       
       // Update status to 'sent'
       await pool.query(
@@ -175,13 +162,12 @@ router.get('/test', async (req, res) => {
       return res.status(404).json({ error: 'Not found' });
     }
 
-    const transporter = createEmailTransporter();
+    const { testEmailConfiguration } = require('../services/emailService');
     
-    // Test email configuration
-    await transporter.verify();
+    const result = await testEmailConfiguration();
     
     res.json({
-      message: 'Email configuration is working correctly',
+      message: result.message,
       emailUser: process.env.EMAIL_USER ? 'Configured' : 'Missing',
       emailPassword: process.env.EMAIL_APP_PASSWORD ? 'Configured' : 'Missing'
     });

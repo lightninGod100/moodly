@@ -3,8 +3,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
-
 const router = express.Router();
+const { sendAccountDeletionEmails } = require('../services/emailService');
 // Import email functionality
 
 
@@ -56,8 +56,9 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
+    // Get user's password hash, email, username, and deletion status
     const userResult = await pool.query(
-      'SELECT id, username, email, country, gender, profile_photo, last_country_change_at, mark_for_deletion, mark_for_deletion_at, created_at FROM users WHERE id = $1',
+      'SELECT password_hash, email, username, mark_for_deletion FROM users WHERE id = $1',
       [userId]
     );
 
@@ -329,7 +330,7 @@ router.delete('/account', authenticateToken, async (req, res) => {
 
     // Get user's password hash, email, and deletion status
     const userResult = await pool.query(
-      'SELECT password_hash, email, mark_for_deletion FROM users WHERE id = $1',
+      'SELECT password_hash, email, username, mark_for_deletion FROM users WHERE id = $1',
       [userId]
     );
 
@@ -364,7 +365,97 @@ router.delete('/account', authenticateToken, async (req, res) => {
       'UPDATE users SET mark_for_deletion = TRUE, mark_for_deletion_at = $1 WHERE id = $2',
       [deletionRequestedAt, userId]
     );
-    
+
+    // Log account deletion activity
+    try {
+      const now = Date.now();
+
+      // Log deletion timestamp
+      await pool.query(
+        'INSERT INTO user_activity_log (user_id, key, value_timestamp, created_at) VALUES ($1, $2, $3, $4)',
+        [userId, 'account_deletion', deletionRequestedAt, now]
+      );
+
+      // Log deletion reason
+      await pool.query(
+        'INSERT INTO user_activity_log (user_id, key, value_string, created_at) VALUES ($1, $2, $3, $4)',
+        [userId, 'account_deletion_reason', req.body.reason, now]
+      );
+
+      console.log('✅ Account deletion activities logged successfully');
+    } catch (logError) {
+      console.error('❌ Failed to log deletion activities:', logError.message);
+      // Continue - logging failure shouldn't block deletion
+    }
+    // Calculate deletion date (7 days from now)
+    const deletionDate = new Date(deletionRequestedAt + (7 * 24 * 60 * 60 * 1000));
+
+    // Send account deletion emails (continue approach - don't fail if emails fail)
+    // Send account deletion emails using email service
+    try {
+      const now = Date.now();
+
+      // Prepare user email content
+      const userEmailContent = `
+Dear ${user.username},
+
+Your account deletion request has been successfully submitted.
+
+ACCOUNT DELETION DETAILS:
+- Account will be permanently deleted on: ${deletionDate.toLocaleDateString('en-GB')}
+- Reason provided: ${req.body.reason}
+
+IMPORTANT INFORMATION:
+- You can cancel this request anytime by logging back into Moodly before ${deletionDate.toLocaleDateString('en-GB')}
+- All your mood data and personal information will be permanently removed after the deletion date
+- This action cannot be undone after the 7-day period expires
+
+If you did not request this deletion or have any concerns, please contact our support team immediately by replying to this email.
+
+Thank you for being part of the Moodly community.
+
+Best regards,
+The Moodly Team
+  `.trim();
+
+      // Prepare admin email content
+      const adminEmailContent = `
+User has requested for account deletion. 
+Required Details can be found below:
+
+USERNAME: ${user.username}
+EMAIL: ${user.email}
+Last date of deletion: ${deletionDate.toLocaleDateString('en-GB')}
+Reason: ${req.body.reason}
+Request time: ${new Date(now).toISOString()}
+
+---
+This message was sent via Moodly Account Deletion System
+  `.trim();
+
+      // Prepare email data for service
+      const userEmailData = {
+        from: process.env.EMAIL_USER,
+        to: user.email,
+        subject: 'Account Deletion Request - Moodly',
+        text: userEmailContent
+      };
+
+      const adminEmailData = {
+        from: process.env.EMAIL_USER,
+        to: 'moodlyapp25@gmail.com',
+        subject: 'Account Deletion',
+        text: adminEmailContent
+      };
+
+      // Send emails using service
+      await sendAccountDeletionEmails(userEmailData, adminEmailData);
+
+      console.log('✅ Account deletion emails sent successfully');
+    } catch (emailError) {
+      console.error('❌ Failed to send deletion emails (deletion proceeding):', emailError.message);
+      // Continue with success - deletion is more important than email notification
+    }
     return res.json({
       message: 'Account deletion request submitted successfully! Your account will be deleted in 7 days. You can cancel this request anytime by logging into Moodly before the 7-day period expires. You will receive confirmation emails shortly.'
     });

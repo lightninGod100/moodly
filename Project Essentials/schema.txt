@@ -35,3 +35,15 @@ CREATE TABLE contact_submissions (
   created_at_utc BIGINT NOT NULL,                          -- UNIX timestamp
   status VARCHAR(50) NOT NULL DEFAULT 'pending'            -- 'pending', 'sent', 'failed', 'processed'
 );
+
+
+
+CREATE TABLE user_activity_log (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,  -- Changed from CASCADE to SET NULL
+    key VARCHAR(50) NOT NULL,
+    value_timestamp BIGINT,           
+    value_string TEXT,                
+    created_at BIGINT NOT NULL,       
+    created_at_utc TIMESTAMPTZ DEFAULT NOW()
+);

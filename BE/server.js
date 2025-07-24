@@ -10,7 +10,7 @@ const userSettingsRoutes = require('./routes/userSettings');
 const authRoutes = require('./routes/auth');
 const MoodsRoutes = require('./routes/moods');
 const worldStatsRoutes = require('./routes/worldStats');
-const contactRoutes = require('./routes/email');
+const contactRoutes = require('./routes/contact');
 const moodSelectedStatsRoutes = require('./routes/moodSelectedStats');
 
 // Import middleware

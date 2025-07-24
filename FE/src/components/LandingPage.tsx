@@ -33,7 +33,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       }
   
       // Make API call to backend
-      const response = await fetch('http://localhost:5000/api/contact', {
+      const response = await fetch('http://localhost:5000/api/contact/', {
         method: 'POST',
         headers,
         body: JSON.stringify({
