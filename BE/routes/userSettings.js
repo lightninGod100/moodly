@@ -468,4 +468,54 @@ This message was sent via Moodly Account Deletion System
   }
 });
 
+// Add this to BE/routes/userSettings.js
+
+// POST /api/user-settings/validate-password - Validate password only (no action)
+router.post('/validate-password', authenticateToken, async (req, res) => {
+  try {
+    const { password } = req.body;
+    const userId = req.user.id;
+
+    // Validation
+    if (!password) {
+      return res.status(400).json({
+        error: 'Password is required'
+      });
+    }
+
+    // Get user's password hash
+    const userResult = await pool.query(
+      'SELECT password_hash FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        error: 'User not found'
+      });
+    }
+
+    // Verify password
+    const validPassword = await bcrypt.compare(password, userResult.rows[0].password_hash);
+
+    if (!validPassword) {
+      return res.status(400).json({
+        error: 'Incorrect password'
+      });
+    }
+
+    // Password is correct
+    return res.json({
+      message: 'Password validated successfully',
+      valid: true
+    });
+
+  } catch (error) {
+    console.error('Password validation error:', error);
+    return res.status(500).json({
+      error: 'Internal server error while validating password'
+    });
+  }
+});
+
 module.exports = router;

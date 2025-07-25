@@ -47,6 +47,16 @@ export interface UserSettings {
     password: string;
   }
   
+// Add this interface and method to src/services/SettingsService.ts
+
+export interface PasswordValidationRequest {
+  password: string;
+}
+
+export interface PasswordValidationResponse {
+  message: string;
+  valid: boolean;
+}
   // API configuration
   const API_BASE = 'http://localhost:5000/api';
   
@@ -308,5 +318,29 @@ export interface UserSettings {
         };
         img.src = URL.createObjectURL(file);
       });
+    },
+    async validatePassword(passwordData: PasswordValidationRequest): Promise<PasswordValidationResponse> {
+      try {
+        // Basic validation
+        if (!passwordData.password) {
+          throw new Error('Password is required');
+        }
+    
+        const response = await fetch(`${API_BASE}/user-settings/validate-password`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(passwordData)
+        });
+    
+        if (!response.ok) {
+          await handleApiError(response);
+        }
+    
+        const data: PasswordValidationResponse = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error validating password:', error);
+        throw error;
+      }
     }
   };

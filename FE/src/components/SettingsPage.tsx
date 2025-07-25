@@ -1,7 +1,7 @@
 // src/components/SettingsPage.tsx
 import { settingsApiService } from '../services/SettingsService';
 import React, { useState, useEffect, useRef } from 'react';
-import type { UserSettings, PasswordChangeRequest, CountryUpdateRequest, PhotoUploadRequest, AccountDeletionRequest } from '../services/SettingsService';
+import type { UserSettings, PasswordChangeRequest, CountryUpdateRequest, PhotoUploadRequest, AccountDeletionRequest, PasswordValidationRequest } from '../services/SettingsService';
 import { useUser } from '../contexts/UserContext';
 import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
@@ -310,7 +310,7 @@ const SettingsPage: React.FC = () => {
   };
 
   // Handle initial form submission - show final confirmation
-  const handleInitialSubmission = (e: React.FormEvent) => {
+  const handleInitialSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!deletionPassword || !deletionReason) {
@@ -318,9 +318,28 @@ const SettingsPage: React.FC = () => {
       return;
     }
     
-    // Clear any existing errors and show final confirmation
+    // Clear any existing errors
     setErrors({});
-    setShowFinalConfirmation(true);
+    
+    try {
+      setIsLoading(true);
+  
+      // Step 1: Validate password first (industry standard)
+      const passwordValidation: PasswordValidationRequest = {
+        password: deletionPassword
+      };
+  
+      await settingsApiService.validatePassword(passwordValidation);
+      
+      // Password is correct, show final confirmation
+      setShowFinalConfirmation(true);
+      
+    } catch (error) {
+      // Password validation failed - show error immediately
+      setErrors({ deletion: error instanceof Error ? error.message : 'Password validation failed' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle account deletion with real API
