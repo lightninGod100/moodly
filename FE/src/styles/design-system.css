@@ -294,7 +294,6 @@
 
   .vanta-waves-container {
     width: 100vw;
-    height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -550,3 +549,10 @@
     position: static;
     
   }
+
+  .settings-page {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%) no-repeat;
+  background-size: 100% 250px;
+  background-color: white;
+  min-height: 100vh;
+}
