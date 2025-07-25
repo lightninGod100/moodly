@@ -58,7 +58,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     // Get user's password hash, email, username, and deletion status
     const userResult = await pool.query(
-      'SELECT password_hash, email, username, mark_for_deletion FROM users WHERE id = $1',
+      'SELECT id, username, email, country, gender, profile_photo, last_country_change_at, mark_for_deletion, mark_for_deletion_at FROM users WHERE id = $1',
       [userId]
     );
 
