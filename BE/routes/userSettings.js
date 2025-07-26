@@ -367,24 +367,24 @@ router.delete('/account', authenticateToken, async (req, res) => {
     );
 
     // Log account deletion activity
+    // Log account deletion activity
     try {
       const now = Date.now();
 
-      // Log deletion timestamp
+      // Create JSON object for deletion data
+      const deletionData = {
+        reason: req.body.reason
+      };
+
+      // Log deletion with both timestamp and reason in single record
       await pool.query(
-        'INSERT INTO user_activity_log (user_id, key, value_timestamp, created_at) VALUES ($1, $2, $3, $4)',
-        [userId, 'account_deletion', deletionRequestedAt, now]
+        'INSERT INTO user_activity_log (user_id, key, value_timestamp, value_string, created_at) VALUES ($1, $2, $3, $4, $5)',
+        [userId, 'account_deletion', deletionRequestedAt, JSON.stringify(deletionData), now]
       );
 
-      // Log deletion reason
-      await pool.query(
-        'INSERT INTO user_activity_log (user_id, key, value_string, created_at) VALUES ($1, $2, $3, $4)',
-        [userId, 'account_deletion_reason', req.body.reason, now]
-      );
-
-      console.log('✅ Account deletion activities logged successfully');
+      console.log('✅ Account deletion logged successfully');
     } catch (logError) {
-      console.error('❌ Failed to log deletion activities:', logError.message);
+      console.error('❌ Failed to log deletion activity:', logError.message);
       // Continue - logging failure shouldn't block deletion
     }
     // Calculate deletion date (7 days from now)
