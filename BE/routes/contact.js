@@ -81,8 +81,8 @@ router.post('/', async (req, res) => {
 
     // Save to database first
     const submissionResult = await pool.query(
-      'INSERT INTO contact_submissions (user_id, subject, body, email, created_at_utc, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [userId, subject, message.trim(), userEmail, now, 'pending']
+      'INSERT INTO email_logs (user_id, email_type, subject, body, recipient_email, created_at_utc, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      [userId, 'contact_form', subject, message.trim(), userEmail, now, 'pending']
     );
 
     const submissionId = submissionResult.rows[0].id;
@@ -117,7 +117,7 @@ This message was sent via Moodly Contact Form
       
       // Update status to 'sent'
       await pool.query(
-        'UPDATE contact_submissions SET status = $1 WHERE id = $2',
+        'UPDATE email_logs SET status = $1 WHERE id = $2',
         ['sent', submissionId]
       );
 
@@ -133,7 +133,7 @@ This message was sent via Moodly Contact Form
       
       // Update status to 'failed'
       await pool.query(
-        'UPDATE contact_submissions SET status = $1 WHERE id = $2',
+        'UPDATE email_logs SET status = $1 WHERE id = $2',
         ['failed', submissionId]
       );
 

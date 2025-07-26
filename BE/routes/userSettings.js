@@ -437,20 +437,30 @@ This message was sent via Moodly Account Deletion System
       const userEmailData = {
         from: process.env.EMAIL_USER,
         to: user.email,
-        subject: 'Account Deletion Request - Moodly',
+        subject: '[Moodly Account Deletion] - Request Received',
         text: userEmailContent
       };
 
       const adminEmailData = {
         from: process.env.EMAIL_USER,
         to: 'moodlyapp25@gmail.com',
-        subject: 'Account Deletion',
+        subject: '[Moodly Account Deletion] - Request Received',
         text: adminEmailContent
       };
 
       // Send emails using service
       await sendAccountDeletionEmails(userEmailData, adminEmailData);
-
+      try {
+        await pool.query(
+          'INSERT INTO email_logs (user_id, email_type, subject, body, recipient_email, created_at_utc, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [userId, 'account_deletion', userEmailData.subject, userEmailData.text, userEmailData.to, now, 'sent']
+        );
+        
+        console.log('✅ Account deletion email logged to database');
+      } catch (emailLogError) {
+        console.error('❌ Failed to log deletion email to database:', emailLogError.message);
+        // Continue - email logging failure shouldn't block deletion
+      }
       console.log('✅ Account deletion emails sent successfully');
     } catch (emailError) {
       console.error('❌ Failed to send deletion emails (deletion proceeding):', emailError.message);
