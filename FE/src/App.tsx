@@ -19,7 +19,8 @@ import SettingsPage from './components/SettingsPage';
 
 import { UserProvider, useUser } from './contexts/UserContext';
 import { settingsApiService } from './services/SettingsService';
-
+// Add this import
+import { authApiService } from './services/AuthService';
 //Helper function to check if timestamp is within 10 minutes
 const isWithin10Minutes = (timestamp: number): boolean => {
   const now = Date.now();
@@ -105,11 +106,15 @@ function AppContent() {
   const handleNavigate = (page: string) => {
     // Special cases for auth-related navigation
     if (page === 'logout') {
-      setIsAuthenticated(false);
-      // Remove token and user data
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userData');
-      setCurrentPage('landing');
+      // Call AuthService logout (which will handle backend logging + local cleanup)
+      authApiService.logout().then(() => {
+        setIsAuthenticated(false);
+        setCurrentPage('landing');
+      }).catch(() => {
+        // Even if logout API fails, clear local state
+        setIsAuthenticated(false);
+        setCurrentPage('landing');
+      });
       return;
     }
     

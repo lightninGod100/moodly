@@ -245,18 +245,38 @@ export interface RegisterRequest {
     /**
      * Logout user (clear local storage)
      */
-    logout(): void {
-      try {
-        tokenManager.clearTokens();
-        userDataManager.clearUserData();
-        console.log('User logged out successfully');
-      } catch (error) {
-        console.error('Logout error:', error);
-        // Even if there's an error, we should clear what we can
-        tokenManager.clearTokens();
-        userDataManager.clearUserData();
-      }
-    },
+    async logout(): Promise<void> {
+        try {
+          // Get token before clearing it
+          const token = tokenManager.getAuthToken();
+          
+          if (token) {
+            // Call backend logout endpoint to log activity
+            const response = await fetch(`${API_BASE}/auth/logout`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+      
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Logout logged successfully:', data.message);
+            } else {
+              console.warn('Logout logging failed, but proceeding with local logout');
+            }
+          }
+        } catch (error) {
+          console.error('Logout API error (proceeding with local logout):', error);
+          // Continue with logout even if API call fails
+        } finally {
+          // Always clear local storage regardless of API call result
+          tokenManager.clearTokens();
+          userDataManager.clearUserData();
+          console.log('Local logout completed');
+        }
+      },
   
     /**
      * Get current authentication state

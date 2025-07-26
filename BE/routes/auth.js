@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -179,6 +180,36 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/logout - Logout user and log activity
+router.post('/logout', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const now = Date.now(); // UNIX timestamp in milliseconds
+
+    // Log logout activity
+    await pool.query(
+      'INSERT INTO user_activity_log (user_id, key, value_timestamp, created_at) VALUES ($1, $2, $3, $4)',
+      [userId, 'account_logout', now, now]
+    );
+
+    console.log(`✅ User ${userId} logged out successfully at ${new Date(now).toISOString()}`);
+
+    res.json({
+      message: 'Logout successful',
+      timestamp: now
+    });
+
+  } catch (error) {
+    console.error('Logout activity logging error:', error);
+
+    // Even if logging fails, we should return success
+    // Frontend will clear tokens regardless
+    res.json({
+      message: 'Logout completed',
+      note: 'Activity logging may have failed but logout was processed'
+    });
+  }
+});
 // Test protected route
 router.get('/me', async (req, res) => {
   try {
