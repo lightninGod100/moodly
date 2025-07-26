@@ -143,7 +143,18 @@ router.post('/login', async (req, res) => {
         error: 'Invalid email or password'
       });
     }
+    try {
+      const loginTimestamp = Date.now(); // UNIX timestamp in milliseconds
+      await pool.query(
+        'INSERT INTO user_activity_log (user_id, key, value_timestamp, created_at) VALUES ($1, $2, $3, $4)',
+        [user.rows[0].id, 'account_login', loginTimestamp, loginTimestamp]
+      );
 
+      console.log(`✅ User ${user.rows[0].id} logged in successfully at ${new Date(loginTimestamp).toISOString()}`);
+    } catch (logError) {
+      console.error('❌ Failed to log login activity:', logError.message);
+      // Continue with login - logging failure shouldn't block authentication
+    }
     // Cancel deletion request if user logs back in
     if (user.rows[0].mark_for_deletion) {
       await pool.query(
