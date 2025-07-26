@@ -1,5 +1,7 @@
 // src/components/SignUpPage.tsx
 import React, { useState } from 'react';
+// Add this import after existing imports
+import { authApiService, type RegisterRequest } from '../services/AuthService';
 
 interface SignUpPageProps {
   onNavigate: (page: string) => void;
@@ -229,44 +231,27 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onNavigate }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
+  
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          gender: formData.gender,
-          email: formData.email,
-          password: formData.password,
-          country: formData.country
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log('Registration successful:', data);
-
-        // Store JWT token (auto-login after signup)
-        localStorage.setItem('authToken', data.token);
-
-        // Store user data
-        localStorage.setItem('userData', JSON.stringify(data.user));
-
-        // Navigate directly to dashboard
-        onNavigate('home');
-        window.location.reload();
-
-      } else {
-        setError(data.error || 'Registration failed. Please try again.');
-      }
-
+      const userData: RegisterRequest = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        country: formData.country,
+        gender: formData.gender
+      };
+  
+      const response = await authApiService.register(userData);
+      
+      console.log('Registration successful:', response);
+  
+      // Navigate directly to dashboard (token/userData storage handled by service)
+      onNavigate('home');
+      window.location.reload();
+  
     } catch (error) {
       console.error('Registration error:', error);
-      setError('Network error. Please check your connection and try again.');
+      setError(error instanceof Error ? error.message : 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

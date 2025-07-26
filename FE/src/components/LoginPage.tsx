@@ -1,6 +1,7 @@
 // src/components/LoginPage.tsx
 import React, { useState } from 'react';
-
+// Add this import after existing imports
+import { authApiService, type LoginRequest } from '../services/AuthService';
 interface LoginPageProps {
   onNavigate: (page: string) => void;
 }
@@ -28,42 +29,24 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
+  
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log('Login successful:', data);
-
-        // Store JWT token
-        localStorage.setItem('authToken', data.token);
-
-        // Store user data
-        localStorage.setItem('userData', JSON.stringify(data.user));
-
-        // REMOVED: localStorage.setItem('userAuth', 'true'); 
-
-        onNavigate('home');
-        window.location.reload();
-
-      } else {
-        setError(data.error || 'Login failed. Please try again.');
-      }
-
+      const credentials: LoginRequest = {
+        email: formData.email,
+        password: formData.password
+      };
+  
+      const response = await authApiService.login(credentials);
+      
+      console.log('Login successful:', response);
+  
+      // Navigate to home (token/userData storage handled by service)
+      onNavigate('home');
+      window.location.reload();
+  
     } catch (error) {
       console.error('Login error:', error);
-      setError('Network error. Please check your connection and try again.');
+      setError(error instanceof Error ? error.message : 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
