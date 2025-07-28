@@ -643,3 +643,21 @@ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Clean, subtle shadow */
   background-color: white;
   min-height: 100vh;
 }
+.navbar-privacy-centered-static {
+  position: relative;          /* Override fixed positioning */
+  top: auto;                   /* Reset top positioning */
+  left: auto;                  /* Reset left positioning */
+  transform: none;             /* Remove transform */
+  margin: 0.6rem auto;         /* Simple centered margin */
+  width: 47%;                  /* Keep responsive width */
+  max-width: 1200px;           /* Customizable max-width */
+  background: none;
+  color: black;
+ 
+  
+}
+/* When on privacy page, make sure body/html background matches content */
+body.privacy-page {
+  background-color: rgb(240,240,240);
+}
+

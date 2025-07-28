@@ -1,12 +1,17 @@
 // src/components/PrivacyAndTermsPage.tsx
-import React from 'react';
-
+import React, { useEffect } from 'react'; // Add useEffect to existing import
 interface PrivacyAndTermsPageProps {
   onNavigate: (page: string) => void;
 }
 
 
 const PrivacyAndTermsPage: React.FC<PrivacyAndTermsPageProps> = ({ onNavigate }) => {
+  useEffect(() => {
+    document.body.classList.add('privacy-page');
+    return () => {
+      document.body.classList.remove('privacy-page');
+    };
+  }, []);
   const handleBackToHome = () => {
     const isAuth = !!localStorage.getItem('authToken');
     onNavigate(isAuth ? 'home' : 'landing');

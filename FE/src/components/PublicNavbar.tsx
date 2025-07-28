@@ -61,7 +61,7 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
       return 'navbar-globe';
     }
     if (currentPage === 'privacy-and-terms') {
-      return 'navbar-privacy-terms';
+      return 'navbar-privacy-centered-static navbar-landing-scrolled-centered';
     }
     return 'navbar-default';
   };
