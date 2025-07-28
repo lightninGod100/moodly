@@ -210,23 +210,52 @@ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Clean, subtle shadow */
 
 
 
+/* Auth pages - static background without zoom effects */
+.auth_section {
+  background-image: var(--landing-bg-image-2);
+  height: 100vh;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
 
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-family: var(--font-family);
+}
   /*hero Section*/
   .hero_section {
-    background-image: var(--landing-bg-image-2);
     height: 100vh;
-    /* background-attachment: fixed; */
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-
+    position: relative;
+    overflow: hidden;
+    
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
     font-family: var(--font-family);
-    /* color: var(--ncolor-0); */
+  }
+  
+  .hero_section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--landing-bg-image-2);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    z-index: -1;
+    will-change: transform;
+    transform: scale(var(--zoom-scale, 1));
+    transform-origin: center center;
+    transition: transform 0.1s ease-out;
   }
 
   .lp_sec2 {
@@ -282,19 +311,20 @@ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Clean, subtle shadow */
   .lp_get_started_button {
     background-color: white;  /* White background */
     color: black;           /* Dark blue text */
-    border: 4px solid var(--ncolor-0);  /* White border */
+    border: 3.4px solid var(--ncolor-0);  /* White border */
     padding: 0.5rem 2.8rem;
     border-radius: 40px;
     transition: all 0.3s ease;
     cursor: pointer;
-    scale: 1.05;
+    scale: 1.15;
   }
   
   .lp_get_started_button:hover {
     background-color: black;
     color: white;             /* White text on hover */
-    border: 2px solid black;  /* Keep white border */
+    border: 2.5px solid black;  /* Keep white border */
     scale: 1.3;
+    transform: translateY(-1px);
   }
 
   .lp_cta {

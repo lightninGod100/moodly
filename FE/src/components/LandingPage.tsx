@@ -1,5 +1,5 @@
 // src/components/LandingPage.tsx
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import ContactPopup from './ContactPopup';
 import SupportUsPopup from './SupportUsPopup';
 import FAQPopup from './FAQPopup';
@@ -10,6 +10,38 @@ interface LandingPageProps {
 
 const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const [showContactPopup, setShowContactPopup] = useState(false);
+
+  useEffect(() => {
+  console.log('Zoom effect useEffect mounted');
+  
+  const handleZoomScroll = () => {
+    const scrolled = window.pageYOffset;
+    const windowHeight = window.innerHeight;
+    
+    console.log('Scroll event fired:', scrolled);
+    
+    // Calculate zoom based on scroll progress through hero section
+    const scrollProgress = Math.min(scrolled / windowHeight, 1);
+    const baseZoom = 1.0; // Start from normal size (your current view)
+    const zoomScale = baseZoom + (scrollProgress * 0.28); // Only zoom IN from current position
+    
+    console.log('Progress:', scrollProgress, 'Scale:', zoomScale);
+    
+    const heroSection = document.querySelector('.hero_section') as HTMLElement;
+    if (heroSection) {
+      heroSection.style.setProperty('--zoom-scale', zoomScale.toString());
+      console.log('Applied zoom scale:', zoomScale);
+    }
+  };
+
+  window.addEventListener('scroll', handleZoomScroll, { passive: true });
+  handleZoomScroll(); // Set initial state
+  
+  return () => {
+    window.removeEventListener('scroll', handleZoomScroll);
+  };
+}, []);
+
 
   const handleContactClick = () => {
     setShowContactPopup(true);

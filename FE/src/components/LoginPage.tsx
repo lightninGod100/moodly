@@ -53,7 +53,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className=" hero_section min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+    <div className=" auth_section min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
         <div className="text-center">
           <button
