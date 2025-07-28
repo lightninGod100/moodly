@@ -28,7 +28,7 @@ const ProfilePhoto: React.FC = () => {
   if (user?.profilePhoto) {
     // User has profile photo
     return (
-      <div 
+      <div
         style={{
           ...profileStyle,
           backgroundImage: `url(${user.profilePhoto})`
@@ -38,7 +38,7 @@ const ProfilePhoto: React.FC = () => {
   } else {
     // Use default profile photo from CSS variable
     return (
-      <div 
+      <div
         style={{
           ...profileStyle,
           backgroundImage: 'var(--default-pp)'
@@ -73,7 +73,7 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
 
   const handleDropdownItemClick = (action: string) => {
     setShowDropdown(false); // Close dropdown first
-    
+
     switch (action) {
       case 'settings':
         onNavigate('settings');
@@ -90,97 +90,97 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
     }
   };
 
-// Support popup handlers
-const handleSupportClose = () => {
-  setShowSupportPopup(false);
-};
+  // Support popup handlers
+  const handleSupportClose = () => {
+    setShowSupportPopup(false);
+  };
 
-const handleSupportSubmit = async (reason: string, message: string, email?: string) => {
-  try {
-    // Prepare headers
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json'
-    };
+  const handleSupportSubmit = async (reason: string, message: string, email?: string) => {
+    try {
+      // Prepare headers
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
 
-    // Add authorization header if user is authenticated
-    const authToken = localStorage.getItem('authToken');
-    if (authToken) {
-      headers['Authorization'] = `Bearer ${authToken}`;
+      // Add authorization header if user is authenticated
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      // Make API call to backend
+      const response = await fetch('http://localhost:5000/api/contact/', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          reason,
+          message,
+          email
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message');
+      }
+
+      console.log('✅ Support message sent successfully:', data.message);
+      console.log('📧 Submission ID:', data.submissionId);
+
+    } catch (error) {
+      console.error('❌ Error sending support message:', error);
+      alert(`Failed to send message: ${error instanceof Error ? error.message : 'Please try again later'}`);
+      throw error;
     }
-
-    // Make API call to backend
-    const response = await fetch('http://localhost:5000/api/contact/', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        reason,
-        message,
-        email
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to send message');
-    }
-
-    console.log('✅ Support message sent successfully:', data.message);
-    console.log('📧 Submission ID:', data.submissionId);
-
-  } catch (error) {
-    console.error('❌ Error sending support message:', error);
-    alert(`Failed to send message: ${error instanceof Error ? error.message : 'Please try again later'}`);
-    throw error;
-  }
-};
+  };
 
 
 
   return (
     <>
-      <nav className="w-full py-3 px-6 flex justify-between items-center">
+      <nav className="navbar_auth_generic">
         <div className="text-2xl font-bold">Moodly</div>
         <div className="flex gap-6 items-center">
-          <button 
-            className={`px-2 ${currentPage === 'home' ? 'font-semibold' : ''}`}
+          <button
+            className={`navbar-button ${currentPage === 'home' ? 'font-semibold' : ''}`}
             onClick={() => onNavigate('home')}
           >
             Home
           </button>
-          <button 
-            className={`px-2 ${currentPage === 'globe' ? 'font-semibold' : ''}`}
+          <button
+            className={`navbar-button ${currentPage === 'globe' ? 'font-semibold' : ''}`}
             onClick={() => onNavigate('globe')}
           >
             Globe
           </button>
-          <button 
-            className={`px-2 ${currentPage === 'dashboard' ? 'font-semibold' : ''}`}
+          <button
+            className={`navbar-button ${currentPage === 'dashboard' ? 'font-semibold' : ''}`}
             onClick={() => onNavigate('dashboard')}
           >
             Dashboard
           </button>
-          
+
           {/* Account Dropdown */}
           <div className="relative" ref={dropdownRef}>
-          <button
-              className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 rounded transition-colors"
+            <button
+              className="navbar-button flex items-center gap-2 px-2 py-1 hover:bg-gray-100 rounded transition-colors"
               onClick={handleDropdownToggle}
               onMouseEnter={() => setShowDropdown(true)}
             >
               {/* Profile Circle */}
               <ProfilePhoto />
-              
+
               {/* Account Text */}
               <span>Account</span>
-              
+
               {/* Dropdown Arrow */}
-              <svg 
-                width="12" 
-                height="12" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
                 strokeWidth="2"
                 style={{
                   transform: showDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -193,7 +193,7 @@ const handleSupportSubmit = async (reason: string, message: string, email?: stri
 
             {/* Dropdown Menu */}
             {showDropdown && (
-              <div 
+              <div
                 style={{
                   position: 'absolute',
                   top: '100%',
@@ -227,7 +227,7 @@ const handleSupportSubmit = async (reason: string, message: string, email?: stri
                   >
                     Settings
                   </button>
-                  
+
                   <button
                     onClick={() => handleDropdownItemClick('support')}
                     style={{
@@ -246,7 +246,7 @@ const handleSupportSubmit = async (reason: string, message: string, email?: stri
                   >
                     Support
                   </button>
-                  
+
                   <button
                     onClick={() => handleDropdownItemClick('privacy')}
                     style={{
@@ -265,14 +265,14 @@ const handleSupportSubmit = async (reason: string, message: string, email?: stri
                   >
                     Privacy & Terms
                   </button>
-                  
+
                   {/* Separator */}
                   <div style={{
                     height: '1px',
                     backgroundColor: '#e5e7eb',
                     margin: '4px 0'
                   }} />
-                  
+
                   <button
                     onClick={() => handleDropdownItemClick('logout')}
                     style={{
