@@ -11,7 +11,7 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
   useEffect(() => {
     const handleScroll = () => {
       // Check if we've scrolled past the hero section (adjust threshold as needed)
-      const scrolled = window.scrollY > window.innerHeight *0.3;
+      const scrolled = window.scrollY > window.innerHeight * 0.3;
       setIsScrolled(scrolled);
     };
 
@@ -29,7 +29,7 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
   }, [currentPage]);
   const getNavbarPageClass = () => {
     if (currentPage === 'landing') {
-      return isScrolled ? 'navbar-landing-scrolled' : 'navbar-landing-transparent';
+      return isScrolled ? 'navbar-landing-scrolled-centered' : 'navbar-landing-transparent';
     }
     if (currentPage === 'globe') {
       return 'navbar-globe';
@@ -40,39 +40,39 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
     return 'navbar-default';
   };
 
-return (
-  <>
-    <nav className={`navbar-base ${getNavbarPageClass()}`}>
-      <div className="text-2xl font-bold">
-        <button
-            onClick={()=> onNavigate('landing')}>
-        mOOdly
-        </button>
-      </div>
+  return (
+    <>
+      <nav className={`navbar-base ${getNavbarPageClass()}`}>
+        <div className="text-2xl font-bold">
+          <button
+            onClick={() => onNavigate('landing')}>
+            mOOdly
+          </button>
+        </div>
 
-      <div className="navbar-menu">
-        <button 
-          className={`navbar-button ${currentPage === 'globe' ? 'navbar-button-active' : ''}`}
-          onClick={() => onNavigate('globe')}
-        >
-          Globe
-        </button>
-        <button 
-          className="navbar-button"
-          onClick={() => onNavigate('signup')}
-        >
-          Signup
-        </button>
-        <button 
-          className="navbar-button"
-          onClick={() => onNavigate('login')}
-        >
-          Login
-        </button>
-      </div>
-    </nav>
-  </>
-);
+        <div className="navbar-menu">
+          <button
+            className={`navbar-button ${currentPage === 'globe' ? 'navbar-button-active' : ''}`}
+            onClick={() => onNavigate('globe')}
+          >
+            Globe
+          </button>
+          <button
+            className="navbar-button"
+            onClick={() => onNavigate('signup')}
+          >
+            Signup
+          </button>
+          <button
+            className="navbar-button"
+            onClick={() => onNavigate('login')}
+          >
+            Login
+          </button>
+        </div>
+      </nav>
+    </>
+  );
 };
 
 export default PublicNavbar;

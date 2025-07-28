@@ -104,6 +104,43 @@
     color: var(--ncolor-300);
   }
  
+
+  .navbar-landing-scrolled-centered {
+    background-color: white;
+    color: black;
+    max-width: 1330px;           /* Wider container for more content space */
+    margin: 0.6rem auto 0 auto;  /* Subtle top spacing - not too much */
+    border-radius: 36px;         /* Large radius for pill-like modern look */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);  /* Clean, subtle shadow */
+    padding: 0.75rem 1.5rem;     /* Kept original padding for consistency */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+  }
+  /* Underline effect ONLY for scrolled/centered navbar state */
+.navbar-base.navbar-landing-scrolled-centered .navbar-button {
+  position: relative;
+}
+
+.navbar-base.navbar-landing-scrolled-centered .navbar-button::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background-color: #3b82f6;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.navbar-base.navbar-landing-scrolled-centered .navbar-button:hover::after {
+  width: 100%;
+}
+
+.navbar-base.navbar-landing-scrolled-centered .navbar-button:hover {
+  color: #3b82f6;
+}
   /* Base navbar - all common properties */
 .navbar-base {
   width: 100%;
@@ -126,6 +163,11 @@
 .navbar-landing-transparent {
   background-color: transparent;
   color: black;
+  max-width: 100%;
+  margin: 0 auto;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
 }
 
 .navbar-landing-scrolled {
