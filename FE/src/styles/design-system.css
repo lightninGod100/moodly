@@ -111,7 +111,9 @@
     max-width: 1330px;           /* Wider container for more content space */
     margin: 0.6rem auto 0 auto;  /* Subtle top spacing - not too much */
     border-radius: 36px;         /* Large radius for pill-like modern look */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);  /* Clean, subtle shadow */
+    border: 1px solid rgba(0, 0, 0, 0.12); 
+    /* No border, rely on shadow for definition */
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Clean, subtle shadow */
     padding: 0.75rem 1.5rem;     /* Kept original padding for consistency */
     left: 50%;
     transform: translateX(-50%);
@@ -121,7 +123,20 @@
 .navbar-base.navbar-landing-scrolled-centered .navbar-button {
   position: relative;
 }
-
+.navbar-landing-scrolled-centered-hidden {
+  background-color: white;
+  color: black;
+  max-width: 1400px;
+  margin: 0.6rem auto 0 auto;
+  border-radius: 36px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 0.75rem 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  width: 90%;
+  opacity: 0;
+  pointer-events: none;
+}
 .navbar-base.navbar-landing-scrolled-centered .navbar-button::after {
   content: '';
   position: absolute;

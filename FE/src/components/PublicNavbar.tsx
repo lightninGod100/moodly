@@ -7,12 +7,30 @@ interface PublicNavbarProps {
 
 const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isScrollingUp, setIsScrollingUp] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      // Check if we've scrolled past the hero section (adjust threshold as needed)
-      const scrolled = window.scrollY > window.innerHeight * 0.3;
+      const currentScrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Check if scrolled past 30% of viewport (existing logic)
+      const scrolled = currentScrollY > windowHeight * 0.2;
+      
+      // Check if near bottom (90% of page)
+      const scrollPercent = (currentScrollY + windowHeight) / documentHeight;
+      const nearBottom = scrollPercent >= 0.97;
+      
+      // Check scroll direction
+      const scrollingUp = currentScrollY < lastScrollY;
+      
       setIsScrolled(scrolled);
+      setIsNearBottom(nearBottom);
+      setIsScrollingUp(scrollingUp);
+      setLastScrollY(currentScrollY);
     };
 
     // Only add scroll listener on landing page
@@ -29,7 +47,15 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
   }, [currentPage]);
   const getNavbarPageClass = () => {
     if (currentPage === 'landing') {
-      return isScrolled ? 'navbar-landing-scrolled-centered' : 'navbar-landing-transparent';
+      if (!isScrolled) {
+        return 'navbar-landing-transparent';
+      }
+      // If near bottom and scrolling down, hide navbar
+      if (isNearBottom && !isScrollingUp) {
+        return 'navbar-landing-scrolled-centered-hidden';
+      }
+      // Otherwise show centered navbar
+      return 'navbar-landing-scrolled-centered';
     }
     if (currentPage === 'globe') {
       return 'navbar-globe';
