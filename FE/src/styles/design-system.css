@@ -714,3 +714,23 @@ body.privacy-page {
   margin: 0 !important;
 }
 
+/* Mood Selection Screen - Dark theme overrides */
+/* Mood Selection Screen - Exact glassmorphism effect from cards */
+.navbar-auth-setting1 {
+  background: rgba(0, 0, 0, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  min-width: 95.5%;
+  padding: 0.6rem 1.5rem;
+}
+
+/* Override button hover effects for glass theme */
+.navbar-auth-setting1 .navbar-button::after {
+  background-color: white !important;
+}
+
+.navbar-auth-setting1 .navbar-button:hover {
+  color: #e5e7eb !important;
+}

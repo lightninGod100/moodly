@@ -84,8 +84,8 @@ const GlobePage: React.FC = () => {
     <div 
       className="relative bg-black" 
       style={{ 
-        height: isAuthenticated ? 'calc(100vh - 3.5rem)' : '100vh',
-        overflow: 'hidden' 
+        height: '100vh',
+        overflow: 'hidden',
       }}
     >
       {/* Map Container - Full screen */}
@@ -93,7 +93,8 @@ const GlobePage: React.FC = () => {
       top: !isAuthenticated ? '3.5rem' : '0',  // Start below navbar for non-auth
       left: '0',
       right: '0', 
-      bottom: '0'
+      bottom: '0',
+      
     }}>
         {/* Loading State */}
         {isLoading && (

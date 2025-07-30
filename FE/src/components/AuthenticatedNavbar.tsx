@@ -48,11 +48,27 @@ const ProfilePhoto: React.FC = () => {
   }
 };
 
+
 const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPage }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSupportPopup, setShowSupportPopup] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
+ 
+  // Add this helper function inside the AuthenticatedNavbar component
+const getNavbarThemeClass = () => {
+  // You'll need to determine how to detect mood selection screen
+  // Option 1: If you pass currentPage prop
+  if (currentPage === 'home' || currentPage === 'dashboard' || currentPage === 'globe')  {
+    return 'navbar-auth-setting1';
+  }
+  
+  // Option 2: Or check URL/route
+  // if (window.location.pathname === '/mood-selection') {
+  //   return 'navbar-auth-mood-selection';
+  // }
+  
+  return ''; // Default - no additional theme class
+};
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -139,7 +155,7 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
 
   return (
     <>
-      <nav className="navbar_auth_generic">
+      <nav className={`navbar_auth_generic ${getNavbarThemeClass()}`}>
         <div className="text-2xl font-bold">Moodly</div>
         <div className="flex gap-6 items-center">
           <button

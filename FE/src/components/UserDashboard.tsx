@@ -384,7 +384,7 @@ const UserDashboard = ({
       <div className="dashboard-container">
         {/* Header */}
         <div className="dashboard-header">
-          <h1 className="dashboard-title">Hi User!</h1>
+          <h1 className="dashboard-title p-8">Hi User!</h1>
           <p className="dashboard-subtitle">Here are your Personalized Mood Stats</p>
         </div>
 
