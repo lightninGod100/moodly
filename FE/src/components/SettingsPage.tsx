@@ -142,6 +142,7 @@ const SettingsPage: React.FC = () => {
           justifyContent: 'center',
           minHeight: '200vh',
           overflow: 'scroll'
+          
         }}>
           <div style={{
             border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -151,7 +152,8 @@ const SettingsPage: React.FC = () => {
             borderRadius: '1rem',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
             textAlign: 'center',
-            maxWidth: '400px'
+            maxWidth: '400px',
+            
           }}>
             <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', color: 'white' }}>
               Account Settings
@@ -411,20 +413,10 @@ const SettingsPage: React.FC = () => {
         display: 'flex',
         justifyContent: 'center'
       }}>
-        <div style={{ width: '100%', minWidth: '700px', maxWidth: '700px' }}>
+        <div style={{ width: '100%', minWidth: '700px', maxWidth: '700px',paddingTop: '2rem' }}>
 
           {/* Header Tile */}
-          <div style={glassStyle}>
-            <h1 style={{ 
-              textAlign: 'center', 
-              fontSize: '2.5rem', 
-              fontWeight: 'bold', 
-              margin: 0, 
-              color: 'white' 
-            }}>
-              Account Settings
-            </h1>
-          </div>
+         
 
           {/* Basic Information & Country Tile */}
           <div style={glassStyle}>

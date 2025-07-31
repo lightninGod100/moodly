@@ -52,31 +52,68 @@ const ProfilePhoto: React.FC = () => {
 const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPage }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSupportPopup, setShowSupportPopup] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isScrollingUp, setIsScrollingUp] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
- 
-  // Add this helper function inside the AuthenticatedNavbar component
-const getNavbarThemeClass = () => {
-  // You'll need to determine how to detect mood selection screen
-  // Option 1: If you pass currentPage prop
-  if (currentPage === 'dashboard')  {
-    return 'navbar-auth-dashboard';
-  }
-  if (currentPage === 'globe')  {
-    return 'navbar-auth-globe';
-  }
-  if (currentPage === 'settings')  {
-    return 'navbar-auth-settings';
-  }
-  if (currentPage === 'privacy-and-terms')  {
-    return 'navbar-auth-privacy-terms';
-  }
-  // Option 2: Or check URL/route
-  // if (window.location.pathname === '/mood-selection') {
-  //   return 'navbar-auth-mood-selection';
-  // }
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      
+      // Check if scrolled past 10% of viewport
+      const scrolled = currentScrollY > windowHeight * 0.1;
+      
+      // Check scroll direction
+      const scrollingUp = currentScrollY < lastScrollY;
+      
+      setIsScrolled(scrolled);
+      setIsScrollingUp(scrollingUp);
+      setLastScrollY(currentScrollY);
+    };
   
-  return ''; // Default - no additional theme class
-};
+    // Only add scroll listener on settings page
+    if (currentPage === 'settings' || currentPage === 'privacy-and-terms') {
+      window.addEventListener('scroll', handleScroll);
+      handleScroll(); // Check initial scroll position
+    }
+  
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [currentPage, lastScrollY]);
+  // Add this helper function inside the AuthenticatedNavbar component
+  const getNavbarThemeClass = () => {
+    // You'll need to determine how to detect mood selection screen
+    // Option 1: If you pass currentPage prop
+    if (currentPage === 'dashboard') {
+      return 'navbar-auth-dashboard';
+    }
+    if (currentPage === 'globe') {
+      return 'navbar-auth-globe';
+    }
+    if (currentPage === 'settings') {
+      // Hide navbar if scrolled down on settings page
+      if (isScrolled && !isScrollingUp) {
+        return 'navbar-auth-settings navbar-auth-settings-hidden';
+      }
+      return 'navbar-auth-settings';
+    }
+
+    if (currentPage === 'privacy-and-terms') {
+      if (isScrolled && !isScrollingUp) {
+        return 'navbar-auth-privacy-terms navbar-auth-settings-hidden';
+      }
+      return 'navbar-auth-privacy-terms';
+    }
+    // Option 2: Or check URL/route
+    // if (window.location.pathname === '/mood-selection') {
+    //   return 'navbar-auth-mood-selection';
+    // }
+
+    return ''; // Default - no additional theme class
+  };
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

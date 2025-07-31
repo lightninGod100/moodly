@@ -4,6 +4,7 @@ interface PrivacyAndTermsPageProps {
   onNavigate: (page: string) => void;
 }
 
+const isAuth = !!localStorage.getItem('authToken');
 
 const PrivacyAndTermsPage: React.FC<PrivacyAndTermsPageProps> = ({ onNavigate }) => {
   useEffect(() => {
@@ -13,11 +14,10 @@ const PrivacyAndTermsPage: React.FC<PrivacyAndTermsPageProps> = ({ onNavigate })
     };
   }, []);
   const handleBackToHome = () => {
-    const isAuth = !!localStorage.getItem('authToken');
     onNavigate(isAuth ? 'home' : 'landing');
   };
   return (
-    <div style={{ backgroundColor: 'rgb(240,240,240)', minHeight: '100vh', color: 'black' }}>
+    <div style={{ backgroundColor: !isAuth? 'rgb(240,240,240)':'rgba(10,10,10,0.85)', minHeight: '100vh', color: 'black', paddingTop:isAuth ? '3rem':'0' }}>
       {/* Content Container */}
       <div style={{ 
         maxWidth: '800px', 
@@ -28,10 +28,10 @@ const PrivacyAndTermsPage: React.FC<PrivacyAndTermsPageProps> = ({ onNavigate })
         
         {/* Page Header */}
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+          <h1 style={{ color: isAuth? 'white':'black',fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
             Privacy Policy & Terms of Service
           </h1>
-          <p style={{ fontSize: '1.125rem', color: '#6b7280' }}>
+          <p style={{ fontSize: '1.125rem', color: isAuth?'rgba(255,255,255,0.8)':'#6b7280' }}>
             Last updated: January 2025
           </p>
         </div>
