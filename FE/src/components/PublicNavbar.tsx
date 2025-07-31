@@ -55,10 +55,10 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
         return 'navbar-landing-scrolled-centered-hidden';
       }
       // Otherwise show centered navbar
-      return 'navbar-landing-scrolled-centered';
+      return 'navbar-landing-scrolled-centered navbar-auth  navbar-landing-page';
     }
     if (currentPage === 'globe') {
-      return 'navbar_auth_generic navbar-auth-setting1 navbar-auth-setting2';
+      return 'navbar-auth navbar-auth-globe ';
     }
     if (currentPage === 'privacy-and-terms') {
       return 'navbar-privacy-centered-static navbar-landing-scrolled-centered';

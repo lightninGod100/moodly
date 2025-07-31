@@ -13,8 +13,8 @@ const ProfilePhoto: React.FC = () => {
   const { user } = useUser();
 
   const profileStyle: React.CSSProperties = {
-    width: '32px',
-    height: '32px',
+    width: '30px',
+    height: '30px',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
@@ -22,7 +22,7 @@ const ProfilePhoto: React.FC = () => {
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
-    border: '2px solid #e5e7eb'
+    
   };
 
   if (user?.profilePhoto) {
@@ -225,7 +225,7 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
           {/* Account Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
-              className="navbar-button flex items-center gap-2 px-2 py-1 hover:bg-gray-100 rounded transition-colors"
+              className="navbar-button flex items-center gap-1 px-2 py-1 rounded transition-colors"
               onClick={handleDropdownToggle}
               onMouseEnter={() => setShowDropdown(true)}
             >
