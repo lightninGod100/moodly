@@ -5,7 +5,7 @@ import { userStatsApiService } from '../services/UserStatsService';
 import type { DominantMoodResponse, HappinessDataPoint, MoodFrequencyData } from '../services/UserStatsService';
 import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
-
+import { useUser } from '../contexts/UserContext';
 // Define mood types and scoring system
 type MoodType = 'Happy' | 'Sad' | 'Anxious' | 'Calm' | 'Excited' | 'Tired' | 'Angry';
 
@@ -37,7 +37,7 @@ const UserDashboard = ({
   // Vanta refs
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
-  
+  const { user } = useUser();
   const [selectedFrequencyPeriod, setSelectedFrequencyPeriod] = useState<TimePeriod>('today');
 
   // API data states
@@ -384,7 +384,7 @@ const UserDashboard = ({
       <div className="dashboard-container">
         {/* Header */}
         <div className="dashboard-header">
-          <h1 className="dashboard-title p-8">Hi User!</h1>
+        <h1 className="dashboard-title">Hi {user?.username || 'User'}!</h1>
           <p className="dashboard-subtitle">Here are your Personalized Mood Stats</p>
         </div>
 

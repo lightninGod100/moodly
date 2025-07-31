@@ -487,17 +487,8 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
 }}>
         
         {/* Hero Section - Current Mood Display */}
-        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          {/* Title */}
-          <h1 style={{ 
-            fontSize: '2.5rem', 
-            fontWeight: '700', 
-            marginBottom: '1rem',
-            fontFamily: 'var(--font-family)',
-            letterSpacing: '-0.025em'
-          }}>
-            Current Mood
-          </h1>
+        <div style={{ textAlign: 'center', marginBottom: '1rem',paddingTop: '4.75rem'}}>
+          
           
           {/* Enhanced Mood Display */}
           <div style={{ marginBottom: '0.8rem' }}>
@@ -523,7 +514,9 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 paddingBottom: '1rem',
                 borderRadius: '1.5rem',
                 boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-                minWidth: '1050px'
+                width: '55vw',
+                minWidth: '800px'
+
               }}>
                 <div style={{ 
                   fontSize: '5rem', 
@@ -827,7 +820,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
            e.currentTarget.style.transform = 'translateY(0)';
            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
          }}>
-           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>💡</div>
              <h3 style={{ 
                fontWeight: '600', 

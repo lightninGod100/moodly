@@ -485,6 +485,7 @@ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Clean, subtle shadow */
     font-weight: var(--font-bold);
     margin-bottom: var(--space-2);
     color: white;
+    padding-top: 2.3rem;
   }
 
   .dashboard-subtitle {
@@ -662,75 +663,66 @@ body.privacy-page {
 }
 
 /* ===== AUTHENTICATED NAVBAR - GENERIC PILL SHAPE ===== */
-.navbar_auth_generic {
+.navbar-auth {
   position: fixed !important;
   top: 0.6rem;
   left: 50%;
   transform: translateX(-50%);
   width: 90%;
   max-width: 1330px;
-  background-color: white;
-  color: black;
   border-radius: 36px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 0.55rem 1.5rem;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   z-index: 50;
   transition: all 300ms;
+  margin: 0 !important;
+  
+  /* Default glassmorphism theme */
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: white;
+  min-width: 97.5%;
+  padding: 0.6rem 1.5rem;
 }
 
-/* Navigation buttons with hover underline effect */
-.navbar_auth_generic .navbar-button {
+/* Button styles */
+.navbar-auth .navbar-button {
   position: relative;
   padding: 0 0.5rem;
   transition: color 0.3s ease;
 }
 
-.navbar_auth_generic .navbar-button::after {
+.navbar-auth .navbar-button::after {
   content: '';
   position: absolute;
   bottom: -2px;
   left: 0;
   width: 0;
   height: 3px;
-  background-color: #3b82f6;
+  background-color: white;
   border-radius: 2px;
   transition: width 0.3s ease;
 }
 
-.navbar_auth_generic .navbar-button:hover::after {
+.navbar-auth .navbar-button:hover::after {
   width: 100%;
 }
 
-.navbar_auth_generic .navbar-button:hover {
-  color: #3b82f6;
+.navbar-auth .navbar-button:hover {
+  color: #e5e7eb;
 }
-
-/* Override Tailwind spacing and positioning */
-.navbar_auth_generic {
-  margin: 0 !important;
+.navbar-auth-globe{
+  background: rgba(0, 0, 0, 0.25) !important;
 }
-
-/* Mood Selection Screen - Dark theme overrides */
-/* Mood Selection Screen - Exact glassmorphism effect from cards */
-.navbar-auth-setting1 {
-  background: rgba(0, 0, 0, 0.1) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 2px solid rgba(255, 255, 255, 0.4) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-  color: white !important;
-  min-width: 95.5%;
-  padding: 0.6rem 1.5rem;
+.navbar-auth-dashboard{
+  
 }
-
-/* Override button hover effects for glass theme */
-.navbar-auth-setting1 .navbar-button::after {
-  background-color: white !important;
+.navbar-auth-settings{
+  min-width: 20%;
 }
+.navbar-auth-privacy-terms{
 
-.navbar-auth-setting1 .navbar-button:hover {
-  color: #e5e7eb !important;
 }

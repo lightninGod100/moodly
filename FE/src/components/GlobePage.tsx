@@ -31,8 +31,8 @@ const GlobePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Check if user is authenticated by looking for auth token
-  const isAuthenticated = !!localStorage.getItem('authToken');
+ 
+ 
 
   // Ensure no body scroll
   useEffect(() => {
@@ -86,11 +86,12 @@ const GlobePage: React.FC = () => {
       style={{ 
         height: '100vh',
         overflow: 'hidden',
+        backgroundColor: '#111'
       }}
     >
       {/* Map Container - Full screen */}
       <div className="absolute bg-black" style={{
-      top: !isAuthenticated ? '3.5rem' : '0',  // Start below navbar for non-auth
+      top: '4.2rem', 
       left: '0',
       right: '0', 
       bottom: '0',
@@ -130,12 +131,12 @@ const GlobePage: React.FC = () => {
 
       {/* Overlay Sidebar - Positioned absolutely */}
       <div 
-  className="absolute left-0 flex flex-col pointer-events-none" 
+  className="absolute left-3 flex flex-col pointer-events-none" 
   style={{ 
-    top: !isAuthenticated ? '3.5rem' : '0',  // Same logic as map container
+    top: '4.2rem',  // Same logic as map container
     width: '18rem', 
     padding: '1rem', 
-    height: isAuthenticated ? '100%' : 'calc(100% - 3.5rem)'  // Adjust height too
+    height: 'calc(100% - 4.2rem)' // Adjust height too
   }}
 >
         {/* Time Filter Tabs - Make clickable */}

@@ -58,10 +58,18 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
 const getNavbarThemeClass = () => {
   // You'll need to determine how to detect mood selection screen
   // Option 1: If you pass currentPage prop
-  if (currentPage === 'home' || currentPage === 'dashboard' || currentPage === 'globe')  {
-    return 'navbar-auth-setting1';
+  if (currentPage === 'dashboard')  {
+    return 'navbar-auth-dashboard';
   }
-  
+  if (currentPage === 'globe')  {
+    return 'navbar-auth-globe';
+  }
+  if (currentPage === 'settings')  {
+    return 'navbar-auth-settings';
+  }
+  if (currentPage === 'privacy-and-terms')  {
+    return 'navbar-auth-privacy-terms';
+  }
   // Option 2: Or check URL/route
   // if (window.location.pathname === '/mood-selection') {
   //   return 'navbar-auth-mood-selection';
@@ -155,7 +163,7 @@ const getNavbarThemeClass = () => {
 
   return (
     <>
-      <nav className={`navbar_auth_generic ${getNavbarThemeClass()}`}>
+      <nav className={`navbar-auth ${getNavbarThemeClass()}`}>
         <div className="text-2xl font-bold">Moodly</div>
         <div className="flex gap-6 items-center">
           <button
