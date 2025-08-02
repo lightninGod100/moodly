@@ -22,7 +22,7 @@ const ProfilePhoto: React.FC = () => {
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
-    
+     
   };
 
   if (user?.profilePhoto) {
@@ -201,7 +201,7 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
   return (
     <>
       <nav className={`navbar-auth ${getNavbarThemeClass()}`}>
-        <div className="text-2xl font-bold">Moodly</div>
+        <div className="text-2xl font-bold">mOOdly</div>
         <div className="flex gap-6 items-center">
           <button
             className={`navbar-button ${currentPage === 'home' ? 'font-semibold' : ''}`}

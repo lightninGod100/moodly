@@ -17,12 +17,12 @@ const PrivacyAndTermsPage: React.FC<PrivacyAndTermsPageProps> = ({ onNavigate })
     onNavigate(isAuth ? 'home' : 'landing');
   };
   return (
-    <div style={{ backgroundColor: !isAuth? 'rgb(240,240,240)':'rgba(10,10,10,0.9)', minHeight: '100vh', color: 'black', paddingTop:isAuth ? '3rem':'0' }}>
+    <div style={{ backgroundColor: !isAuth? 'rgb(240,240,240)':'rgba(10,10,10,0.9)', minHeight: '100vh', color: 'black'}}>
       {/* Content Container */}
       <div style={{ 
         maxWidth: '800px', 
         margin: '0 auto', 
-        padding: '3rem 2rem 3rem', // Top padding accounts for fixed navbar
+        padding: '6rem 2rem 3rem', // Top padding accounts for fixed navbar
         lineHeight: '1.6'
       }}>
         

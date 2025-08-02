@@ -17,34 +17,43 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       
-      // Check if scrolled past 30% of viewport (existing logic)
-      const scrolled = currentScrollY > windowHeight * 0.2;
+      // Different thresholds based on page
+      let scrollThreshold;
+      if (currentPage === 'privacy-and-terms') {
+        scrollThreshold = windowHeight * 0.1;  // 10% for privacy
+      } else {
+        scrollThreshold = windowHeight * 0.2;  // 20% for landing
+      }
+      
+      const scrolled = currentScrollY > scrollThreshold;
       
       // Check if near bottom (90% of page)
       const scrollPercent = (currentScrollY + windowHeight) / documentHeight;
       const nearBottom = scrollPercent >= 0.97;
       
-      // Check scroll direction
-      const scrollingUp = currentScrollY < lastScrollY;
+      // Improved scroll direction detection with threshold
+      const scrollDifference = currentScrollY - lastScrollY;
+      const scrollingUp = scrollDifference < -5; // Only consider "up" if scrolled up by 5px+
       
       setIsScrolled(scrolled);
       setIsNearBottom(nearBottom);
       setIsScrollingUp(scrollingUp);
       setLastScrollY(currentScrollY);
     };
-
+  
     // Only add scroll listener on landing page
-    if (currentPage === 'landing') {
+    if (currentPage === 'landing' || currentPage === 'privacy-and-terms') {
       window.addEventListener('scroll', handleScroll);
       handleScroll(); // Check initial scroll position
     } else {
       setIsScrolled(true); // Always show white bg on other pages
     }
-
+  
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [currentPage]);
+  }, [currentPage, lastScrollY]);
+
   const getNavbarPageClass = () => {
     if (currentPage === 'landing') {
       if (!isScrolled) {
@@ -61,7 +70,13 @@ const PublicNavbar: React.FC<PublicNavbarProps> = ({ onNavigate, currentPage }) 
       return 'navbar-auth navbar-auth-globe ';
     }
     if (currentPage === 'privacy-and-terms') {
-      return 'navbar-privacy-centered-static navbar-landing-scrolled-centered';
+      console.log('Privacy page - isScrolled:', isScrolled, 'isScrollingUp:', isScrollingUp);
+      if (isScrolled && !isScrollingUp) {
+        console.log('Should hide navbar');
+        return 'navbar-landing-scrolled-centered-hidden ';
+      }
+      console.log('Should show pill navbar');
+      return 'navbar-landing-scrolled-centered navbar-auth navbar-landing-page navbar-public';
     }
     return 'navbar-default';
   };
