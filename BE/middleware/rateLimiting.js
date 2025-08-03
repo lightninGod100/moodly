@@ -1,8 +1,7 @@
 // BE/middleware/rateLimiting.js
 const rateLimit = require('express-rate-limit');
 const { 
-  generateRateLimitKey, 
-  generateIPKey, 
+  generateUserKey, 
   rateLimitErrorHandler, 
   skipSuccessfulRequests 
 } = require('./rateLimitHelpers');
@@ -14,7 +13,7 @@ const {
 const authHighSecurity = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 attempts per 15 minutes
-  keyGenerator: generateIPKey,
+  // Remove keyGenerator - use default IPv6-safe IP-based limiting
   handler: rateLimitErrorHandler,
   standardHeaders: false, // Disable rate limit headers
   legacyHeaders: false,
@@ -28,7 +27,7 @@ const authHighSecurity = rateLimit({
 const userHighSecurity = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 attempts per hour
-  keyGenerator: generateRateLimitKey,
+  keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
@@ -41,7 +40,7 @@ const userHighSecurity = rateLimit({
 const mediumUsage = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 60, // 60 requests per hour
-  keyGenerator: generateRateLimitKey,
+  keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
@@ -54,7 +53,7 @@ const mediumUsage = rateLimit({
 const moodCreation = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 20, // 20 mood entries per hour
-  keyGenerator: generateRateLimitKey,
+  keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
@@ -67,7 +66,7 @@ const moodCreation = rateLimit({
 const lowUsage = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 120, // 120 requests per hour
-  keyGenerator: generateRateLimitKey,
+  keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
@@ -80,7 +79,7 @@ const lowUsage = rateLimit({
 const veryLowUsage = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   max: 2, // 2 requests per day
-  keyGenerator: generateRateLimitKey,
+  keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
@@ -93,7 +92,7 @@ const veryLowUsage = rateLimit({
 const accountDeletion = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   max: 1, // 1 attempt per day
-  keyGenerator: generateRateLimitKey,
+  keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
@@ -106,7 +105,7 @@ const accountDeletion = rateLimit({
 const logoutLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10, // 10 requests per minute
-  keyGenerator: generateRateLimitKey,
+  keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
@@ -119,7 +118,7 @@ const logoutLimiter = rateLimit({
 const healthCheck = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 100, // 100 requests per hour
-  keyGenerator: generateIPKey,
+  // Remove keyGenerator - use default IPv6-safe IP-based limiting
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
@@ -132,7 +131,7 @@ const healthCheck = rateLimit({
 const photoUpload = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10, // 10 uploads per hour
-  keyGenerator: generateRateLimitKey,
+  keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false

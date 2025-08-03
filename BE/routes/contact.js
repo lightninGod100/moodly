@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { sendContactEmail } = require('../services/emailService');
 const { validateEmail } = require('../middleware/emailValidation');
-
+const { contactProgressiveLimiter } = require('../middleware/progressivePenalty');
 const router = express.Router();
 
 
@@ -45,7 +45,7 @@ const getUserFromToken = async (authHeader) => {
 };
 
 // POST /api/contact - Handle contact form submissions
-router.post('/', validateContactEmail, async (req, res) => {
+router.post('/', contactProgressiveLimiter, validateContactEmail, async (req, res) => {
   try {
     const { reason, message, email: formEmail } = req.body;
     const authHeader = req.headers['authorization'];

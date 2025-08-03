@@ -1,14 +1,15 @@
 const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
-
+// ADD: Rate limiting imports
+const { moodCreation, lowUsage } = require('../middleware/rateLimiting');
 const router = express.Router();
 
 // Valid mood values (matching your frontend)
 const VALID_MOODS = ['Excited', 'Happy', 'Calm', 'Tired', 'Anxious', 'Angry', 'Sad'];
 
 // POST /api/moods - Create new mood entry
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', moodCreation, authenticateToken, async (req, res) => {
   try {
     const { mood } = req.body;
     const userId = req.user.id; // ✅ Extract from JWT token
@@ -61,7 +62,7 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-router.get('/last', authenticateToken, async (req, res) => {
+router.get('/last', lowUsage, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -109,7 +110,7 @@ router.get('/last', authenticateToken, async (req, res) => {
   }
 });
 
-router.get('/current', authenticateToken, async (req, res) => {
+router.get('/current', lowUsage, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 

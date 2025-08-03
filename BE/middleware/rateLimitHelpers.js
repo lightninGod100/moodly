@@ -2,11 +2,12 @@
 const jwt = require('jsonwebtoken');
 
 /**
- * Generate rate limiting key based on user authentication status
+ * Generate rate limiting key for authenticated users only
+ * Falls back to default IP-based limiting if not authenticated
  * @param {Object} req - Express request object
- * @returns {string} - Rate limiting key (user-based or IP-based)
+ * @returns {string|undefined} - User-based key or undefined (uses default)
  */
-const generateRateLimitKey = (req) => {
+const generateUserKey = (req) => {
   try {
     // Try to extract user ID from JWT token
     const authHeader = req.headers['authorization'];
@@ -16,22 +17,11 @@ const generateRateLimitKey = (req) => {
       return `user-${decoded.userId}`;
     }
   } catch (error) {
-    // Token invalid or missing, fall back to IP
+    // Token invalid or missing, fall back to default IP-based
   }
   
-  // Fall back to IP-based limiting for anonymous users
-  const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
-  return `ip-${clientIP}`;
-};
-
-/**
- * Generate IP-based key (for auth endpoints that should always be IP-based)
- * @param {Object} req - Express request object
- * @returns {string} - IP-based rate limiting key
- */
-const generateIPKey = (req) => {
-  const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress;
-  return `ip-${clientIP}`;
+  // Return undefined to use express-rate-limit's default IPv6-safe key generation
+  return undefined;
 };
 
 /**
@@ -57,8 +47,7 @@ const skipSuccessfulRequests = (req, res) => {
 };
 
 module.exports = {
-  generateRateLimitKey,
-  generateIPKey,
+  generateUserKey,
   rateLimitErrorHandler,
   skipSuccessfulRequests
 };

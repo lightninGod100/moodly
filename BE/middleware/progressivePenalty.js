@@ -1,6 +1,6 @@
 // BE/middleware/progressivePenalty.js
 const rateLimit = require('express-rate-limit');
-const { generateIPKey, rateLimitErrorHandler } = require('./rateLimitHelpers');
+const { generateIPKey } = require('./rateLimitHelpers');
 
 // In-memory store for tracking violations and penalties
 const violationStore = new Map();
@@ -31,7 +31,23 @@ const registerProgressiveLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // Base window: 15 minutes
   max: 3, // Base limit: 3 attempts per 15 minutes
   keyGenerator: generateIPKey,
-  handler: rateLimitErrorHandler,
+  handler: (req, res) => {
+    // Record violation when limit is exceeded
+    const key = generateIPKey(req);
+    const now = Date.now();
+    
+    // Record violation
+    const existingViolations = violationStore.get(key) || { count: 0, lastViolation: 0 };
+    violationStore.set(key, {
+      count: existingViolations.count + 1,
+      lastViolation: now
+    });
+
+    // Return the standard error response
+    return res.status(429).json({
+      error: 'Something went wrong. If issue persists kindly reach to support.'
+    });
+  },
   skip: (req, res) => {
     const key = generateIPKey(req);
     const now = Date.now();
@@ -71,17 +87,6 @@ const registerProgressiveLimiter = rateLimit({
     }
     
     return false; // Don't skip, use base rate limit
-  },
-  onLimitReached: (req, res) => {
-    const key = generateIPKey(req);
-    const now = Date.now();
-    
-    // Record violation
-    const existingViolations = violationStore.get(key) || { count: 0, lastViolation: 0 };
-    violationStore.set(key, {
-      count: existingViolations.count + 1,
-      lastViolation: now
-    });
   }
 });
 
@@ -92,7 +97,23 @@ const contactProgressiveLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // Base window: 1 hour
   max: 5, // Base limit: 5 attempts per hour
   keyGenerator: generateIPKey,
-  handler: rateLimitErrorHandler,
+  handler: (req, res) => {
+    // Record violation when limit is exceeded
+    const key = `contact-${generateIPKey(req)}`;
+    const now = Date.now();
+    
+    // Record violation
+    const existingViolations = violationStore.get(key) || { count: 0, lastViolation: 0 };
+    violationStore.set(key, {
+      count: existingViolations.count + 1,
+      lastViolation: now
+    });
+
+    // Return the standard error response
+    return res.status(429).json({
+      error: 'Something went wrong. If issue persists kindly reach to support.'
+    });
+  },
   skip: (req, res) => {
     const key = `contact-${generateIPKey(req)}`;
     const now = Date.now();
@@ -131,17 +152,6 @@ const contactProgressiveLimiter = rateLimit({
     }
     
     return false; // Don't skip, use base rate limit
-  },
-  onLimitReached: (req, res) => {
-    const key = `contact-${generateIPKey(req)}`;
-    const now = Date.now();
-    
-    // Record violation
-    const existingViolations = violationStore.get(key) || { count: 0, lastViolation: 0 };
-    violationStore.set(key, {
-      count: existingViolations.count + 1,
-      lastViolation: now
-    });
   }
 });
 

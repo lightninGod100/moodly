@@ -5,11 +5,13 @@ const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const { validateEmail } = require('../middleware/emailValidation');
-
+// ADD: Rate limiting imports
+const { registerProgressiveLimiter } = require('../middleware/progressivePenalty');
+const { authHighSecurity, logoutLimiter } = require('../middleware/rateLimiting');
 const router = express.Router();
 
 // Register new user
-router.post('/register', validateEmail,async (req, res) => {
+router.post('/register', registerProgressiveLimiter, validateEmail, async (req, res) => {
   try {
     const { username, email, password, country, gender } = req.body;
 
@@ -112,7 +114,7 @@ router.post('/register', validateEmail,async (req, res) => {
 });
 
 // Login user
-router.post('/login', async (req, res) => {
+router.post('/login', authHighSecurity, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -193,7 +195,7 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /api/auth/logout - Logout user and log activity
-router.post('/logout', authenticateToken, async (req, res) => {
+router.post('/logout', logoutLimiter, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const now = Date.now(); // UNIX timestamp in milliseconds

@@ -1,7 +1,8 @@
 const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
-
+// ADD: Rate limiting import
+const { lowUsage } = require('../middleware/rateLimiting');
 const router = express.Router();
 
 
@@ -253,7 +254,7 @@ const calculateMoodCountMilestone = (totalMoods) => {
 };
 
 // GET /api/mood-selected-stats/achievements
-router.get('/achievements', authenticateToken, async (req, res) => {
+router.get('/achievements', lowUsage, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const userTimezone = req.headers['timezone'] || 'UTC';
@@ -318,7 +319,7 @@ router.get('/achievements', authenticateToken, async (req, res) => {
   }
 });
 
-router.get('/weekly-sentiment', authenticateToken, async (req, res) => {
+router.get('/weekly-sentiment', lowUsage, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     
@@ -444,7 +445,7 @@ router.get('/weekly-sentiment', authenticateToken, async (req, res) => {
 });
 
 // GET /api/mood-selected-stats/mood-transition
-router.get('/mood-transition', authenticateToken, async (req, res) => {
+router.get('/mood-transition', lowUsage, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -499,7 +500,7 @@ router.get('/mood-transition', authenticateToken, async (req, res) => {
   }
 });
 
-router.get('/global-percentage', authenticateToken, async (req, res) => {
+router.get('/global-percentage', lowUsage, authenticateToken, async (req, res) => {
     try {
       const { mood } = req.query;
   
