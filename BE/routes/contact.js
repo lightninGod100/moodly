@@ -3,9 +3,25 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { sendContactEmail } = require('../services/emailService');
+const { validateEmail } = require('../middleware/emailValidation');
 
 const router = express.Router();
 
+
+// Create conditional middleware for contact (since email is optional for authenticated users)
+const validateContactEmail = (req, res, next) => {
+  // Skip validation if no email provided and user is authenticated
+  if (!req.body.email && req.headers['authorization']) {
+    return next();
+  }
+  
+  // If email is provided, validate it
+  if (req.body.email) {
+    return validateEmail(req, res, next);
+  }
+  
+  next();
+};
 // Helper function to get user data from JWT token (optional)
 const getUserFromToken = async (authHeader) => {
   try {
@@ -29,7 +45,7 @@ const getUserFromToken = async (authHeader) => {
 };
 
 // POST /api/contact - Handle contact form submissions
-router.post('/', async (req, res) => {
+router.post('/', validateContactEmail, async (req, res) => {
   try {
     const { reason, message, email: formEmail } = req.body;
     const authHeader = req.headers['authorization'];

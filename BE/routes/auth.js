@@ -4,11 +4,12 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
+const { validateEmail } = require('../middleware/emailValidation');
 
 const router = express.Router();
 
 // Register new user
-router.post('/register', async (req, res) => {
+router.post('/register', validateEmail,async (req, res) => {
   try {
     const { username, email, password, country, gender } = req.body;
 

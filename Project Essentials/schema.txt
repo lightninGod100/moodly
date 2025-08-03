@@ -47,3 +47,12 @@ CREATE TABLE user_activity_log (
     created_at BIGINT NOT NULL,       
     created_at_utc TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Users table indexes (very fast with low data)
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_username ON users(username);
+
+-- Moods table indexes (still very fast with 500 rows)
+CREATE INDEX idx_moods_user_id ON moods(user_id);
+CREATE INDEX idx_moods_created_at ON moods(created_at);
+CREATE INDEX idx_moods_user_time ON moods(user_id, created_at DESC);
