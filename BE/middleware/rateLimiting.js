@@ -52,13 +52,25 @@ const mediumUsage = rateLimit({
  */
 const moodCreation = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // 20 mood entries per hour
+  max: 8, // 20 mood entries per hour
   keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
 });
 
+/**
+ * MOOD RETRIEVAL - Tiered limiting
+ * Used for: GET /api/moods/last
+ */
+const moodRetrievalLast = rateLimit({
+ windowMs: 10 * 60 * 1000, // 10 minute windows
+ max: 8, // 8 requests per 10 minutes
+ keyGenerator: generateUserKey,
+ handler: rateLimitErrorHandler,
+ standardHeaders: false,
+ legacyHeaders: false
+});
 /**
  * LOW USAGE - Dashboard and statistics (User-based)
  * Used for: user stats, mood history
@@ -104,7 +116,7 @@ const accountDeletion = rateLimit({
  */
 const logoutLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 requests per minute
+  max: 1, // 10 requests per minute
   keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
@@ -154,6 +166,7 @@ module.exports = {
   accountDeletion,
   logoutLimiter,
   photoUpload,
+  moodRetrievalLast,
   
   // Infrastructure
   healthCheck

@@ -1,161 +1,227 @@
 // BE/middleware/progressivePenalty.js
 const rateLimit = require('express-rate-limit');
-const { generateIPKey } = require('./rateLimitHelpers');
 
-// In-memory store for tracking violations and penalties
-const violationStore = new Map();
-const penaltyStore = new Map();
+// In-memory stores
+const registrationAttempts = new Map(); // Track all registration attempts
+const registrationPenalties = new Map(); // Track registration penalties
+const contactAttempts = new Map(); // Track contact attempts
+const contactPenalties = new Map(); // Track contact penalties
 
 /**
- * Clean up expired violation records (runs every hour)
+ * Generate IP-based key
  */
-const cleanupExpiredViolations = () => {
+const getProgressiveKey = (req, prefix = '') => {
+  const ip = req.ip || req.connection?.remoteAddress || '0.0.0.0';
+  return `${prefix}${ip}`;
+};
+
+/**
+ * Clean up expired records
+ */
+const cleanupExpiredRecords = () => {
   const now = Date.now();
-  const twentyFourHours = 24 * 60 * 60 * 1000;
+  const twoHours = 2 * 60 * 60 * 1000;
   
-  for (const [key, data] of violationStore.entries()) {
-    if (now - data.lastViolation > twentyFourHours) {
-      violationStore.delete(key);
-      penaltyStore.delete(key);
+  // Clean expired penalties
+  for (const [key, penalty] of registrationPenalties.entries()) {
+    if (now > penalty.expiry) {
+      registrationPenalties.delete(key);
+      console.log(`Cleaned up expired registration penalty for ${key}`);
+    }
+  }
+  
+  for (const [key, penalty] of contactPenalties.entries()) {
+    if (now > penalty.expiry) {
+      contactPenalties.delete(key);
+      console.log(`Cleaned up expired contact penalty for ${key}`);
+    }
+  }
+  
+  // Clean old attempt records
+  for (const [key, data] of registrationAttempts.entries()) {
+    if (now - data.lastReset > twoHours) {
+      registrationAttempts.delete(key);
+    }
+  }
+  
+  for (const [key, data] of contactAttempts.entries()) {
+    if (now - data.lastReset > twoHours) {
+      contactAttempts.delete(key);
     }
   }
 };
 
-// Run cleanup every hour
-setInterval(cleanupExpiredViolations, 60 * 60 * 1000);
+setInterval(cleanupExpiredRecords, 60 * 60 * 1000);
 
 /**
- * Progressive penalty configuration for register endpoint
+ * Get current attempt count within window
  */
-const registerProgressiveLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // Base window: 15 minutes
-  max: 3, // Base limit: 3 attempts per 15 minutes
-  keyGenerator: generateIPKey,
-  handler: (req, res) => {
-    // Record violation when limit is exceeded
-    const key = generateIPKey(req);
-    const now = Date.now();
-    
-    // Record violation
-    const existingViolations = violationStore.get(key) || { count: 0, lastViolation: 0 };
-    violationStore.set(key, {
-      count: existingViolations.count + 1,
-      lastViolation: now
-    });
+const getCurrentCount = (store, key, windowMs, now) => {
+  const record = store.get(key);
+  if (!record || now - record.lastReset > windowMs) {
+    return 0;
+  }
+  return record.count;
+};
 
-    // Return the standard error response
+/**
+ * Increment attempt count
+ */
+const incrementCount = (store, key, windowMs, now) => {
+  const record = store.get(key) || { count: 0, lastReset: now };
+  
+  if (now - record.lastReset > windowMs) {
+    record.count = 1;
+    record.lastReset = now;
+  } else {
+    record.count += 1;
+  }
+  
+  store.set(key, record);
+  return record.count;
+};
+
+/**
+ * Registration Combined Limiter: 6/15min → 3/1hr → 1/24hr
+ */
+const registerCombinedLimiter = (req, res, next) => {
+  const baseKey = getProgressiveKey(req);
+  const key = `register-${baseKey}`;
+  const now = Date.now();
+  
+  // Check if under active penalty
+  const activePenalty = registrationPenalties.get(key);
+  if (activePenalty && now < activePenalty.expiry) {
+    const penaltyAttempts = getCurrentCount(registrationAttempts, key, activePenalty.windowMs, now);
+    if (penaltyAttempts >= activePenalty.max) {
+      console.log(`Registration blocked for ${baseKey}: Under penalty level ${activePenalty.level}`);
+      return res.status(429).json({
+        error: 'Something went wrong. If issue persists kindly reach to support.'
+      });
+    }
+    
+    // Under penalty but within limits - increment and allow
+    const newCount = incrementCount(registrationAttempts, key, activePenalty.windowMs, now);
+    console.log(`Registration allowed under penalty for ${baseKey}: ${newCount}/${activePenalty.max}`);
+    return next();
+  }
+  
+  // Normal operation - check base limits: 5/15min
+  const baseWindowMs = 15 * 60 * 1000; // 15 minutes
+  const baseMax = 5; // 5 attempts per 15 minutes
+  
+  const newCount = incrementCount(registrationAttempts, key, baseWindowMs, now);
+  
+  if (newCount > baseMax) {
+    // Exceeded base limit - apply progressive penalty
+    const existing = registrationPenalties.get(key) || { violationCount: 0 };
+    const newViolationCount = existing.violationCount + 1;
+    
+    let penalty;
+    if (newViolationCount >= 2) {
+      // 2nd+ violation: 1/24hr for 24hr
+      penalty = {
+        level: 2,
+        violationCount: newViolationCount,
+        windowMs: 24 * 60 * 60 * 1000, // 24 hours
+        max: 1, // 1 attempt
+        expiry: now + (24 * 60 * 60 * 1000) // 24 hours
+      };
+    } else {
+      // 1st violation: 3/3hr for 1hr
+      penalty = {
+        level: 1,
+        violationCount: newViolationCount,
+        windowMs: 3*60 * 60 * 1000, // 1 hour
+        max: 3, // 3 attempts
+        expiry: now + (60 * 60 * 1000) // 1 hour
+      };
+    }
+    
+    registrationPenalties.set(key, penalty);
+    console.log(`Applied registration penalty level ${penalty.level} for ${key}: ${penalty.max} attempts per ${penalty.windowMs / (60 * 60 * 1000)} hours`);
+    
     return res.status(429).json({
       error: 'Something went wrong. If issue persists kindly reach to support.'
     });
-  },
-  skip: (req, res) => {
-    const key = generateIPKey(req);
-    const now = Date.now();
-    
-    // Check if user is currently under penalty
-    const penalty = penaltyStore.get(key);
-    if (penalty && now < penalty.expiry) {
-      // Still under penalty, reject request
-      return false; // Don't skip, apply rate limit
-    }
-    
-    // Check violation history
-    const violations = violationStore.get(key);
-    if (violations) {
-      const timeSinceLastViolation = now - violations.lastViolation;
-      const twentyFourHours = 24 * 60 * 60 * 1000;
-      
-      // Reset violations after 24 hours of good behavior
-      if (timeSinceLastViolation > twentyFourHours) {
-        violationStore.delete(key);
-        penaltyStore.delete(key);
-        return false; // Don't skip, use base rate limit
-      }
-      
-      // Apply progressive penalties based on violation count
-      if (violations.count >= 2) {
-        // Third violation: 24 hour penalty
-        const penaltyDuration = 24 * 60 * 60 * 1000;
-        penaltyStore.set(key, { expiry: now + penaltyDuration });
-        return false; // Don't skip, will be blocked
-      } else if (violations.count >= 1) {
-        // Second violation: 1 hour penalty
-        const penaltyDuration = 60 * 60 * 1000;
-        penaltyStore.set(key, { expiry: now + penaltyDuration });
-        return false; // Don't skip, will be blocked
-      }
-    }
-    
-    return false; // Don't skip, use base rate limit
   }
-});
+  
+  console.log(`Registration allowed for ${baseKey}: ${newCount}/${baseMax}`);
+  next();
+};
 
 /**
- * Progressive penalty configuration for contact endpoint
+ * Contact Progressive Limiter: 6/1hr → 3/6hr → 1/24hr
  */
-const contactProgressiveLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // Base window: 1 hour
-  max: 5, // Base limit: 5 attempts per hour
-  keyGenerator: generateIPKey,
-  handler: (req, res) => {
-    // Record violation when limit is exceeded
-    const key = `contact-${generateIPKey(req)}`;
-    const now = Date.now();
+const contactProgressiveLimiter = (req, res, next) => {
+  const baseKey = getProgressiveKey(req);
+  const key = `contact-${baseKey}`;
+  const now = Date.now();
+  
+  // Check if under active penalty
+  const activePenalty = contactPenalties.get(key);
+  if (activePenalty && now < activePenalty.expiry) {
+    const penaltyAttempts = getCurrentCount(contactAttempts, key, activePenalty.windowMs, now);
+    if (penaltyAttempts >= activePenalty.max) {
+      console.log(`Contact blocked for ${baseKey}: Under penalty level ${activePenalty.level}`);
+      return res.status(429).json({
+        error: 'Something went wrong. If issue persists kindly reach to support.'
+      });
+    }
     
-    // Record violation
-    const existingViolations = violationStore.get(key) || { count: 0, lastViolation: 0 };
-    violationStore.set(key, {
-      count: existingViolations.count + 1,
-      lastViolation: now
-    });
-
-    // Return the standard error response
+    // Under penalty but within limits - increment and allow
+    const newCount = incrementCount(contactAttempts, key, activePenalty.windowMs, now);
+    console.log(`Contact allowed under penalty for ${baseKey}: ${newCount}/${activePenalty.max}`);
+    return next();
+  }
+  
+  // Normal operation - check base limits: 5/1hr
+  const baseWindowMs = 60 * 60 * 1000; // 1 hour
+  const baseMax = 5; // 6 attempts per hour
+  
+  const newCount = incrementCount(contactAttempts, key, baseWindowMs, now);
+  
+  if (newCount > baseMax) {
+    // Exceeded base limit - apply progressive penalty
+    const existing = contactPenalties.get(key) || { violationCount: 0 };
+    const newViolationCount = existing.violationCount + 1;
+    
+    let penalty;
+    if (newViolationCount >= 2) {
+      // 2nd+ violation: 1/24hr for 24hr
+      penalty = {
+        level: 2,
+        violationCount: newViolationCount,
+        windowMs: 24 * 60 * 60 * 1000, // 24 hours
+        max: 1, // 1 attempt
+        expiry: now + (24 * 60 * 60 * 1000) // 24 hours
+      };
+    } else {
+      // 1st violation: 3/6hr for 6hr
+      penalty = {
+        level: 1,
+        violationCount: newViolationCount,
+        windowMs: 6 * 60 * 60 * 1000, // 6 hours
+        max: 2, // 3 attempts
+        expiry: now + (6 * 60 * 60 * 1000) // 6 hours
+      };
+    }
+    
+    contactPenalties.set(key, penalty);
+    console.log(`Applied contact penalty level ${penalty.level} for ${key}: ${penalty.max} attempts per ${penalty.windowMs / (60 * 60 * 1000)} hours`);
+    
     return res.status(429).json({
       error: 'Something went wrong. If issue persists kindly reach to support.'
     });
-  },
-  skip: (req, res) => {
-    const key = `contact-${generateIPKey(req)}`;
-    const now = Date.now();
-    
-    // Check if user is currently under penalty
-    const penalty = penaltyStore.get(key);
-    if (penalty && now < penalty.expiry) {
-      return false; // Don't skip, apply rate limit
-    }
-    
-    // Check violation history
-    const violations = violationStore.get(key);
-    if (violations) {
-      const timeSinceLastViolation = now - violations.lastViolation;
-      const twentyFourHours = 24 * 60 * 60 * 1000;
-      
-      // Reset violations after 24 hours of good behavior
-      if (timeSinceLastViolation > twentyFourHours) {
-        violationStore.delete(key);
-        penaltyStore.delete(key);
-        return false; // Don't skip, use base rate limit
-      }
-      
-      // Apply progressive penalties
-      if (violations.count >= 2) {
-        // Third violation: 24 hour penalty, 1 attempt
-        const penaltyDuration = 24 * 60 * 60 * 1000;
-        penaltyStore.set(key, { expiry: now + penaltyDuration });
-        return false; // Don't skip, will be heavily limited
-      } else if (violations.count >= 1) {
-        // Second violation: 6 hour penalty, 2 attempts
-        const penaltyDuration = 6 * 60 * 60 * 1000;
-        penaltyStore.set(key, { expiry: now + penaltyDuration });
-        return false; // Don't skip, will be limited
-      }
-    }
-    
-    return false; // Don't skip, use base rate limit
   }
-});
+  
+  console.log(`Contact allowed for ${baseKey}: ${newCount}/${baseMax}`);
+  next();
+};
 
 module.exports = {
-  registerProgressiveLimiter,
-  contactProgressiveLimiter
+  registerProgressiveLimiter: registerCombinedLimiter,
+  contactProgressiveLimiter,
+  registerCombinedLimiter,
+  getProgressiveKey
 };
