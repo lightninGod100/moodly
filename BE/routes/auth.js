@@ -195,32 +195,61 @@ router.post('/login', authHighSecurity, async (req, res) => {
 });
 
 // POST /api/auth/logout - Logout user and log activity
+// POST /api/auth/logout - HYBRID VERSION
 router.post('/logout', logoutLimiter, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const now = Date.now(); // UNIX timestamp in milliseconds
-
-    // Log logout activity
+    const now = Date.now();
+    
+    // ✅ NEW: Accept client timestamp and retry attempt
+    const logoutTimestamp = req.body.timestamp || now;
+    const retryAttempt = req.body.retryAttempt || 0;
+    
+    // ✅ NEW: Validate timestamp to prevent abuse
+    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+    if (logoutTimestamp > now + 60000 || now - logoutTimestamp > maxAge) {
+      console.warn(`Invalid logout timestamp for user ${userId}: ${logoutTimestamp}`);
+      return res.status(400).json({
+        error: 'Invalid timestamp',
+        message: 'Logout timestamp is invalid'
+      });
+    }
+    
+    // ✅ UPDATED: Store both original time AND server processing time
     await pool.query(
-      'INSERT INTO user_activity_log (user_id, key, value_timestamp, created_at) VALUES ($1, $2, $3, $4)',
-      [userId, 'account_logout', now, now]
+      `INSERT INTO user_activity_log (user_id, key, value_timestamp, created_at, value_string) 
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        userId, 
+        'account_logout', 
+        logoutTimestamp,  // ✅ Original logout time (client timestamp)
+        now,              // ✅ Server processing time
+        JSON.stringify({
+          retryAttempt: retryAttempt,
+          serverDelay: now - logoutTimestamp,
+          source: retryAttempt > 0 ? 'retry' : 'immediate'
+        })
+      ]
     );
 
-    console.log(`✅ User ${userId} logged out successfully at ${new Date(now).toISOString()}`);
+    console.log(`✅ User ${userId} logout logged: ${new Date(logoutTimestamp).toISOString()} (attempt: ${retryAttempt})`);
 
+    // ✅ UPDATED: Return both timestamps
     res.json({
       message: 'Logout successful',
-      timestamp: now
+      timestamp: logoutTimestamp,     // Original logout time
+      serverTimestamp: now,           // Server processing time  
+      attempt: retryAttempt
     });
 
   } catch (error) {
     console.error('Logout activity logging error:', error);
-
-    // Even if logging fails, we should return success
-    // Frontend will clear tokens regardless
-    res.json({
-      message: 'Logout completed',
-      note: 'Activity logging may have failed but logout was processed'
+    
+    // ✅ CRITICAL CHANGE: Return error instead of fake success
+    // This allows frontend retry mechanism to work
+    res.status(500).json({
+      error: 'Logout logging failed',
+      message: 'Server error during logout - will retry automatically'
     });
   }
 });
