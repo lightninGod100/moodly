@@ -117,12 +117,26 @@ const UserDashboard = ({
       
       const stats = await userStatsApiService.getAllUserStats();
       
-      setDominantMoodData(stats.dominantMood);
-      setHappinessData(stats.happinessIndex);
-      setFrequencyData(stats.frequencyToday);
+      // Set data for successful calls, keep existing data for failed calls
+      if (stats.dominantMood) {
+        setDominantMoodData(stats.dominantMood);
+      }
+      
+      if (stats.happinessIndex && stats.happinessIndex.length > 0) {
+        setHappinessData(stats.happinessIndex);
+      }
+      
+      if (stats.frequencyToday) {
+        setFrequencyData(stats.frequencyToday);
+      }
+      
+      // Optional: Show a warning if some APIs failed but don't block the UI
+      // You could add a toast notification here if needed
+      
     } catch (err) {
-      console.error('Failed to fetch user stats:', err);
-      setError('Failed to load your mood statistics');
+      // This should rarely happen now since individual failures are handled
+      console.error('Complete failure fetching user stats:', err);
+      setError('Unable to load dashboard data');
     } finally {
       setIsLoading(false);
     }

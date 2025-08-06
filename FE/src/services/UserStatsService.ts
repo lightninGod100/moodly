@@ -124,11 +124,24 @@ interface DominantMoodData {
      */
     async getAllUserStats() {
       try {
-        const [dominantMood, happinessIndex, frequencyToday] = await Promise.all([
-          this.getDominantMood(), // Gets all periods
-          this.getHappinessIndex('month'), // Default to month view
-          this.getMoodFrequency('today') // Default to today
+        const results = await Promise.allSettled([
+          this.getDominantMood(),
+          this.getHappinessIndex('month'),
+          this.getMoodFrequency('today')
         ]);
+        
+        // Extract successful results, handle failures gracefully
+        const dominantMood = results[0].status === 'fulfilled' ? results[0].value : null;
+        const happinessIndex = results[1].status === 'fulfilled' ? results[1].value : [];
+        const frequencyToday = results[2].status === 'fulfilled' ? results[2].value : null;
+        
+        // Log any failures for debugging
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            const apiNames = ['dominantMood', 'happinessIndex', 'frequencyToday'];
+            console.warn(`${apiNames[index]} API failed:`, result.reason);
+          }
+        });
   
         return {
           dominantMood,
