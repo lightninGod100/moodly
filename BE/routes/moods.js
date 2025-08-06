@@ -2,7 +2,7 @@ const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 // ADD: Rate limiting imports
-const { moodCreation, lowUsage } = require('../middleware/rateLimiting');
+const { moodCreation, lowUsage, moodRetrievalLast } = require('../middleware/rateLimiting');
 const router = express.Router();
 
 // Valid mood values (matching your frontend)
@@ -62,7 +62,7 @@ router.post('/', moodCreation, authenticateToken, async (req, res) => {
   }
 });
 
-router.get('/last', lowUsage, authenticateToken, async (req, res) => {
+router.get('/last', moodRetrievalLast, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -110,36 +110,36 @@ router.get('/last', lowUsage, authenticateToken, async (req, res) => {
   }
 });
 
-router.get('/current', lowUsage, authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
+// router.get('/current', lowUsage, authenticateToken, async (req, res) => {
+//   try {
+//     const userId = req.user.id;
 
-    const currentMoodResult = await pool.query(
-      'SELECT id, mood, created_at FROM moods WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
-      [userId]
-    );
+//     const currentMoodResult = await pool.query(
+//       'SELECT id, mood, created_at FROM moods WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+//       [userId]
+//     );
 
-    // Edge case (shouldn't happen due to routing logic)
-    if (currentMoodResult.rows.length === 0) {
-      console.warn(`Unexpected: /current called for user ${userId} with no moods`);
-      return res.status(404).json({
-        error: 'No current mood found'
-      });
-    }
+//     // Edge case (shouldn't happen due to routing logic)
+//     if (currentMoodResult.rows.length === 0) {
+//       console.warn(`Unexpected: /current called for user ${userId} with no moods`);
+//       return res.status(404).json({
+//         error: 'No current mood found'
+//       });
+//     }
 
-    const currentMood = currentMoodResult.rows[0];
+//     const currentMood = currentMoodResult.rows[0];
 
-    res.status(200).json({
-      mood: currentMood.mood,
-      createdAt: currentMood.created_at
-    });
+//     res.status(200).json({
+//       mood: currentMood.mood,
+//       createdAt: currentMood.created_at
+//     });
 
-  } catch (error) {
-    console.error('Current mood retrieval error:', error);
-    res.status(500).json({
-      error: 'Internal server error while retrieving current mood'
-    });
-  }
-});
+//   } catch (error) {
+//     console.error('Current mood retrieval error:', error);
+//     res.status(500).json({
+//       error: 'Internal server error while retrieving current mood'
+//     });
+//   }
+// });
 
 module.exports = router;

@@ -97,23 +97,23 @@ interface LastMoodResponse {
      * Get user's current mood (most recent)
      * Calls GET /api/moods/current
      */
-    async getCurrentMood(): Promise<{mood: string, createdAt: string}> {
-      try {
-        const response = await fetch(`${API_BASE}/moods/current`, {
-          method: 'GET',
-          headers: getAuthHeaders()
-        });
+    // async getCurrentMood(): Promise<{mood: string, createdAt: string}> {
+    //   try {
+    //     const response = await fetch(`${API_BASE}/moods/current`, {
+    //       method: 'GET',
+    //       headers: getAuthHeaders()
+    //     });
   
-        if (!response.ok) {
-          throw new Error(`Failed to fetch current mood: ${response.status} ${response.statusText}`);
-        }
+    //     if (!response.ok) {
+    //       throw new Error(`Failed to fetch current mood: ${response.status} ${response.statusText}`);
+    //     }
   
-        const data: CurrentMoodResponse = await response.json();
-        return data;
-      } catch (error) {
-        console.error('Error fetching current mood:', error);
-        throw error;
-      }
-    }
+    //     const data: CurrentMoodResponse = await response.json();
+    //     return data;
+    //   } catch (error) {
+    //     console.error('Error fetching current mood:', error);
+    //     throw error;
+    //   }
+    // }
   };
   
