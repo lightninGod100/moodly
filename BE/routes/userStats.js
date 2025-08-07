@@ -3,7 +3,7 @@ const express = require('express');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 // ADD: Rate limiting import
-const { lowUsage } = require('../middleware/rateLimiting');
+const { arl_user_stats } = require('../middleware/rateLimiting');
 const router = express.Router();
 
 // Mood to happiness score mapping (matching frontend)
@@ -37,7 +37,7 @@ const getTimePeriodFilter = (period) => {
 };
 
 // GET /api/user-stats/dominant-mood?period=today|week|month
-router.get('/dominant-mood', lowUsage, authenticateToken, async (req, res) => {
+router.get('/dominant-mood', arl_user_stats, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { period } = req.query;
@@ -111,7 +111,7 @@ router.get('/dominant-mood', lowUsage, authenticateToken, async (req, res) => {
 });
 
 // GET /api/user-stats/happiness-index?period=week|month
-router.get('/happiness-index', lowUsage, authenticateToken, async (req, res) => {
+router.get('/happiness-index', arl_user_stats, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { period } = req.query;
@@ -178,7 +178,7 @@ router.get('/happiness-index', lowUsage, authenticateToken, async (req, res) => 
 });
 
 // GET /api/user-stats/frequency?period=today|week|month
-router.get('/frequency', lowUsage, authenticateToken, async (req, res) => {
+router.get('/frequency', arl_user_stats, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const { period } = req.query;
@@ -227,7 +227,7 @@ router.get('/frequency', lowUsage, authenticateToken, async (req, res) => {
 });
 
 // Test route to verify routing
-router.get('/test', lowUsage, authenticateToken, (req, res) => {
+router.get('/test', arl_user_stats, authenticateToken, (req, res) => {
   res.json({
     message: 'User stats routes are working',
     user: req.user

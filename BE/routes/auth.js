@@ -7,7 +7,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { validateEmail } = require('../middleware/emailValidation');
 // ADD: Rate limiting imports
 const { registerProgressiveLimiter } = require('../middleware/progressivePenalty');
-const { authHighSecurity, logoutLimiter } = require('../middleware/rateLimiting');
+const { arl_authHighSecurity, arl_logoutLimiter } = require('../middleware/rateLimiting');
 const router = express.Router();
 
 // Register new user
@@ -114,7 +114,7 @@ router.post('/register', registerProgressiveLimiter, validateEmail, async (req, 
 });
 
 // Login user
-router.post('/login', authHighSecurity, async (req, res) => {
+router.post('/login', arl_authHighSecurity, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -196,7 +196,7 @@ router.post('/login', authHighSecurity, async (req, res) => {
 
 // POST /api/auth/logout - Logout user and log activity
 // POST /api/auth/logout - HYBRID VERSION
-router.post('/logout', logoutLimiter, authenticateToken, async (req, res) => {
+router.post('/logout', arl_logoutLimiter, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const now = Date.now();

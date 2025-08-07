@@ -1,18 +1,18 @@
 // BE/middleware/rateLimiting.js
 const rateLimit = require('express-rate-limit');
-const { 
-  generateUserKey, 
-  rateLimitErrorHandler, 
-  skipSuccessfulRequests 
+const {
+  generateUserKey,
+  rateLimitErrorHandler,
+  skipSuccessfulRequests
 } = require('./rateLimitHelpers');
 
 /**
  * HIGH SECURITY - Authentication endpoints (IP-based)
  * Used for: login
  */
-const authHighSecurity = rateLimit({
+const arl_authHighSecurity = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per 15 minutes
+  max: 6, // 5 attempts per 15 minutes
   // Remove keyGenerator - use default IPv6-safe IP-based limiting
   handler: rateLimitErrorHandler,
   standardHeaders: false, // Disable rate limit headers
@@ -24,7 +24,7 @@ const authHighSecurity = rateLimit({
  * USER HIGH SECURITY - Critical user actions (User-based)
  * Used for: password change, account deletion
  */
-const userHighSecurity = rateLimit({
+const arl_userHighSecurity = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 attempts per hour
   keyGenerator: generateUserKey,
@@ -37,7 +37,7 @@ const userHighSecurity = rateLimit({
  * MEDIUM USAGE - Regular application features (User/Session-based)
  * Used for: mood tracking, world stats, user settings updates
  */
-const mediumUsage = rateLimit({
+const arl_mediumUsage = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 60, // 60 requests per hour
   keyGenerator: generateUserKey,
@@ -50,7 +50,7 @@ const mediumUsage = rateLimit({
  * MEDIUM USAGE - Mood creation (User-based)
  * Used for: POST /api/moods
  */
-const moodCreation = rateLimit({
+const arl_moodCreation = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 8, // 20 mood entries per hour
   keyGenerator: generateUserKey,
@@ -63,19 +63,19 @@ const moodCreation = rateLimit({
  * MOOD RETRIEVAL - Tiered limiting
  * Used for: GET /api/moods/last
  */
-const moodRetrievalLast = rateLimit({
- windowMs: 10 * 60 * 1000, // 10 minute windows
- max: 8, // 8 requests per 10 minutes
- keyGenerator: generateUserKey,
- handler: rateLimitErrorHandler,
- standardHeaders: false,
- legacyHeaders: false
+const arl_moodRetrievalLast = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minute windows
+  max: 8, // 8 requests per 10 minutes
+  keyGenerator: generateUserKey,
+  handler: rateLimitErrorHandler,
+  standardHeaders: false,
+  legacyHeaders: false
 });
 /**
  * LOW USAGE - Dashboard and statistics (User-based)
  * Used for: user stats, mood history
  */
-const lowUsage = rateLimit({
+const arl_lowUsage = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 120, // 120 requests per hour
   keyGenerator: generateUserKey,
@@ -84,11 +84,37 @@ const lowUsage = rateLimit({
   legacyHeaders: false
 });
 
+const  arl_user_stats = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 24, // 8*No of API call on dashboard page
+  keyGenerator: generateUserKey,
+  handler: rateLimitErrorHandler,
+  standardHeaders: false,
+  legacyHeaders: false
+});
+
+const arl_world_stats = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 48, // 10 page loads * 3 APIs = 30 requests per hour per IP
+  // No keyGenerator = IP-based limiting
+  handler: rateLimitErrorHandler,
+  standardHeaders: false,
+  legacyHeaders: false
+});
+
+const arl_mood_selected_stats = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 32, // 8*No of API call on dashboard page
+  keyGenerator: generateUserKey,
+  handler: rateLimitErrorHandler,
+  standardHeaders: false,
+  legacyHeaders: false
+});
 /**
  * VERY LOW USAGE - Critical settings (User-based)
  * Used for: country change (business rule: 2/day), account deletion (1/day)
  */
-const veryLowUsage = rateLimit({
+const arl_veryLowUsage = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   max: 2, // 2 requests per day
   keyGenerator: generateUserKey,
@@ -101,9 +127,9 @@ const veryLowUsage = rateLimit({
  * ACCOUNT DELETION - Ultra restricted (User-based)
  * Used for: DELETE /api/user-settings/account
  */
-const accountDeletion = rateLimit({
+const arl_accountDeletion = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  max: 1, // 1 attempt per day
+  max: 2, // 1 attempt per day
   keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
@@ -114,9 +140,9 @@ const accountDeletion = rateLimit({
  * LOGOUT - Special case (User-based, very permissive)
  * Used for: POST /api/auth/logout
  */
-const logoutLimiter = rateLimit({
+const arl_logoutLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 1, // 10 requests per minute
+  max: 10, // 10 requests per minute
   keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
@@ -127,7 +153,7 @@ const logoutLimiter = rateLimit({
  * HEALTH CHECK - Monitoring endpoints (IP-based)
  * Used for: /api/health, test endpoints
  */
-const healthCheck = rateLimit({
+const arl_healthCheck = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 100, // 100 requests per hour
   // Remove keyGenerator - use default IPv6-safe IP-based limiting
@@ -140,7 +166,7 @@ const healthCheck = rateLimit({
  * PHOTO UPLOAD - File upload protection (User-based)
  * Used for: PUT /api/user-settings/photo
  */
-const photoUpload = rateLimit({
+const arl_photoUpload = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10, // 10 uploads per hour
   keyGenerator: generateUserKey,
@@ -151,23 +177,25 @@ const photoUpload = rateLimit({
 
 module.exports = {
   // High Security
-  authHighSecurity,
-  userHighSecurity,
-  
+  arl_authHighSecurity,
+  arl_userHighSecurity,
+
   // Medium Usage
-  mediumUsage,
-  moodCreation,
-  
+  arl_mediumUsage,
+  arl_moodCreation,
+
   // Low Usage
-  lowUsage,
-  
+  arl_lowUsage,
+  arl_user_stats,
+  arl_mood_selected_stats,
+  arl_world_stats,
   // Special Cases
-  veryLowUsage,
-  accountDeletion,
-  logoutLimiter,
-  photoUpload,
-  moodRetrievalLast,
-  
+  arl_veryLowUsage,
+  arl_accountDeletion,
+  arl_logoutLimiter,
+  arl_photoUpload,
+  arl_moodRetrievalLast,
+
   // Infrastructure
-  healthCheck
+  arl_healthCheck
 };

@@ -4,7 +4,7 @@ const { pool } = require('../config/database');
 
 const router = express.Router();
 // ADD: Rate limiting import
-const { mediumUsage } = require('../middleware/rateLimiting');
+const { arl_world_stats } = require('../middleware/rateLimiting');
 // Valid mood values (matching your frontend)
 const VALID_MOODS = ['Excited', 'Happy', 'Calm', 'Tired', 'Anxious', 'Angry', 'Sad'];
 
@@ -27,7 +27,7 @@ const getTimePeriodFilter = (period) => {
 };
 
 // GET /api/world-stats/global?period=live|today|week|month
-router.get('/global', mediumUsage, async (req, res) => {
+router.get('/global', arl_world_stats, async (req, res) => {
   try {
     const { period } = req.query;
     
@@ -118,7 +118,7 @@ CROSS JOIN total_users tu
 });
 
 // GET /api/world-stats/countries?period=live|today|week|month
-router.get('/countries', mediumUsage, async (req, res) => {
+router.get('/countries', arl_world_stats, async (req, res) => {
   try {
     const { period } = req.query;
     
@@ -248,7 +248,7 @@ ORDER BY cmp.country, cmp.percentage DESC
 });
 
 // GET /api/world-stats/mood_frequency?period=live|today|week|month
-router.get('/mood_frequency', mediumUsage, async (req, res) => {
+router.get('/mood_frequency', arl_world_stats, async (req, res) => {
   try {
     const { period } = req.query;
     
