@@ -7,7 +7,7 @@ const router = express.Router();
 const { sendAccountDeletionEmails } = require('../services/emailService');
 // Import email functionality
 // ADD: Rate limiting imports
-const { arl_userHighSecurity, arl_veryLowUsage, arl_accountDeletion, arl_photoUpload } = require('../middleware/rateLimiting');
+const { arl_account_deletion, arl_photo_upload_delete, arl_validate_password, arl_country_change, arl_user_settings_password_change, arl_userSettingsRead } = require('../middleware/rateLimiting');
 
 // Helper function to validate Base64 image
 const validateBase64Image = (base64String) => {
@@ -53,7 +53,7 @@ const canChangeCountry = (lastChangeTimestamp) => {
 };
 
 // GET /api/user-settings - Get current user settings
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', arl_userSettingsRead, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -127,7 +127,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // PUT /api/user-settings/password - Change password
-router.put('/password', arl_userHighSecurity, authenticateToken, async (req, res) => {
+router.put('/password_change', arl_user_settings_password_change, authenticateToken, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
@@ -189,7 +189,7 @@ router.put('/password', arl_userHighSecurity, authenticateToken, async (req, res
 });
 
 // PUT /api/user-settings/country - Update country (with 30-day restriction)
-router.put('/country', arl_veryLowUsage, authenticateToken, async (req, res) => {
+router.put('/country', arl_country_change, authenticateToken, async (req, res) => {
   try {
     const { country } = req.body;
     const userId = req.user.id;
@@ -255,7 +255,7 @@ router.put('/country', arl_veryLowUsage, authenticateToken, async (req, res) => 
 });
 
 // PUT /api/user-settings/photo - Upload/update profile photo
-router.put('/photo', arl_photoUpload, authenticateToken, async (req, res) => {
+router.put('/photo', arl_photo_upload_delete, authenticateToken, async (req, res) => {
   try {
     const { photoData } = req.body;
     const userId = req.user.id;
@@ -294,7 +294,7 @@ router.put('/photo', arl_photoUpload, authenticateToken, async (req, res) => {
 });
 
 // DELETE /api/user-settings/photo - Remove profile photo
-router.delete('/account', arl_accountDeletion, authenticateToken, async (req, res) => {
+router.delete('/photo', arl_photo_upload_delete, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -317,7 +317,7 @@ router.delete('/account', arl_accountDeletion, authenticateToken, async (req, re
 });
 
 // DELETE /api/user-settings/account - Delete account
-router.delete('/account', authenticateToken, async (req, res) => {
+router.delete('/account_deletion', arl_account_deletion, authenticateToken, async (req, res) => {
   try {
     const { password } = req.body;
     const userId = req.user.id;
@@ -482,7 +482,7 @@ This message was sent via Moodly Account Deletion System
 // Add this to BE/routes/userSettings.js
 
 // POST /api/user-settings/validate-password - Validate password only (no action)
-router.post('/validate-password', authenticateToken, async (req, res) => {
+router.post('/validate-password', arl_validate_password, authenticateToken, async (req, res) => {
   try {
     const { password } = req.body;
     const userId = req.user.id;

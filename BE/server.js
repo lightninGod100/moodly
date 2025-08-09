@@ -19,7 +19,8 @@ const { authenticateToken } = require('./middleware/auth');
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
-
+// ADD: Rate limiting import
+const { arl_healthCheck } = require('./middleware/rateLimiting');
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -38,7 +39,7 @@ app.get('/', (req, res) => {
 });
 
 // Health check route
-app.get('/api/health', async (req, res) => {
+app.get('/api/health', arl_healthCheck, async (req, res) => {
   try {
     // Test database connection
     const dbConnected = await testConnection();
@@ -59,7 +60,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Test database query route
-app.get('/api/test-db', async (req, res) => {
+app.get('/api/test-db', arl_healthCheck, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users LIMIT 5');
     res.json({

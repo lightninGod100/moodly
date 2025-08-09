@@ -139,7 +139,7 @@ export interface PasswordValidationResponse {
           throw new Error('New password must be different from current password');
         }
   
-        const response = await fetch(`${API_BASE}/user-settings/password`, {
+        const response = await fetch(`${API_BASE}/user-settings/password_change`, {
           method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify(passwordData)
@@ -259,7 +259,7 @@ export interface PasswordValidationResponse {
           throw new Error('Password is required to delete account');
         }
   
-        const response = await fetch(`${API_BASE}/user-settings/account`, {
+        const response = await fetch(`${API_BASE}/user-settings/account_deletion`, {
           method: 'DELETE',
           headers: getAuthHeaders(),
           body: JSON.stringify(accountData)

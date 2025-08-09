@@ -33,6 +33,28 @@ const arl_userHighSecurity = rateLimit({
   legacyHeaders: false
 });
 
+const arl_user_settings_password_change = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 4, // 4 attempts per hour
+  keyGenerator: generateUserKey,
+  handler: rateLimitErrorHandler,
+  standardHeaders: false,
+  legacyHeaders: false
+});
+
+/**
+ * USER SETTINGS READ - Moderate protection (User-based)
+ * Used for: GET /api/user-settings
+ * Prevents abuse while allowing legitimate app loads/refreshes
+ */
+const arl_userSettingsRead = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5, // 20 requests per hour per user
+  keyGenerator: generateUserKey,
+  handler: rateLimitErrorHandler,
+  standardHeaders: false,
+  legacyHeaders: false
+});
 /**
  * MEDIUM USAGE - Regular application features (User/Session-based)
  * Used for: mood tracking, world stats, user settings updates
@@ -127,15 +149,32 @@ const arl_veryLowUsage = rateLimit({
  * ACCOUNT DELETION - Ultra restricted (User-based)
  * Used for: DELETE /api/user-settings/account
  */
-const arl_accountDeletion = rateLimit({
+const arl_account_deletion = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  max: 2, // 1 attempt per day
+  max: 2, // 2 attempt per day
   keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
   legacyHeaders: false
 });
 
+const arl_validate_password = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 4, // 4 attempt per day
+  keyGenerator: generateUserKey,
+  handler: rateLimitErrorHandler,
+  standardHeaders: false,
+  legacyHeaders: false
+});
+
+const arl_country_change = rateLimit({
+  windowMs: 24 * 24 * 60 * 60 * 1000, // 24 days (close to 1 month, within Node.js limits)
+  max: 2, // 2 attempts per month
+  keyGenerator: generateUserKey,
+  handler: rateLimitErrorHandler,
+  standardHeaders: false,
+  legacyHeaders: false
+});
 /**
  * LOGOUT - Special case (User-based, very permissive)
  * Used for: POST /api/auth/logout
@@ -166,9 +205,9 @@ const arl_healthCheck = rateLimit({
  * PHOTO UPLOAD - File upload protection (User-based)
  * Used for: PUT /api/user-settings/photo
  */
-const arl_photoUpload = rateLimit({
+const arl_photo_upload_delete = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // 10 uploads per hour
+  max: 20, // 10 uploads per hour
   keyGenerator: generateUserKey,
   handler: rateLimitErrorHandler,
   standardHeaders: false,
@@ -179,7 +218,8 @@ module.exports = {
   // High Security
   arl_authHighSecurity,
   arl_userHighSecurity,
-
+  arl_user_settings_password_change,
+  arl_userSettingsRead,
   // Medium Usage
   arl_mediumUsage,
   arl_moodCreation,
@@ -191,11 +231,12 @@ module.exports = {
   arl_world_stats,
   // Special Cases
   arl_veryLowUsage,
-  arl_accountDeletion,
+  arl_account_deletion,
   arl_logoutLimiter,
-  arl_photoUpload,
+  arl_photo_upload_delete,
   arl_moodRetrievalLast,
-
+  arl_validate_password,
+  arl_country_change,
   // Infrastructure
   arl_healthCheck
 };

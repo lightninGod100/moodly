@@ -132,7 +132,7 @@ const registerCombinedLimiter = (req, res, next) => {
       penalty = {
         level: 1,
         violationCount: newViolationCount,
-        windowMs: 3*60 * 60 * 1000, // 1 hour
+        windowMs: 3*60 * 60 * 1000, //3 hour
         max: 3, // 3 attempts
         expiry: now + (60 * 60 * 1000) // 1 hour
       };
@@ -177,7 +177,7 @@ const contactProgressiveLimiter = (req, res, next) => {
   
   // Normal operation - check base limits: 5/1hr
   const baseWindowMs = 60 * 60 * 1000; // 1 hour
-  const baseMax = 5; // 6 attempts per hour
+  const baseMax = 5; // 5 attempts per hour
   
   const newCount = incrementCount(contactAttempts, key, baseWindowMs, now);
   
