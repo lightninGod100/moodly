@@ -177,7 +177,31 @@ const ERROR_CATALOG = {
         message: 'Mood selection is required'
     },
 
+    // Email Service Errors (EMAIL_xxx)
+    EMAIL_SERVICE_UNAVAILABLE: {
+        code: 'EMAIL_SERVICE_UNAVAILABLE',
+        message: 'Email service temporarily unavailable'
+    },
+    EMAIL_SENDING_FAILED: {
+        code: 'EMAIL_SENDING_FAILED',
+        message: 'Failed to send email'
+    },
+    EMAIL_CONFIG_ERROR: {
+        code: 'EMAIL_CONFIG_ERROR',
+        message: 'Email configuration error'
+    },
+
+    // Database Operation Errors (DB_xxx) - if not already exist
+    DB_INSERT_FAILED: {
+        code: 'DB_INSERT_FAILED',
+        message: 'Database insert operation failed'
+    },
+    DB_UPDATE_FAILED: {
+        code: 'DB_UPDATE_FAILED',
+        message: 'Database update operation failed'
+    },
     // Contact Form Errors (CONTACT_xxx)
+
     CONTACT_SUBJECT_REQUIRED: {
         code: 'CONTACT_SUBJECT_REQUIRED',
         message: 'Subject is required'
@@ -191,6 +215,16 @@ const ERROR_CATALOG = {
         message: 'Email is required'
     },
 
+    // Add these to ERROR_CATALOG after existing VAL_EMAIL codes:
+
+    VAL_EMAIL_DOMAIN_NOT_ALLOWED: {
+        code: 'VAL_EMAIL_DOMAIN_NOT_ALLOWED',
+        message: 'The email domain is not allowed due to security reasons, please use email with common domains like gmail, yahoo etc'
+    },
+    VAL_EMAIL_PLUS_SIGN: {
+        code: 'VAL_EMAIL_PLUS_SIGN',
+        message: 'Email with \'+\' character not supported'
+    },
     // Generic/Unknown Errors
     UNKNOWN_ERROR: {
         code: 'UNKNOWN_ERROR',

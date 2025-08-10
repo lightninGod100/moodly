@@ -24,7 +24,7 @@ CREATE TABLE moods (
   created_at_utc TIMESTAMPTZ DEFAULT NOW()
 );
 
---contact_submissions
+--email-logs
 
 CREATE TABLE contact_submissions (
   id SERIAL PRIMARY KEY,

@@ -1,5 +1,7 @@
 // BE/middleware/emailValidation.js
-
+// ADD: Error handling imports at the top
+const { ERROR_CATALOG, getError } = require('../config/errorCodes');
+const ErrorLogger = require('../services/errorLogger');
 /**
  * Email Domain Validation Middleware
  * Validates email domains against whitelist of secure, OTP/phone-verified providers
@@ -127,9 +129,11 @@ const SECURE_EMAIL_DOMAINS = [
       
       // Check if email is provided
       if (!rawEmail) {
-        return res.status(400).json({
-          error: 'Email is required'
-        });
+        const errorResponse = ErrorLogger.createErrorResponse(
+          ERROR_CATALOG.VAL_EMAIL_REQUIRED.code,
+          ERROR_CATALOG.VAL_EMAIL_REQUIRED.message
+        );
+        return res.status(400).json(errorResponse);
       }
       
       // Normalize email
@@ -137,31 +141,51 @@ const SECURE_EMAIL_DOMAINS = [
       
       // Validate email format
       if (!isValidEmailFormat(email)) {
-        return res.status(400).json({
-          error: 'Invalid email format'
-        });
+        const errorResponse = ErrorLogger.logAndCreateResponse(
+          ERROR_CATALOG.VAL_INVALID_EMAIL.code,
+          'Email format validation in middleware',
+          new Error(`Invalid email format: ${rawEmail}`),
+          ERROR_CATALOG.VAL_INVALID_EMAIL.message,
+          null
+        );
+        return res.status(400).json(errorResponse);
       }
       
       // Check for plus sign (aliasing)
       if (containsPlusSign(email)) {
-        return res.status(400).json({
-          error: 'Email with \'+\' character not supported'
-        });
+        const errorResponse = ErrorLogger.logAndCreateResponse(
+          ERROR_CATALOG.VAL_EMAIL_PLUS_SIGN.code,
+          'Email plus sign validation in middleware',
+          new Error(`Email with plus sign rejected: ${email}`),
+          ERROR_CATALOG.VAL_EMAIL_PLUS_SIGN.message,
+          null
+        );
+        return res.status(400).json(errorResponse);
       }
       
       // Extract and validate domain
       const domain = extractDomain(email);
       if (!domain) {
-        return res.status(400).json({
-          error: 'Invalid email format'
-        });
+        const errorResponse = ErrorLogger.logAndCreateResponse(
+          ERROR_CATALOG.VAL_INVALID_EMAIL.code,
+          'Email domain extraction in middleware',
+          new Error(`Unable to extract domain from email: ${email}`),
+          ERROR_CATALOG.VAL_INVALID_EMAIL.message,
+          null
+        );
+        return res.status(400).json(errorResponse);
       }
       
       // Check against secure domain whitelist
       if (!isSecureDomain(domain)) {
-        return res.status(400).json({
-          error: 'The email domain is not allowed due to security reasons, please use email with common domains like gmail, yahoo etc'
-        });
+        const errorResponse = ErrorLogger.logAndCreateResponse(
+          ERROR_CATALOG.VAL_EMAIL_DOMAIN_NOT_ALLOWED.code,
+          'Email domain whitelist validation in middleware',
+          new Error(`Rejected email domain: ${domain} for email: ${email}`),
+          ERROR_CATALOG.VAL_EMAIL_DOMAIN_NOT_ALLOWED.message,
+          null
+        );
+        return res.status(400).json(errorResponse);
       }
       
       // Replace original email with normalized version
@@ -171,12 +195,17 @@ const SECURE_EMAIL_DOMAINS = [
       next();
       
     } catch (error) {
-      console.error('Email validation error:', error);
-      return res.status(500).json({
-        error: 'Internal server error during email validation'
-      });
+      const errorResponse = ErrorLogger.logAndCreateResponse(
+        ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
+        'Email validation middleware general error',
+        error,
+        'Internal server error during email validation',
+        null
+      );
+      return res.status(500).json(errorResponse);
     }
   };
+  
   
   /**
    * Get list of allowed domains (for documentation/debugging)
