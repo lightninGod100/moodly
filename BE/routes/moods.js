@@ -3,6 +3,10 @@ const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 // ADD: Rate limiting imports
 const { arl_moodCreation, arl_moodRetrievalLast } = require('../middleware/rateLimiting');
+
+const { ERROR_CATALOG, getError } = require('../config/errorCodes');
+const ErrorLogger = require('../services/errorLogger');
+
 const router = express.Router();
 
 // Valid mood values (matching your frontend)
@@ -15,25 +19,29 @@ router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
     const userId = req.user.id; // ✅ Extract from JWT token
 
     // Validate mood value
+    // Validate mood value
     if (!mood) {
-      return res.status(400).json({
-        error: 'Mood is required'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.MOOD_REQUIRED.code,
+        ERROR_CATALOG.MOOD_REQUIRED.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     if (!VALID_MOODS.includes(mood)) {
-      return res.status(400).json({
-        error: 'Invalid mood value',
-        validMoods: VALID_MOODS
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.MOOD_INVALID_VALUE.code,
+        ERROR_CATALOG.MOOD_INVALID_VALUE.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     // Insert mood into database
     // Insert mood into database - ADD: UNIX timestamp for created_at
     const now = Date.now(); // UNIX timestamp in milliseconds
     const newMood = await pool.query(
-    'INSERT INTO moods (user_id, mood, created_at, created_at_utc) VALUES ($1, $2, $3, to_timestamp($3::bigint/1000.0)) RETURNING id, user_id, mood, created_at, created_at_utc',
-    [userId, mood, now]
+      'INSERT INTO moods (user_id, mood, created_at, created_at_utc) VALUES ($1, $2, $3, to_timestamp($3::bigint/1000.0)) RETURNING id, user_id, mood, created_at, created_at_utc',
+      [userId, mood, now]
     );
 
     res.status(201).json({
@@ -48,17 +56,27 @@ router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Mood creation error:', error);
-    
+
     // Handle database constraint errors
     if (error.code === '23503') { // Foreign key violation
-      return res.status(400).json({
-        error: 'Invalid user reference'
-      });
+      const errorResponse = ErrorLogger.logAndCreateResponse(
+        ERROR_CATALOG.MOOD_USER_REFERENCE_INVALID.code,
+        'POST /api/moods - Mood creation with invalid user reference',
+        error,
+        ERROR_CATALOG.MOOD_USER_REFERENCE_INVALID.message,
+        userId
+      );
+      return res.status(400).json(errorResponse);
     }
 
-    res.status(500).json({
-      error: 'Internal server error while recording mood'
-    });
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.MOOD_CREATION_ERROR.code,
+      'POST /api/moods - Mood creation error',
+      error,
+      ERROR_CATALOG.MOOD_CREATION_ERROR.message,
+      userId
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -82,7 +100,7 @@ router.get('/last', arl_moodRetrievalLast, authenticateToken, async (req, res) =
     }
 
     const lastMood = lastMoodResult.rows[0];
-    
+
     // Calculate if within 10 minutes (matching your frontend logic)
     // Calculate if within 10 minutes - SIMPLIFIED: direct UNIX timestamp comparison
     const now = Date.now();
@@ -103,10 +121,14 @@ router.get('/last', arl_moodRetrievalLast, authenticateToken, async (req, res) =
     });
 
   } catch (error) {
-    console.error('Last mood retrieval error:', error);
-    res.status(500).json({
-      error: 'Internal server error while retrieving mood'
-    });
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.MOOD_RETRIEVAL_ERROR.code,
+      'GET /api/moods/last - Last mood retrieval error',
+      error,
+      ERROR_CATALOG.MOOD_RETRIEVAL_ERROR.message,
+      userId
+    );
+    res.status(500).json(errorResponse);
   }
 });
 

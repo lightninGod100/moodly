@@ -225,6 +225,31 @@ const ERROR_CATALOG = {
         code: 'VAL_EMAIL_PLUS_SIGN',
         message: 'Email with \'+\' character not supported'
     },
+
+    // Mood-specific validation errors (MOOD_xxx)
+    MOOD_REQUIRED: {
+        code: 'MOOD_REQUIRED',
+        message: 'Mood is required'
+    },
+    MOOD_INVALID_VALUE: {
+        code: 'MOOD_INVALID_VALUE',
+        message: 'Invalid mood value'
+    },
+    MOOD_USER_REFERENCE_INVALID: {
+        code: 'MOOD_USER_REFERENCE_INVALID',
+        message: 'Invalid user reference'
+    },
+
+    // Mood retrieval errors
+    MOOD_RETRIEVAL_ERROR: {
+        code: 'MOOD_RETRIEVAL_ERROR',
+        message: 'Failed to retrieve mood data'
+    },
+    MOOD_CREATION_ERROR: {
+        code: 'MOOD_CREATION_ERROR',
+        message: 'Failed to create mood entry'
+    },
+    
     // Generic/Unknown Errors
     UNKNOWN_ERROR: {
         code: 'UNKNOWN_ERROR',
