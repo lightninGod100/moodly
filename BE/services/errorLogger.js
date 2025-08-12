@@ -4,23 +4,32 @@
 class ErrorLogger {
     /**
      * Log error to server console for debugging
-     * @param {string} errorCode - Error code from errorCodes.js (e.g., 'VAL_EMAIL_REQUIRED')
+     * @param {string} sys_error_code - Error code from errorCodes.js (e.g., 'VAL_EMAIL_REQUIRED')
+     * @param {string} api - API endpoint where error occurred
      * @param {string} context - Context where error occurred (e.g., 'Email validation', 'Database operation')
-     * @param {Error} technicalError - The actual JavaScript Error object with technical details
-     * @param {number|null} userId - User ID if available, null otherwise
+     * @param {Error} error - The actual JavaScript Error object with technical details
+     * @param {number|null} userID - User ID if available, null otherwise
+     * @param {string} source - Source of the error (e.g., 'pending-react-routing')
      */
-    static logError(errorCode, context, technicalError, userId = null) {
+    static serverLogError(sys_error_code, sys_error_message, apiEndpoint, operationContext, technicalError, userId = null, source) {
       const errorLog = {
+        sys_error_code: sys_error_code,
+        sys_error_message: sys_error_message || 'Unknown error',
+        api: apiEndpoint,
+        context: operationContext,
         timestamp: new Date().toISOString(),
-        errorCode,
-        context,
-        userId,
-        technicalError: technicalError?.message || 'Unknown error',
+        error: {
+          name: technicalError?.name || 'Unknown',
+          message: technicalError?.message || 'Unknown error',
+          code: technicalError?.code || null
+        },
+        source: source,
+        userID: userId,
         stackTrace: technicalError?.stack || 'No stack trace available'
       };
       
       // Log to server console for debugging
-      console.error('[BE_ERROR_LOG]', JSON.stringify(errorLog, null, 2));
+      console.error('[MOODLY_ERROR]', JSON.stringify(errorLog, null, 2));
       
       // Future enhancement: Send to monitoring service
       // this.sendToMonitoringService(errorLog);
@@ -28,14 +37,14 @@ class ErrorLogger {
   
     /**
      * Create standardized error response object to send to frontend
-     * @param {string} errorCode - Error code from errorCodes.js (e.g., 'VAL_EMAIL_REQUIRED')
-     * @param {string} customMessage - Custom error message to display (optional)
+     * @param {string}  sys_error_code - Error code from errorCodes.js (e.g., 'VAL_EMAIL_REQUIRED')
+     * @param {string} sys_error_message - Custom error message to display (optional)
      * @returns {Object} Standardized error response object
      */
-    static createErrorResponse(errorCode, customMessage = null) {
+    static createErrorResponse(sys_error_code, sys_error_message = null) {
       return {
-        errorCode,
-        error: customMessage || 'An error occurred',
+        sys_error_code,
+        sys_error_message: sys_error_message || 'An error occurred',
         timestamp: new Date().toISOString()
       };
     }
@@ -49,23 +58,14 @@ class ErrorLogger {
      * @param {number|null} userId - User ID if available
      * @returns {Object} Standardized error response object
      */
-    static logAndCreateResponse(errorCode, context, technicalError, userMessage, userId = null) {
+    static logAndCreateResponse(sys_error_code, sys_error_message, apiEndpoint, operationContext, technicalError, userId = null, source) {
       // Log the error for debugging
-      this.logError(errorCode, context, technicalError, userId);
+      this.serverLogError(sys_error_code, sys_error_message, apiEndpoint, operationContext, technicalError, userId, source);
       
       // Return response for frontend
-      return this.createErrorResponse(errorCode, userMessage);
+      return this.createErrorResponse(sys_error_code, sys_error_message);
     }
-  
-    /**
-     * Future enhancement: Send error logs to external monitoring service
-     * @param {Object} errorLog - The error log object to send
-     */
-    static sendToMonitoringService(errorLog) {
-      // TODO: Implement when monitoring service is set up
-      // Examples: Sentry, LogRocket, DataDog, etc.
-      // await monitoringService.send(errorLog);
-    }
+
   }
   
   module.exports = ErrorLogger;
