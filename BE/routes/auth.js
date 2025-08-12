@@ -97,36 +97,30 @@ router.post('/register', registerProgressiveLimiter, validateEmail, async (req, 
       return res.status(400).json(errorResponse);
     }
 
-    // Check if username already exists
+    // Check if username already exists - NO SERVER LOGGING (validation error)
     const existingUsername = await pool.query(
       'SELECT id FROM users WHERE username = $1',
       [username.toLowerCase()]
     );
 
     if (existingUsername.rows.length > 0) {
-      const errorResponse = ErrorLogger.logAndCreateResponse(
+      const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.VAL_USERNAME_TAKEN.code,
-        'Username uniqueness check during registration',
-        new Error(`Username conflict: ${username}`),
-        ERROR_CATALOG.VAL_USERNAME_TAKEN.message,
-        null
+        ERROR_CATALOG.VAL_USERNAME_TAKEN.message
       );
       return res.status(409).json(errorResponse);
     }
 
-    // Check if email already exists
+    // Check if email already exists - NO SERVER LOGGING (validation error)
     const existingUser = await pool.query(
       'SELECT id FROM users WHERE email = $1',
       [email.toLowerCase()]
     );
 
     if (existingUser.rows.length > 0) {
-      const errorResponse = ErrorLogger.logAndCreateResponse(
+      const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.VAL_EMAIL_TAKEN.code,
-        'Email uniqueness check during registration',
-        new Error(`Email conflict: ${email}`),
-        ERROR_CATALOG.VAL_EMAIL_TAKEN.message,
-        null
+        ERROR_CATALOG.VAL_EMAIL_TAKEN.message
       );
       return res.status(409).json(errorResponse);
     }
@@ -164,11 +158,13 @@ router.post('/register', registerProgressiveLimiter, validateEmail, async (req, 
     });
 
   } catch (error) {
+    // Multi-operation endpoint - let ErrorLogger determine context
     const errorResponse = ErrorLogger.logAndCreateResponse(
       ERROR_CATALOG.SYS_DATABASE_ERROR.code,
-      'User registration database operation',
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'POST /api/auth/register',
+      "", // Empty string - multiple operations, let ErrorLogger analyze
       error,
-      'Internal server error during registration',
       null
     );
     res.status(500).json(errorResponse);
@@ -180,7 +176,7 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Field validation
+    // Field validation - NO SERVER LOGGING (validation errors)
     if (!email || !password) {
       const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.VAL_ALL_FIELDS_REQUIRED.code,
@@ -211,13 +207,11 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
       [email.toLowerCase()]
     );
 
+    // Invalid credentials - NO SERVER LOGGING (validation/auth error)
     if (user.rows.length === 0) {
-      const errorResponse = ErrorLogger.logAndCreateResponse(
+      const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.code,
-        'User login attempt with invalid email',
-        new Error(`Login attempt with non-existent email: ${email}`),
-        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.message,
-        null
+        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.message
       );
       return res.status(401).json(errorResponse);
     }
@@ -225,13 +219,11 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
     // Check password
     const validPassword = await bcrypt.compare(password, user.rows[0].password_hash);
 
+    // Invalid password - NO SERVER LOGGING (validation/auth error)
     if (!validPassword) {
-      const errorResponse = ErrorLogger.logAndCreateResponse(
+      const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.code,
-        'User login attempt with invalid password',
-        new Error(`Invalid password attempt for user: ${user.rows[0].id}`),
-        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.message,
-        user.rows[0].id
+        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.message
       );
       return res.status(401).json(errorResponse);
     }
@@ -246,11 +238,15 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
 
       console.log(`✅ User ${user.rows[0].id} logged in successfully at ${new Date(loginTimestamp).toISOString()}`);
     } catch (logError) {
-      ErrorLogger.logError(
+      // Activity logging failure shouldn't block login, but should be logged
+      ErrorLogger.serverLogError(
         ERROR_CATALOG.SYS_DATABASE_ERROR.code,
-        'Login activity logging',
+        ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+        'POST /api/auth/login',
+        'write to database',
         logError,
-        user.rows[0].id
+        user.rows[0].id,
+        'pending-react-routing'
       );
       // Continue with login - logging failure shouldn't block authentication
     }
@@ -285,11 +281,13 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
     });
 
   } catch (error) {
+    // Multi-operation endpoint - let ErrorLogger determine context
     const errorResponse = ErrorLogger.logAndCreateResponse(
       ERROR_CATALOG.SYS_DATABASE_ERROR.code,
-      'User login database operation',
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'POST /api/auth/login',
+      "", // Empty string - multiple operations (SELECT, bcrypt, INSERT, UPDATE, JWT)
       error,
-      'Internal server error during login',
       null
     );
     res.status(500).json(errorResponse);
@@ -306,15 +304,12 @@ router.post('/logout', arl_logoutLimiter, authenticateToken, async (req, res) =>
     const logoutTimestamp = req.body.timestamp || now;
     const retryAttempt = req.body.retryAttempt || 0;
 
-    // Validate timestamp to prevent abuse
+    // Validate timestamp to prevent abuse - NO SERVER LOGGING (validation error)
     const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
     if (logoutTimestamp > now + 60000 || now - logoutTimestamp > maxAge) {
-      const errorResponse = ErrorLogger.logAndCreateResponse(
+      const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.VAL_INVALID_EMAIL.code, // Reusing for timestamp validation
-        'Invalid logout timestamp validation',
-        new Error(`Invalid logout timestamp: ${logoutTimestamp}`),
-        'Invalid timestamp',
-        userId
+        'Invalid timestamp'
       );
       return res.status(400).json(errorResponse);
     }
@@ -346,11 +341,13 @@ router.post('/logout', arl_logoutLimiter, authenticateToken, async (req, res) =>
     });
 
   } catch (error) {
+    // Single operation endpoint - we know it's the INSERT that failed
     const errorResponse = ErrorLogger.logAndCreateResponse(
       ERROR_CATALOG.SYS_DATABASE_ERROR.code,
-      'User logout activity logging',
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'POST /api/auth/logout',
+      'write to database', // Specific context - only INSERT operation can fail
       error,
-      'Server error during logout - will retry automatically',
       req.user?.id || null
     );
     res.status(500).json(errorResponse);
@@ -364,11 +361,13 @@ router.get('/me', authenticateToken, async (req, res) => {
       user: req.user
     });
   } catch (error) {
+    // Simple endpoint - no database operations, just JSON response
     const errorResponse = ErrorLogger.logAndCreateResponse(
       ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
-      'Protected route access',
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.message,
+      'GET /api/auth/me',
+      'system operation', // Specific context - no DB, just system/JSON response
       error,
-      'Error fetching user data',
       req.user?.id || null
     );
     res.status(500).json(errorResponse);
