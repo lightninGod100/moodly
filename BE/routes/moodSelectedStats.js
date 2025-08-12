@@ -3,6 +3,9 @@ const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 // ADD: Rate limiting import
 const { arl_mood_selected_stats } = require('../middleware/rateLimiting');
+
+const { ERROR_CATALOG, getError } = require('../config/errorCodes');
+const ErrorLogger = require('../services/errorLogger');
 const router = express.Router();
 
 
@@ -312,10 +315,16 @@ router.get('/achievements', arl_mood_selected_stats, authenticateToken, async (r
     }
     
   } catch (error) {
-    console.error('Achievements calculation error:', error);
-    res.status(500).json({
-      error: 'Moodly Seems to be tired rn, please come back later'
-    });
+    // Multi-operation endpoint - let ErrorLogger determine context
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/mood-selected-stats/achievements',
+      '', // Empty string - multiple operations (user SELECT + moods SELECT + calculations)
+      error,
+      userId
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -437,10 +446,16 @@ router.get('/weekly-sentiment', arl_mood_selected_stats, authenticateToken, asyn
     return res.json(response);
     
   } catch (error) {
-    console.error('Weekly sentiment error:', error);
-    res.status(500).json({
-      error: 'Moodly Seems to be tired rn, please come back later'
-    });
+    // Multi-operation endpoint - let ErrorLogger determine context
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/mood-selected-stats/weekly-sentiment',
+      '', // Empty string - multiple operations (user SELECT + moods SELECT + current mood SELECT)
+      error,
+      userId
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -493,68 +508,83 @@ router.get('/mood-transition', arl_mood_selected_stats, authenticateToken, async
     }
 
   } catch (error) {
-    console.error('Mood transition error:', error);
-    res.status(500).json({
-      error: 'Moodly Seems to be tired rn, please come back later'
-    });
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/mood-selected-stats/mood-transition',
+      'read from database', // Specific context - only SELECT operation can fail
+      error,
+      userId
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
 router.get('/global-percentage', arl_mood_selected_stats, authenticateToken, async (req, res) => {
-    try {
-      const { mood } = req.query;
-  
-      // Validate mood parameter
-      if (!mood) {
-        return res.status(400).json({
-          error: 'Mood parameter is required'
-        });
-      }
-  
-      if (!VALID_MOODS.includes(mood)) {
-        return res.status(400).json({
-          error: 'Invalid mood value',
-          validMoods: VALID_MOODS
-        });
-      }
-  
-      // Calculate time filter for last 10 minutes
-      const now = Date.now();
-      const tenMinutesAgo = now - (10 * 60 * 1000);
-  
-      // Get count of users with specific mood in last 10 minutes
-      const moodCountResult = await pool.query(
-        'SELECT COUNT(DISTINCT user_id) as count FROM moods WHERE mood = $1::VARCHAR AND created_at >= $2',
-        [mood, tenMinutesAgo]
-      );
-  
-      // Get total count of active users in last 10 minutes
-      const totalCountResult = await pool.query(
-        'SELECT COUNT(DISTINCT user_id) as count FROM moods WHERE created_at >= $1',
-        [tenMinutesAgo]
-      );
-  
-      const moodCount = parseInt(moodCountResult.rows[0].count);
-      const totalCount = parseInt(totalCountResult.rows[0].count);
-  
-      const adjustedMoodCount = moodCount + 1;  // Current user + others with same mood
-const adjustedTotalCount = Math.max(totalCount + 1, 1);  // Ensure at least 1 total user
+  try {
+    const { mood } = req.query;
 
-// Calculate percentage
-const percentage = Math.round((adjustedMoodCount / adjustedTotalCount) * 100);
-  
-      return res.json({
-        percentage: percentage,
-        message: `You are among ${percentage}% of users feeling ${mood} right now`
-      });
-  
-    } catch (error) {
-      console.error('Global percentage error:', error);
-      res.status(500).json({
-        error: 'Moodly Seems to be tired rn, please come back later'
-      });
+    // Validate mood parameter - NO SERVER LOGGING (validation errors)
+    if (!mood) {
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_INVALID_EMAIL.code, // Reusing for parameter validation
+        'Mood parameter is required'
+      );
+      return res.status(400).json(errorResponse);
     }
-  });
+
+    if (!VALID_MOODS.includes(mood)) {
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.MOOD_INVALID_VALUE.code,
+        ERROR_CATALOG.MOOD_INVALID_VALUE.message
+      );
+      return res.status(400).json(errorResponse);
+    }
+
+    // Calculate time filter for last 10 minutes
+    const now = Date.now();
+    const tenMinutesAgo = now - (10 * 60 * 1000);
+
+    // Get count of users with specific mood in last 10 minutes
+    const moodCountResult = await pool.query(
+      'SELECT COUNT(DISTINCT user_id) as count FROM moods WHERE mood = $1::VARCHAR AND created_at >= $2',
+      [mood, tenMinutesAgo]
+    );
+
+    // Get total count of active users in last 10 minutes
+    const totalCountResult = await pool.query(
+      'SELECT COUNT(DISTINCT user_id) as count FROM moods WHERE created_at >= $1',
+      [tenMinutesAgo]
+    );
+
+    const moodCount = parseInt(moodCountResult.rows[0].count);
+    const totalCount = parseInt(totalCountResult.rows[0].count);
+
+    const adjustedMoodCount = moodCount + 1;  // Current user + others with same mood
+    const adjustedTotalCount = Math.max(totalCount + 1, 1);  // Ensure at least 1 total user
+
+    // Calculate percentage
+    const percentage = Math.round((adjustedMoodCount / adjustedTotalCount) * 100);
+
+    return res.json({
+      percentage: percentage,
+      message: `You are among ${percentage}% of users feeling ${mood} right now`
+    });
+
+  } catch (error) {
+    // Multi-operation endpoint - let ErrorLogger determine context
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/mood-selected-stats/global-percentage',
+      '', // Empty string - multiple operations (mood count SELECT + total count SELECT)
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
+  }
+});
 
   
 module.exports = router;
