@@ -52,7 +52,7 @@ router.post('/', contactProgressiveLimiter, validateContactEmail, async (req, re
     const { reason, message, email: formEmail } = req.body;
     const authHeader = req.headers['authorization'];
 
-    // Subject validation
+    // Subject validation - NO SERVER LOGGING (validation error)
     if (!reason || !reason.trim()) {
       const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.CONTACT_SUBJECT_REQUIRED.code,
@@ -61,7 +61,7 @@ router.post('/', contactProgressiveLimiter, validateContactEmail, async (req, re
       return res.status(400).json(errorResponse);
     }
 
-    // Message validation
+    // Message validation - NO SERVER LOGGING (validation error)
     if (!message || !message.trim()) {
       const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.CONTACT_MESSAGE_REQUIRED.code,
@@ -89,8 +89,6 @@ router.post('/', contactProgressiveLimiter, validateContactEmail, async (req, re
         return res.status(400).json(errorResponse);
       }
 
-      // Email validation is handled by validateContactEmail middleware
-      // No need for redundant validation here
       userEmail = formEmail.trim();
       userId = null;
     }
@@ -98,7 +96,7 @@ router.post('/', contactProgressiveLimiter, validateContactEmail, async (req, re
     const now = Date.now();
     const subject = `[Moodly Contact] - ${reason.trim()}`;
 
-    // Save to database first
+    // CRITICAL OPERATION: Save to database first (FAIL FAST if this fails)
     let submissionResult;
     try {
       submissionResult = await pool.query(
@@ -106,11 +104,13 @@ router.post('/', contactProgressiveLimiter, validateContactEmail, async (req, re
         [userId, 'contact_form', subject, message.trim(), userEmail, now, 'pending']
       );
     } catch (dbError) {
+      // Critical failure - log and return error
       const errorResponse = ErrorLogger.logAndCreateResponse(
         ERROR_CATALOG.DB_INSERT_FAILED.code,
-        'Contact form database insertion',
+        ERROR_CATALOG.DB_INSERT_FAILED.message,
+        'POST /api/contact',
+        'write to database', // Specific context - INSERT operation
         dbError,
-        'Failed to save your message. Please try again.',
         userId
       );
       return res.status(500).json(errorResponse);
@@ -142,22 +142,26 @@ This message was sent via Moodly Contact Form
       content: emailContent
     };
 
-    // Send email using service
+    // NON-CRITICAL OPERATION: Send email (don't fail if this fails)
     try {
       await sendContactEmail(emailData);
       
-      // Update status to 'sent'
+      // NON-CRITICAL: Update status to 'sent' (nested try-catch)
       try {
         await pool.query(
           'UPDATE email_logs SET status = $1 WHERE id = $2',
           ['sent', submissionId]
         );
       } catch (updateError) {
-        ErrorLogger.logError(
+        // Log only - don't fail the response
+        ErrorLogger.serverLogError(
           ERROR_CATALOG.DB_UPDATE_FAILED.code,
-          'Contact email status update to sent',
+          ERROR_CATALOG.DB_UPDATE_FAILED.message,
+          'POST /api/contact',
+          'write to database', // Specific context - UPDATE operation
           updateError,
-          userId
+          userId,
+          'pending-react-routing'
         );
         // Continue - status update failure shouldn't affect user experience
       }
@@ -170,25 +174,33 @@ This message was sent via Moodly Contact Form
       });
 
     } catch (emailError) {
-      ErrorLogger.logError(
+      // Email failed - log but don't fail the response (we have their message saved)
+      ErrorLogger.serverLogError(
         ERROR_CATALOG.EMAIL_SENDING_FAILED.code,
-        'Contact email sending',
+        ERROR_CATALOG.EMAIL_SENDING_FAILED.message,
+        'POST /api/contact',
+        'call external service', // Specific context - email service call
         emailError,
-        userId
+        userId,
+        'pending-react-routing'
       );
       
-      // Update status to 'failed'
+      // NON-CRITICAL: Update status to 'failed' (nested try-catch)
       try {
         await pool.query(
           'UPDATE email_logs SET status = $1 WHERE id = $2',
           ['failed', submissionId]
         );
       } catch (updateError) {
-        ErrorLogger.logError(
+        // Log only - don't fail the response
+        ErrorLogger.serverLogError(
           ERROR_CATALOG.DB_UPDATE_FAILED.code,
-          'Contact email status update to failed',
+          ERROR_CATALOG.DB_UPDATE_FAILED.message,
+          'POST /api/contact',
+          'write to database', // Specific context - UPDATE operation
           updateError,
-          userId
+          userId,
+          'pending-react-routing'
         );
       }
 
@@ -201,12 +213,14 @@ This message was sent via Moodly Contact Form
     }
 
   } catch (error) {
+    // MAIN CATCH: Unexpected errors (JWT verification, variable assignment, etc.)
     const errorResponse = ErrorLogger.logAndCreateResponse(
       ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
-      'Contact form general error handling',
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.message,
+      'POST /api/contact',
+      '', // Empty string - multi-operation endpoint, let ErrorLogger determine
       error,
-      'Internal server error while processing your message',
-      null
+      null // No user ID available for unexpected errors
     );
     res.status(500).json(errorResponse);
   }
@@ -216,41 +230,38 @@ This message was sent via Moodly Contact Form
 // GET /api/contact/test - Test email configuration (development only)
 router.get('/test', async (req, res) => {
   try {
-    // Environment validation
+    // Environment validation - NO SERVER LOGGING (validation error)
     if (process.env.NODE_ENV === 'production') {
-      const errorResponse = ErrorLogger.logAndCreateResponse(
+      const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.AUTH_UNAUTHORIZED.code,
-        'Production environment access attempt to test endpoint',
-        new Error('Test endpoint accessed in production'),
-        'Not found',
-        null
+        'Not found'
       );
       return res.status(404).json(errorResponse);
     }
 
-    // Check email configuration
+    // Check email configuration - NO SERVER LOGGING (validation error)
     if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) {
-      const errorResponse = ErrorLogger.logAndCreateResponse(
+      const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.EMAIL_CONFIG_ERROR.code,
-        'Missing email configuration environment variables',
-        new Error('EMAIL_USER or EMAIL_APP_PASSWORD not configured'),
-        'Email configuration incomplete',
-        null
+        ERROR_CATALOG.EMAIL_CONFIG_ERROR.message
       );
       return res.status(500).json(errorResponse);
     }
 
     const { testEmailConfiguration } = require('../services/emailService');
     
+    // Email service test - nested try-catch for specific operation
     let result;
     try {
       result = await testEmailConfiguration();
     } catch (configError) {
+      // Server error during email service test
       const errorResponse = ErrorLogger.logAndCreateResponse(
         ERROR_CATALOG.EMAIL_SERVICE_UNAVAILABLE.code,
-        'Email service configuration test failure',
+        ERROR_CATALOG.EMAIL_SERVICE_UNAVAILABLE.message,
+        'GET /api/contact/test',
+        'call external service', // Specific context - email service test
         configError,
-        'Email service configuration test failed',
         null
       );
       return res.status(500).json(errorResponse);
@@ -264,11 +275,13 @@ router.get('/test', async (req, res) => {
     });
 
   } catch (error) {
+    // MAIN CATCH: Unexpected errors
     const errorResponse = ErrorLogger.logAndCreateResponse(
       ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
-      'Email configuration test general error',
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.message,
+      'GET /api/contact/test',
+      'system operation', // Specific context - simple endpoint with environment checks
       error,
-      'Internal server error during email configuration test',
       null
     );
     res.status(500).json(errorResponse);

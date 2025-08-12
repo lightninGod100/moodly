@@ -16,10 +16,9 @@ const VALID_MOODS = ['Excited', 'Happy', 'Calm', 'Tired', 'Anxious', 'Angry', 'S
 router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
   try {
     const { mood } = req.body;
-    const userId = req.user.id; // ✅ Extract from JWT token
+    const userId = req.user.id;
 
-    // Validate mood value
-    // Validate mood value
+    // Validate mood value - NO SERVER LOGGING (validation errors)
     if (!mood) {
       const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.MOOD_REQUIRED.code,
@@ -37,8 +36,7 @@ router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
     }
 
     // Insert mood into database
-    // Insert mood into database - ADD: UNIX timestamp for created_at
-    const now = Date.now(); // UNIX timestamp in milliseconds
+    const now = Date.now();
     const newMood = await pool.query(
       'INSERT INTO moods (user_id, mood, created_at, created_at_utc) VALUES ($1, $2, $3, to_timestamp($3::bigint/1000.0)) RETURNING id, user_id, mood, created_at, created_at_utc',
       [userId, mood, now]
@@ -55,25 +53,14 @@ router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Mood creation error:', error);
-
-    // Handle database constraint errors
-    if (error.code === '23503') { // Foreign key violation
-      const errorResponse = ErrorLogger.logAndCreateResponse(
-        ERROR_CATALOG.MOOD_USER_REFERENCE_INVALID.code,
-        'POST /api/moods - Mood creation with invalid user reference',
-        error,
-        ERROR_CATALOG.MOOD_USER_REFERENCE_INVALID.message,
-        userId
-      );
-      return res.status(400).json(errorResponse);
-    }
-
+    // Single operation endpoint - we know it's the INSERT that failed
+    // Remove conditional checking - all catch errors are server errors
     const errorResponse = ErrorLogger.logAndCreateResponse(
       ERROR_CATALOG.MOOD_CREATION_ERROR.code,
-      'POST /api/moods - Mood creation error',
-      error,
       ERROR_CATALOG.MOOD_CREATION_ERROR.message,
+      'POST /api/moods',
+      'write to database', // Specific context - only INSERT operation can fail
+      error,
       userId
     );
     res.status(500).json(errorResponse);
@@ -101,10 +88,9 @@ router.get('/last', arl_moodRetrievalLast, authenticateToken, async (req, res) =
 
     const lastMood = lastMoodResult.rows[0];
 
-    // Calculate if within 10 minutes (matching your frontend logic)
-    // Calculate if within 10 minutes - SIMPLIFIED: direct UNIX timestamp comparison
+    // Calculate if within 10 minutes
     const now = Date.now();
-    const moodTime = lastMood.created_at; // Already UNIX timestamp
+    const moodTime = lastMood.created_at;
     const tenMinutesInMs = 10 * 60 * 1000;
     const isWithin10Minutes = (now - moodTime) <= tenMinutesInMs;
 
@@ -121,11 +107,13 @@ router.get('/last', arl_moodRetrievalLast, authenticateToken, async (req, res) =
     });
 
   } catch (error) {
+    // Single operation endpoint - we know it's the SELECT that failed
     const errorResponse = ErrorLogger.logAndCreateResponse(
       ERROR_CATALOG.MOOD_RETRIEVAL_ERROR.code,
-      'GET /api/moods/last - Last mood retrieval error',
-      error,
       ERROR_CATALOG.MOOD_RETRIEVAL_ERROR.message,
+      'GET /api/moods/last',
+      'read from database', // Specific context - only SELECT operation can fail
+      error,
       userId
     );
     res.status(500).json(errorResponse);
