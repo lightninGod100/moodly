@@ -1,6 +1,8 @@
 // routes/worldStats.js
 const express = require('express');
 const { pool } = require('../config/database');
+const { ERROR_CATALOG, getError } = require('../config/errorCodes');
+const ErrorLogger = require('../services/errorLogger');
 
 const router = express.Router();
 // ADD: Rate limiting import
@@ -31,12 +33,13 @@ router.get('/global', arl_world_stats, async (req, res) => {
   try {
     const { period } = req.query;
     
-    // Validate period
+    // Validate period - NO SERVER LOGGING (validation error)
     if (!period || !['live', 'today', 'week', 'month'].includes(period)) {
-      return res.status(400).json({
-        error: 'Invalid period parameter',
-        validPeriods: ['live', 'today', 'week', 'month']
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_PERIOD_REQUIRED.code,
+        ERROR_CATALOG.VAL_PERIOD_REQUIRED.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     const timeFilter = getTimePeriodFilter(period);
@@ -110,10 +113,16 @@ CROSS JOIN total_users tu
     res.json(response);
 
   } catch (error) {
-    console.error('Global stats error:', error);
-    res.status(500).json({
-      error: 'Internal server error while fetching global stats'
-    });
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/world-stats/global',
+      'read from database', // Specific context - only SELECT operation can fail
+      error,
+      null // No user ID for public endpoints
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -122,12 +131,13 @@ router.get('/countries', arl_world_stats, async (req, res) => {
   try {
     const { period } = req.query;
     
-    // Validate period
+    // Validate period - NO SERVER LOGGING (validation error)
     if (!period || !['live', 'today', 'week', 'month'].includes(period)) {
-      return res.status(400).json({
-        error: 'Invalid period parameter',
-        validPeriods: ['live', 'today', 'week', 'month']
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_PERIOD_REQUIRED.code,
+        ERROR_CATALOG.VAL_PERIOD_REQUIRED.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     const timeFilter = getTimePeriodFilter(period);
@@ -143,7 +153,7 @@ router.get('/countries', arl_world_stats, async (req, res) => {
     COUNT(*) as mood_count,
     MAX(m.created_at) as latest_occurrence
   FROM moods m
-  INNER JOIN users u ON m.user_id = u.id  -- Still need this for country!
+  INNER JOIN users u ON m.user_id = u.id
   WHERE m.created_at >= $1
   GROUP BY m.user_id, u.country, m.mood
 ),
@@ -240,10 +250,16 @@ ORDER BY cmp.country, cmp.percentage DESC
     res.json(response);
 
   } catch (error) {
-    console.error('Country stats error:', error);
-    res.status(500).json({
-      error: 'Internal server error while fetching country stats'
-    });
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/world-stats/countries',
+      'read from database', // Specific context - only SELECT operation can fail
+      error,
+      null // No user ID for public endpoints
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -252,12 +268,13 @@ router.get('/mood_frequency', arl_world_stats, async (req, res) => {
   try {
     const { period } = req.query;
     
-    // Validate period
+    // Validate period - NO SERVER LOGGING (validation error)
     if (!period || !['live', 'today', 'week', 'month'].includes(period)) {
-      return res.status(400).json({
-        error: 'Invalid period parameter',
-        validPeriods: ['live', 'today', 'week', 'month']
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_PERIOD_REQUIRED.code,
+        ERROR_CATALOG.VAL_PERIOD_REQUIRED.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     const timeFilter = getTimePeriodFilter(period);
@@ -288,10 +305,16 @@ router.get('/mood_frequency', arl_world_stats, async (req, res) => {
     res.json(response);
 
   } catch (error) {
-    console.error('Mood frequency stats error:', error);
-    res.status(500).json({
-      error: 'Internal server error while fetching mood frequency stats'
-    });
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/world-stats/mood_frequency',
+      'read from database', // Specific context - only SELECT operation can fail
+      error,
+      null // No user ID for public endpoints
+    );
+    res.status(500).json(errorResponse);
   }
 });
 

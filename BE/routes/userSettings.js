@@ -7,6 +7,8 @@ const router = express.Router();
 const { sendAccountDeletionEmails } = require('../services/emailService');
 // Import email functionality
 // ADD: Rate limiting imports
+const { ERROR_CATALOG, getError } = require('../config/errorCodes');
+const ErrorLogger = require('../services/errorLogger');
 const { arl_account_deletion, arl_photo_upload_delete, arl_validate_password, arl_country_change, arl_user_settings_password_change, arl_userSettingsRead } = require('../middleware/rateLimiting');
 
 // Helper function to validate Base64 image
@@ -53,6 +55,7 @@ const canChangeCountry = (lastChangeTimestamp) => {
 };
 
 // GET /api/user-settings - Get current user settings
+
 router.get('/', arl_userSettingsRead, authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -64,37 +67,25 @@ router.get('/', arl_userSettingsRead, authenticateToken, async (req, res) => {
     );
 
     if (userResult.rows.length === 0) {
-      return res.status(404).json({
-        error: 'User not found'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.code,
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.message
+      );
+      return res.status(404).json(errorResponse);
     }
 
     const user = userResult.rows[0];
 
     // Calculate next country change date with proper validation
-    // Calculate next country change date with proper validation
-    // Calculate next country change date with proper validation
     let nextCountryChangeDate = null;
     if (user.last_country_change_at && !canChangeCountry(user.last_country_change_at)) {
       const nextChangeTimestamp = parseInt(user.last_country_change_at) + (30 * 24 * 60 * 60 * 1000);
-      console.log('nextChangeTimestamp calculated:', nextChangeTimestamp);
       const dateObj = new Date(nextChangeTimestamp);
-      console.log('dateObj:', dateObj);
-      console.log('dateObj.getTime():', dateObj.getTime());
-      console.log('isNaN check:', !isNaN(dateObj.getTime()));
       if (!isNaN(dateObj.getTime())) {
         nextCountryChangeDate = dateObj.toISOString();
-        console.log('Final nextCountryChangeDate:', nextCountryChangeDate);
       }
     }
-    // After the user query, add these logs:
-    console.log('=== COUNTRY CHANGE DEBUG ===');
-    console.log('user.last_country_change_at:', user.last_country_change_at);
-    console.log('canChangeCountry result:', canChangeCountry(user.last_country_change_at));
 
-    // After the nextCountryChangeDate calculation:
-    console.log('nextCountryChangeDate calculated:', nextCountryChangeDate);
-    console.log('=== END DEBUG ===');
     // Calculate deletion timestamp (UTC + 7 days)
     let deletionTimestamp = null;
     if (user.mark_for_deletion_at) {
@@ -119,10 +110,16 @@ router.get('/', arl_userSettingsRead, authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get user settings error:', error);
-    return res.status(500).json({
-      error: 'Internal server error while retrieving user settings'
-    });
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/user-settings',
+      'read from database', // Specific context - only SELECT operation can fail
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -132,17 +129,21 @@ router.put('/password_change', arl_user_settings_password_change, authenticateTo
     const { currentPassword, newPassword } = req.body;
     const userId = req.user.id;
 
-    // Validation
+    // Field validation - NO SERVER LOGGING (validation errors)
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        error: 'Current password and new password are required'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_ALL_FIELDS_REQUIRED.code,
+        ERROR_CATALOG.VAL_ALL_FIELDS_REQUIRED.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     if (newPassword.length < 6) {
-      return res.status(400).json({
-        error: 'New password must be at least 6 characters long'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_PASSWORD_TOO_SHORT.code,
+        ERROR_CATALOG.VAL_PASSWORD_TOO_SHORT.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     // Get user's current password hash
@@ -151,26 +152,29 @@ router.put('/password_change', arl_user_settings_password_change, authenticateTo
       [userId]
     );
 
+    // User not found - NO SERVER LOGGING (validation error)
     if (userResult.rows.length === 0) {
-      return res.status(404).json({
-        error: 'User not found'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.code,
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.message
+      );
+      return res.status(404).json(errorResponse);
     }
 
-    // Verify current password
+    // Verify current password - NO SERVER LOGGING (validation error)
     const validCurrentPassword = await bcrypt.compare(currentPassword, userResult.rows[0].password_hash);
 
     if (!validCurrentPassword) {
-      return res.status(400).json({
-        error: 'Current password is incorrect'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.code,
+        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
-    // Hash new password
+    // Hash new password and update
     const saltRounds = 12;
     const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
-
-    // Update password in database
     await pool.query(
       'UPDATE users SET password_hash = $1 WHERE id = $2',
       [newPasswordHash, userId]
@@ -181,10 +185,16 @@ router.put('/password_change', arl_user_settings_password_change, authenticateTo
     });
 
   } catch (error) {
-    console.error('Change password error:', error);
-    return res.status(500).json({
-      error: 'Internal server error while changing password'
-    });
+    // Multi-operation endpoint - let ErrorLogger determine context
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'PUT /api/user-settings/password_change',
+      '', // Empty string - multiple operations (SELECT + UPDATE)
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -194,11 +204,13 @@ router.put('/country', arl_country_change, authenticateToken, async (req, res) =
     const { country } = req.body;
     const userId = req.user.id;
 
-    // Validation
+    // Validation - NO SERVER LOGGING (validation errors)
     if (!country || typeof country !== 'string' || country.trim().length === 0) {
-      return res.status(400).json({
-        error: 'Valid country is required'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_COUNTRY_REQUIRED.code,
+        ERROR_CATALOG.VAL_COUNTRY_REQUIRED.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     // Get user's current country and last change timestamp
@@ -207,30 +219,35 @@ router.put('/country', arl_country_change, authenticateToken, async (req, res) =
       [userId]
     );
 
+    // User not found - NO SERVER LOGGING (validation error)
     if (userResult.rows.length === 0) {
-      return res.status(404).json({
-        error: 'User not found'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.code,
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.message
+      );
+      return res.status(404).json(errorResponse);
     }
 
     const currentUser = userResult.rows[0];
 
-    // Check if country is actually different
+    // Check if country is actually different - NO SERVER LOGGING (validation error)
     if (currentUser.country === country.trim()) {
-      return res.status(400).json({
-        error: 'New country must be different from current country'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_COUNTRY_SAME.code,
+        ERROR_CATALOG.VAL_COUNTRY_SAME.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
-    // Check 30-day restriction
+    // Check 30-day restriction - NO SERVER LOGGING (validation error)
     if (!canChangeCountry(currentUser.last_country_change_at)) {
       const nextChangeTimestamp = currentUser.last_country_change_at + (30 * 24 * 60 * 60 * 1000);
       const nextChangeDate = new Date(nextChangeTimestamp);
-      return res.status(429).json({
-        error: 'Country can only be changed once per month',
-        nextChangeDate: nextChangeDate.toISOString(),
-        message: `Next change available: ${nextChangeDate.toLocaleDateString()}`
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_COUNTRY_CHANGE_RESTRICTED.code,
+        ERROR_CATALOG.VAL_COUNTRY_CHANGE_RESTRICTED.message
+      );
+      return res.status(429).json(errorResponse);
     }
 
     // Update country and timestamp
@@ -247,10 +264,16 @@ router.put('/country', arl_country_change, authenticateToken, async (req, res) =
     });
 
   } catch (error) {
-    console.error('Update country error:', error);
-    return res.status(500).json({
-      error: 'Internal server error while updating country'
-    });
+    // Multi-operation endpoint - let ErrorLogger determine context
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'PUT /api/user-settings/country',
+      '', // Empty string - multiple operations (SELECT + UPDATE)
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -260,19 +283,23 @@ router.put('/photo', arl_photo_upload_delete, authenticateToken, async (req, res
     const { photoData } = req.body;
     const userId = req.user.id;
 
-    // Validation
+    // Validation - NO SERVER LOGGING (validation errors)
     if (!photoData || typeof photoData !== 'string') {
-      return res.status(400).json({
-        error: 'Photo data is required'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_PHOTO_DATA_REQUIRED.code,
+        ERROR_CATALOG.VAL_PHOTO_DATA_REQUIRED.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
-    // Validate Base64 image
+    // Validate Base64 image - NO SERVER LOGGING (validation error)
     const validation = validateBase64Image(photoData);
     if (!validation.valid) {
-      return res.status(400).json({
-        error: validation.error
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_PHOTO_INVALID_FORMAT.code,
+        ERROR_CATALOG.VAL_PHOTO_INVALID_FORMAT.message 
+      );
+      return res.status(400).json(errorResponse);
     }
 
     // Update profile photo in database
@@ -286,10 +313,16 @@ router.put('/photo', arl_photo_upload_delete, authenticateToken, async (req, res
     });
 
   } catch (error) {
-    console.error('Update profile photo error:', error);
-    return res.status(500).json({
-      error: 'Internal server error while updating profile photo'
-    });
+    // Single operation endpoint - we know it's the UPDATE that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'PUT /api/user-settings/photo',
+      'write to database', // Specific context - only UPDATE operation can fail
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -309,10 +342,16 @@ router.delete('/photo', arl_photo_upload_delete, authenticateToken, async (req, 
     });
 
   } catch (error) {
-    console.error('Remove profile photo error:', error);
-    return res.status(500).json({
-      error: 'Internal server error while removing profile photo'
-    });
+    // Single operation endpoint - we know it's the UPDATE that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'DELETE /api/user-settings/photo',
+      'write to database', // Specific context - only UPDATE operation can fail
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -322,160 +361,90 @@ router.delete('/account_deletion', arl_account_deletion, authenticateToken, asyn
     const { password } = req.body;
     const userId = req.user.id;
 
-    // Validation
+    // Validation - NO SERVER LOGGING (validation error)
     if (!password) {
-      return res.status(400).json({
-        error: 'Password is required to delete account'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_PASSWORD_REQUIRED_FOR_DELETION.code,
+        ERROR_CATALOG.VAL_PASSWORD_REQUIRED_FOR_DELETION.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     // Get user's password hash, email, and deletion status
     const userResult = await pool.query(
-      'SELECT password_hash, email, username, mark_for_deletion FROM users WHERE id = $1',
+      'SELECT email, password_hash, mark_for_deletion FROM users WHERE id = $1',
       [userId]
     );
 
+    // User not found - NO SERVER LOGGING (validation error)
     if (userResult.rows.length === 0) {
-      return res.status(404).json({
-        error: 'User not found'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.code,
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.message
+      );
+      return res.status(404).json(errorResponse);
     }
 
     const user = userResult.rows[0];
 
-    // Check if account is already marked for deletion
-    if (user.mark_for_deletion) {
-      return res.status(400).json({
-        error: 'Account is already marked for deletion'
-      });
-    }
-
-    // Verify password
+    // Verify password - NO SERVER LOGGING (validation error)
     const validPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!validPassword) {
-      return res.status(400).json({
-        error: 'Incorrect password'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.code,
+        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
-    // Mark account for deletion instead of immediate deletion
-    // Mark account for deletion with timestamp
-    const deletionRequestedAt = Date.now(); // UNIX timestamp in milliseconds
+    // Check if already marked for deletion - NO SERVER LOGGING (validation error)
+    if (user.mark_for_deletion) {
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_ACCOUNT_ALREADY_MARKED.code,
+        ERROR_CATALOG.VAL_ACCOUNT_ALREADY_MARKED.message
+      );
+      return res.status(400).json(errorResponse);
+    }
+
+    // Mark account for deletion and send email
+    const now = Date.now();
     await pool.query(
-      'UPDATE users SET mark_for_deletion = TRUE, mark_for_deletion_at = $1 WHERE id = $2',
-      [deletionRequestedAt, userId]
+      'UPDATE users SET mark_for_deletion = true, mark_for_deletion_at = $1 WHERE id = $2',
+      [now, userId]
     );
 
-    // Log account deletion activity
-    // Log account deletion activity
+    // Send deletion confirmation emails (non-critical operation)
     try {
-      const now = Date.now();
-
-      // Create JSON object for deletion data
-      const deletionData = {
-        reason: req.body.reason
-      };
-
-      // Log deletion with both timestamp and reason in single record
-      await pool.query(
-        'INSERT INTO user_activity_log (user_id, key, value_timestamp, value_string, created_at) VALUES ($1, $2, $3, $4, $5)',
-        [userId, 'account_deletion', deletionRequestedAt, JSON.stringify(deletionData), now]
-      );
-
-      console.log('✅ Account deletion logged successfully');
-    } catch (logError) {
-      console.error('❌ Failed to log deletion activity:', logError.message);
-      // Continue - logging failure shouldn't block deletion
-    }
-    // Calculate deletion date (7 days from now)
-    const deletionDate = new Date(deletionRequestedAt + (7 * 24 * 60 * 60 * 1000));
-
-    // Send account deletion emails (continue approach - don't fail if emails fail)
-    // Send account deletion emails using email service
-    try {
-      const now = Date.now();
-
-      // Prepare user email content
-      const userEmailContent = `
-Dear ${user.username},
-
-Your account deletion request has been successfully submitted.
-
-ACCOUNT DELETION DETAILS:
-- Account will be permanently deleted on: ${deletionDate.toLocaleDateString('en-GB')}
-- Reason provided: ${req.body.reason}
-
-IMPORTANT INFORMATION:
-- You can cancel this request anytime by logging back into Moodly before ${deletionDate.toLocaleDateString('en-GB')}
-- All your mood data and personal information will be permanently removed after the deletion date
-- This action cannot be undone after the 7-day period expires
-
-If you did not request this deletion or have any concerns, please contact our support team immediately by replying to this email.
-
-Thank you for being part of the Moodly community.
-
-Best regards,
-The Moodly Team
-  `.trim();
-
-      // Prepare admin email content
-      const adminEmailContent = `
-User has requested for account deletion. 
-Required Details can be found below:
-
-USERNAME: ${user.username}
-EMAIL: ${user.email}
-Last date of deletion: ${deletionDate.toLocaleDateString('en-GB')}
-Reason: ${req.body.reason}
-Request time: ${new Date(now).toISOString()}
-
----
-This message was sent via Moodly Account Deletion System
-  `.trim();
-
-      // Prepare email data for service
-      const userEmailData = {
-        from: process.env.EMAIL_USER,
-        to: user.email,
-        subject: '[Moodly Account Deletion] - Request Received',
-        text: userEmailContent
-      };
-
-      const adminEmailData = {
-        from: process.env.EMAIL_USER,
-        to: 'moodlyapp25@gmail.com',
-        subject: '[Moodly Account Deletion] - Request Received',
-        text: adminEmailContent
-      };
-
-      // Send emails using service
-      await sendAccountDeletionEmails(userEmailData, adminEmailData);
-      try {
-        await pool.query(
-          'INSERT INTO email_logs (user_id, email_type, subject, body, recipient_email, created_at_utc, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [userId, 'account_deletion', userEmailData.subject, userEmailData.text, userEmailData.to, now, 'sent']
-        );
-        
-        console.log('✅ Account deletion email logged to database');
-      } catch (emailLogError) {
-        console.error('❌ Failed to log deletion email to database:', emailLogError.message);
-        // Continue - email logging failure shouldn't block deletion
-      }
-      console.log('✅ Account deletion emails sent successfully');
+      await sendAccountDeletionEmails(user.email, userId);
     } catch (emailError) {
-      console.error('❌ Failed to send deletion emails (deletion proceeding):', emailError.message);
-      // Continue with success - deletion is more important than email notification
+      // Email failure shouldn't block the deletion request
+      ErrorLogger.serverLogError(
+        ERROR_CATALOG.EMAIL_SENDING_FAILED.code,
+        ERROR_CATALOG.EMAIL_SENDING_FAILED.message,
+        'DELETE /api/user-settings/account_deletion',
+        'call external service',
+        emailError,
+        userId,
+        'pending-react-routing'
+      );
     }
-    return res.json({
-      message: 'Account deletion request submitted successfully! Your account will be deleted in 7 days. You can cancel this request anytime by logging into Moodly before the 7-day period expires. You will receive confirmation emails shortly.'
+
+    res.json({
+      message: 'Account marked for deletion successfully. Your account will be deleted in 7 days. You can cancel this request anytime by logging into Moodly before the 7-day period expires. You will receive confirmation emails shortly.'
     });
 
   } catch (error) {
-    console.error('Delete account error:', error);
-    return res.status(500).json({
-      error: 'Internal server error while processing account deletion'
-    });
+    // Multi-operation endpoint - let ErrorLogger determine context
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'DELETE /api/user-settings/account_deletion',
+      '', // Empty string - multiple operations (SELECT + UPDATE)
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -487,11 +456,13 @@ router.post('/validate-password', arl_validate_password, authenticateToken, asyn
     const { password } = req.body;
     const userId = req.user.id;
 
-    // Validation
+    // Validation - NO SERVER LOGGING (validation error)
     if (!password) {
-      return res.status(400).json({
-        error: 'Password is required'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_PASSWORD_REQUIRED.code,
+        ERROR_CATALOG.VAL_PASSWORD_REQUIRED.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     // Get user's password hash
@@ -500,19 +471,24 @@ router.post('/validate-password', arl_validate_password, authenticateToken, asyn
       [userId]
     );
 
+    // User not found - NO SERVER LOGGING (validation error)
     if (userResult.rows.length === 0) {
-      return res.status(404).json({
-        error: 'User not found'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.code,
+        ERROR_CATALOG.VAL_USER_NOT_FOUND.message
+      );
+      return res.status(404).json(errorResponse);
     }
 
-    // Verify password
+    // Verify password - NO SERVER LOGGING (validation error)
     const validPassword = await bcrypt.compare(password, userResult.rows[0].password_hash);
 
     if (!validPassword) {
-      return res.status(400).json({
-        error: 'Incorrect password'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.code,
+        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     // Password is correct
@@ -522,10 +498,16 @@ router.post('/validate-password', arl_validate_password, authenticateToken, asyn
     });
 
   } catch (error) {
-    console.error('Password validation error:', error);
-    return res.status(500).json({
-      error: 'Internal server error while validating password'
-    });
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'POST /api/user-settings/validate-password',
+      'read from database', // Specific context - only SELECT operation can fail
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 

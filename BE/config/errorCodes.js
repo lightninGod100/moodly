@@ -64,6 +64,42 @@ const ERROR_CATALOG = {
         code: 'VAL_EMAIL_PLUS_SIGN',
         message: 'Email with \'+\' character not supported'
     },
+    VAL_USER_NOT_FOUND: {
+        code: 'VAL_USER_NOT_FOUND',
+        message: 'User not found'
+    },
+    VAL_COUNTRY_SAME: {
+        code: 'VAL_COUNTRY_SAME',
+        message: 'New country must be different from current country'
+    },
+    VAL_COUNTRY_CHANGE_RESTRICTED: {
+        code: 'VAL_COUNTRY_CHANGE_RESTRICTED',
+        message: 'Country can only be changed once per month'
+    },
+    VAL_PASSWORD_REQUIRED_FOR_DELETION: {
+        code: 'VAL_PASSWORD_REQUIRED_FOR_DELETION',
+        message: 'Password is required to delete account'
+    },
+    VAL_PHOTO_DATA_REQUIRED: {
+        code: 'VAL_PHOTO_DATA_REQUIRED',
+        message: 'Photo data is required'
+    },
+    VAL_PHOTO_INVALID_FORMAT: {
+        code: 'VAL_PHOTO_INVALID_FORMAT',
+        message: 'Invalid photo format'
+    },
+    VAL_ACCOUNT_ALREADY_MARKED: {
+        code: 'VAL_ACCOUNT_ALREADY_MARKED',
+        message: 'Account is already marked for deletion'
+    },
+    VAL_INVALID_PERIOD: {
+        code: 'VAL_INVALID_PERIOD',
+        message: 'Invalid period parameter'
+    },
+    VAL_PERIOD_REQUIRED: {
+        code: 'VAL_PERIOD_REQUIRED',
+        message: 'Period parameter is required'
+    },
 
     // Authentication Errors (AUTH_xxx)
     AUTH_INVALID_CREDENTIALS: {
@@ -215,16 +251,7 @@ const ERROR_CATALOG = {
         message: 'Email is required'
     },
 
-    // Add these to ERROR_CATALOG after existing VAL_EMAIL codes:
-
-    VAL_EMAIL_DOMAIN_NOT_ALLOWED: {
-        code: 'VAL_EMAIL_DOMAIN_NOT_ALLOWED',
-        message: 'The email domain is not allowed due to security reasons, please use email with common domains like gmail, yahoo etc'
-    },
-    VAL_EMAIL_PLUS_SIGN: {
-        code: 'VAL_EMAIL_PLUS_SIGN',
-        message: 'Email with \'+\' character not supported'
-    },
+    
 
     // Mood-specific validation errors (MOOD_xxx)
     MOOD_REQUIRED: {

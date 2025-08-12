@@ -4,6 +4,9 @@ const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 // ADD: Rate limiting import
 const { arl_user_stats } = require('../middleware/rateLimiting');
+
+const { ERROR_CATALOG, getError } = require('../config/errorCodes');
+const ErrorLogger = require('../services/errorLogger');
 const router = express.Router();
 
 // Mood to happiness score mapping (matching frontend)
@@ -45,12 +48,13 @@ router.get('/dominant-mood', arl_user_stats, authenticateToken, async (req, res)
     // If no period specified, return all three
     const periods = period ? [period] : ['today', 'week', 'month'];
     
-    // Validate period
+    // Validate period - NO SERVER LOGGING (validation error)
     if (period && !['today', 'week', 'month'].includes(period)) {
-      return res.status(400).json({
-        error: 'Invalid period parameter',
-        validPeriods: ['today', 'week', 'month']
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_INVALID_PERIOD.code,
+        ERROR_CATALOG.VAL_INVALID_PERIOD.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     const result = {};
@@ -103,10 +107,16 @@ router.get('/dominant-mood', arl_user_stats, authenticateToken, async (req, res)
     res.json(result);
 
   } catch (error) {
-    console.error('Dominant mood error:', error);
-    res.status(500).json({
-      error: 'Internal server error while fetching dominant mood stats'
-    });
+    // Multi-operation endpoint - let ErrorLogger determine context
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/user-stats/dominant-mood',
+      '', // Empty string - multiple operations (multiple SELECT queries in loop)
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -116,12 +126,13 @@ router.get('/happiness-index', arl_user_stats, authenticateToken, async (req, re
     const userId = req.user.id;
     const { period } = req.query;
     
-    // Validate period
+    // Validate period - NO SERVER LOGGING (validation error)
     if (!period || !['week', 'month'].includes(period)) {
-      return res.status(400).json({
-        error: 'Invalid period parameter',
-        validPeriods: ['week', 'month']
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_INVALID_PERIOD.code,
+        ERROR_CATALOG.VAL_INVALID_PERIOD.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     const timeFilter = getTimePeriodFilter(period);
@@ -170,10 +181,16 @@ router.get('/happiness-index', arl_user_stats, authenticateToken, async (req, re
     res.json(filledData.reverse()); // Chronological order
 
   } catch (error) {
-    console.error('Happiness index error:', error);
-    res.status(500).json({
-      error: 'Internal server error while fetching happiness index'
-    });
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/user-stats/happiness-index',
+      'read from database', // Specific context - only SELECT operation can fail
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -183,12 +200,13 @@ router.get('/frequency', arl_user_stats, authenticateToken, async (req, res) => 
     const userId = req.user.id;
     const { period } = req.query;
     
-    // Validate period
+    // Validate period - NO SERVER LOGGING (validation error)
     if (!period || !['today', 'week', 'month'].includes(period)) {
-      return res.status(400).json({
-        error: 'Invalid period parameter',
-        validPeriods: ['today', 'week', 'month']
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_INVALID_PERIOD.code,
+        ERROR_CATALOG.VAL_INVALID_PERIOD.message
+      );
+      return res.status(400).json(errorResponse);
     }
 
     const timeFilter = getTimePeriodFilter(period);
@@ -219,19 +237,38 @@ router.get('/frequency', arl_user_stats, authenticateToken, async (req, res) => 
     res.json(frequency);
 
   } catch (error) {
-    console.error('Mood frequency error:', error);
-    res.status(500).json({
-      error: 'Internal server error while fetching mood frequency'
-    });
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/user-stats/frequency',
+      'read from database', // Specific context - only SELECT operation can fail
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
 // Test route to verify routing
 router.get('/test', arl_user_stats, authenticateToken, (req, res) => {
-  res.json({
-    message: 'User stats routes are working',
-    user: req.user
-  });
+  try {
+    res.json({
+      message: 'User stats routes are working',
+      user: req.user
+    });
+  } catch (error) {
+    // Simple endpoint - no database operations, just JSON response
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.message,
+      'GET /api/user-stats/test',
+      'system operation', // Specific context - no DB, just system/JSON response
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
+  }
 });
 
 module.exports = router;
