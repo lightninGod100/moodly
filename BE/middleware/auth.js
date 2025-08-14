@@ -1,6 +1,8 @@
 // middleware/auth.js
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/database');
+const { ERROR_CATALOG, getError } = require('../config/errorCodes');
+const ErrorLogger = require('../services/errorLogger');
 
 // Middleware to verify JWT token
 const authenticateToken = async (req, res, next) => {
@@ -10,10 +12,11 @@ const authenticateToken = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
-      return res.status(401).json({
-        error: 'Access token required',
-        message: 'Please provide a valid authorization token'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_TOKEN_REQUIRED.code,
+        ERROR_CATALOG.AUTH_TOKEN_REQUIRED.message
+      );
+      return res.status(401).json(errorResponse);
     }
 
     // Verify token
@@ -26,10 +29,11 @@ const authenticateToken = async (req, res, next) => {
     );
 
     if (user.rows.length === 0) {
-      return res.status(401).json({
-        error: 'Invalid token',
-        message: 'User no longer exists'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_USER_NOT_EXISTS.code,
+        ERROR_CATALOG.AUTH_USER_NOT_EXISTS.message
+      );
+      return res.status(401).json(errorResponse);
     }
 
     // Add user info to request object
@@ -43,24 +47,31 @@ const authenticateToken = async (req, res, next) => {
     next(); // Continue to the next middleware/route handler
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({
-        error: 'Invalid token',
-        message: 'Token is malformed or invalid'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_TOKEN_MALFORMED.code,
+        ERROR_CATALOG.AUTH_TOKEN_MALFORMED.message
+      );
+      return res.status(401).json(errorResponse);
     }
     
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        error: 'Token expired',
-        message: 'Please login again'
-      });
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_TOKEN_EXPIRED.code,
+        ERROR_CATALOG.AUTH_TOKEN_EXPIRED.message
+      );
+      return res.status(401).json(errorResponse);
     }
 
-    console.error('Auth middleware error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Error during authentication'
-    });
+    // System error - with server logging
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.message,
+      'AUTH_MIDDLEWARE',
+      'authentication verification', // Custom context for middleware
+      error,
+      decoded?.userId || null // Pass user ID if available from token
+    );
+    res.status(500).json(errorResponse);
   }
 };
 

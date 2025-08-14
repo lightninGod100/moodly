@@ -130,6 +130,18 @@ const ERROR_CATALOG = {
         code: 'AUTH_ACCOUNT_LOCKED',
         message: 'Account temporarily locked'
     },
+    AUTH_TOKEN_REQUIRED: {
+        code: 'AUTH_TOKEN_REQUIRED',
+        message: 'Access token required'
+    },
+    AUTH_USER_NOT_EXISTS: {
+        code: 'AUTH_USER_NOT_EXISTS',
+        message: 'User no longer exists'
+    },
+    AUTH_TOKEN_MALFORMED: {
+        code: 'AUTH_TOKEN_MALFORMED',
+        message: 'Token is malformed or invalid'
+    },
 
     // System Errors (SYS_xxx)
     SYS_INTERNAL_ERROR: {
@@ -152,6 +164,10 @@ const ERROR_CATALOG = {
         code: 'SYS_MAINTENANCE',
         message: 'Service temporarily unavailable for maintenance'
     },
+    SYS_LOGGING_ERROR: {
+        code: 'SYS_LOGGING_ERROR',
+        message: 'Failed to log system event'
+      },
 
     // Network Errors (NET_xxx)
     NET_CONNECTION_ERROR: {
@@ -277,6 +293,11 @@ const ERROR_CATALOG = {
         message: 'Failed to create mood entry'
     },
     
+    //security errors
+    SECURITY_PROGRESSIVE_VIOLATION: {
+        code: 'SECURITY_PROGRESSIVE_VIOLATION',
+        message: 'Progressive rate limit threshold exceeded'
+    },
     // Generic/Unknown Errors
     UNKNOWN_ERROR: {
         code: 'UNKNOWN_ERROR',
