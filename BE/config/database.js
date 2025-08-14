@@ -2,6 +2,8 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+const { ERROR_CATALOG } = require('./errorCodes');
+const ErrorLogger = require('../services/errorLogger');
 // Create PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -17,6 +19,17 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
+  // Log critical database connection error
+  ErrorLogger.serverLogError(
+    ERROR_CATALOG.SYS_DATABASE_CONNECTION_FAILED.code,
+    ERROR_CATALOG.SYS_DATABASE_CONNECTION_FAILED.message,
+    'DATABASE_CONFIG',
+    'database connection pool',
+    err,
+    null, // No user context at system level
+    'database-service'
+  );
+  
   console.error('❌ Database connection error:', err);
   process.exit(-1);
 });
@@ -34,6 +47,17 @@ const testConnection = async () => {
     client.release();
     return true;
   } catch (err) {
+    // Log database test failure
+    ErrorLogger.serverLogError(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'DATABASE_TEST',
+      'test database connection',
+      err,
+      null, // No user context at system level
+      'database-service'
+    );
+    
     console.error('❌ Database test failed:', err.message);
     return false;
   }
