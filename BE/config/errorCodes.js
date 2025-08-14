@@ -100,6 +100,10 @@ const ERROR_CATALOG = {
         code: 'VAL_PERIOD_REQUIRED',
         message: 'Period parameter is required'
     },
+    VAL_INVALID_JSON: {
+        code: 'VAL_INVALID_JSON',
+        message: 'Invalid request format'
+      },
 
     // Authentication Errors (AUTH_xxx)
     AUTH_INVALID_CREDENTIALS: {

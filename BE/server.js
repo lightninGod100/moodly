@@ -12,15 +12,15 @@ const MoodsRoutes = require('./routes/moods');
 const worldStatsRoutes = require('./routes/worldStats');
 const contactRoutes = require('./routes/contact');
 const moodSelectedStatsRoutes = require('./routes/moodSelectedStats');
-
+const { globalErrorHandler } = require('./middleware/errorHandler');
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
-
+const { arl_healthCheck } = require('./middleware/rateLimiting');
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
 // ADD: Rate limiting import
-const { arl_healthCheck } = require('./middleware/rateLimiting');
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -100,13 +100,7 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(500).json({
-    error: 'Something went wrong!',
-    message: err.message
-  });
-});
+app.use(globalErrorHandler);
 
 // 404 handler
 app.use('*', (req, res) => {
