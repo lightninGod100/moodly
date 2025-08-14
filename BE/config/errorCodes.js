@@ -298,6 +298,10 @@ const ERROR_CATALOG = {
         code: 'SECURITY_PROGRESSIVE_VIOLATION',
         message: 'Progressive rate limit threshold exceeded'
     },
+    SECURITY_RATE_LIMIT_VIOLATION: {
+        code: 'SEC_RATE_LIMIT_VIOLATION',
+        message: 'Rate limit violation detected'
+      },
     // Generic/Unknown Errors
     UNKNOWN_ERROR: {
         code: 'UNKNOWN_ERROR',

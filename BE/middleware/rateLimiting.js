@@ -2,10 +2,13 @@
 const rateLimit = require('express-rate-limit');
 const {
   generateUserKey,
-  rateLimitErrorHandler,
-  skipSuccessfulRequests
+  createRateLimitErrorHandler
 } = require('./rateLimitHelpers');
 
+/**
+ * HIGH SECURITY - Authentication endpoints (IP-based)
+ * Used for: login
+ */
 /**
  * HIGH SECURITY - Authentication endpoints (IP-based)
  * Used for: login
@@ -13,11 +16,10 @@ const {
 const arl_authHighSecurity = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 6, // 5 attempts per 15 minutes
-  // Remove keyGenerator - use default IPv6-safe IP-based limiting
-  handler: rateLimitErrorHandler,
-  standardHeaders: false, // Disable rate limit headers
+  handler: createRateLimitErrorHandler('auth_login', 'POST /api/auth/login', 'ip'),
+  standardHeaders: false,
   legacyHeaders: false,
-  skipSuccessfulRequests: true // Only count failed login attempts
+  skipSuccessfulRequests: true
 });
 
 /**
@@ -28,7 +30,7 @@ const arl_userHighSecurity = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // 3 attempts per hour
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('account_deletion', 'DELETE /api/user-settings/account', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
@@ -37,80 +39,61 @@ const arl_user_settings_password_change = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 4, // 4 attempts per hour
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('password_change', 'PUT /api/user-settings/password', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
 
-/**
- * USER SETTINGS READ - Moderate protection (User-based)
- * Used for: GET /api/user-settings
- * Prevents abuse while allowing legitimate app loads/refreshes
- */
 const arl_userSettingsRead = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 5, // 20 requests per hour per user
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('user_settings_read', 'GET /api/user-settings', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
-/**
- * MEDIUM USAGE - Regular application features (User/Session-based)
- * Used for: mood tracking, world stats, user settings updates
- */
+
 const arl_mediumUsage = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 60, // 60 requests per hour
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('moods', 'API /api/moods/*', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
 
-/**
- * MEDIUM USAGE - Mood creation (User-based)
- * Used for: POST /api/moods
- */
 const arl_moodCreation = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 8, // 20 mood entries per hour
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('moods', 'POST /api/moods', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
 
-/**
- * MOOD RETRIEVAL - Tiered limiting
- * Used for: GET /api/moods/last
- */
 const arl_moodRetrievalLast = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minute windows
   max: 8, // 8 requests per 10 minutes
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
-  standardHeaders: false,
-  legacyHeaders: false
-});
-/**
- * LOW USAGE - Dashboard and statistics (User-based)
- * Used for: user stats, mood history
- */
-const arl_lowUsage = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 120, // 120 requests per hour
-  keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('moods', 'GET /api/moods/last', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
 
-const  arl_user_stats = rateLimit({
+const arl_lowUsage = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 120, // 120 requests per hour
+  keyGenerator: generateUserKey,
+  handler: createRateLimitErrorHandler('user_stats', 'API /api/user-stats/*', 'user'),
+  standardHeaders: false,
+  legacyHeaders: false
+});
+
+const arl_user_stats = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 24, // 8*No of API call on dashboard page
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('user_stats', 'GET /api/user-stats/*', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
@@ -118,8 +101,7 @@ const  arl_user_stats = rateLimit({
 const arl_world_stats = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 48, // 10 page loads * 3 APIs = 30 requests per hour per IP
-  // No keyGenerator = IP-based limiting
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('world_stats', 'GET /api/world-stats/*', 'ip'),
   standardHeaders: false,
   legacyHeaders: false
 });
@@ -128,32 +110,25 @@ const arl_mood_selected_stats = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 32, // 8*No of API call on dashboard page
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
-  standardHeaders: false,
-  legacyHeaders: false
-});
-/**
- * VERY LOW USAGE - Critical settings (User-based)
- * Used for: country change (business rule: 2/day), account deletion (1/day)
- */
-const arl_veryLowUsage = rateLimit({
-  windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  max: 2, // 2 requests per day
-  keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('mood_selected_stats', 'GET /api/mood-selected-stats/*', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
 
-/**
- * ACCOUNT DELETION - Ultra restricted (User-based)
- * Used for: DELETE /api/user-settings/account
- */
+const arl_veryLowUsage = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 2, // 2 requests per day
+  keyGenerator: generateUserKey,
+  handler: createRateLimitErrorHandler('country_change', 'PUT /api/user-settings/country', 'user'),
+  standardHeaders: false,
+  legacyHeaders: false
+});
+
 const arl_account_deletion = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   max: 2, // 2 attempt per day
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('account_deletion', 'DELETE /api/user-settings/account', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
@@ -162,7 +137,7 @@ const arl_validate_password = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
   max: 4, // 4 attempt per day
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('validate_password', 'POST /api/user-settings/validate-password', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
@@ -171,45 +146,33 @@ const arl_country_change = rateLimit({
   windowMs: 24 * 24 * 60 * 60 * 1000, // 24 days (close to 1 month, within Node.js limits)
   max: 2, // 2 attempts per month
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('country_change', 'PUT /api/user-settings/country', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
-/**
- * LOGOUT - Special case (User-based, very permissive)
- * Used for: POST /api/auth/logout
- */
+
 const arl_logoutLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10, // 10 requests per minute
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('auth_logout', 'POST /api/auth/logout', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
 
-/**
- * HEALTH CHECK - Monitoring endpoints (IP-based)
- * Used for: /api/health, test endpoints
- */
 const arl_healthCheck = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 100, // 100 requests per hour
-  // Remove keyGenerator - use default IPv6-safe IP-based limiting
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('health_check', 'GET /api/health', 'ip'),
   standardHeaders: false,
   legacyHeaders: false
 });
 
-/**
- * PHOTO UPLOAD - File upload protection (User-based)
- * Used for: PUT /api/user-settings/photo
- */
 const arl_photo_upload_delete = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 20, // 10 uploads per hour
   keyGenerator: generateUserKey,
-  handler: rateLimitErrorHandler,
+  handler: createRateLimitErrorHandler('photo_upload', 'PUT /api/user-settings/photo', 'user'),
   standardHeaders: false,
   legacyHeaders: false
 });
