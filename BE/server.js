@@ -16,6 +16,9 @@ const { globalErrorHandler } = require('./middleware/errorHandler');
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
 const { arl_healthCheck } = require('./middleware/rateLimiting');
+
+const { ERROR_CATALOG } = require('./config/errorCodes');
+const ErrorLogger = require('./services/errorLogger');
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,9 +54,18 @@ app.get('/api/health', arl_healthCheck, async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    ErrorLogger.serverLogError(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/health',
+      'health check database test',
+      error,
+      null,
+      'health-check'
+    );
+    
     res.status(500).json({
       status: 'unhealthy',
-      error: error.message,
       timestamp: new Date().toISOString()
     });
   }
@@ -69,10 +81,15 @@ app.get('/api/test-db', arl_healthCheck, async (req, res) => {
       users: result.rows
     });
   } catch (error) {
-    res.status(500).json({
-      error: 'Database query failed',
-      details: error.message
-    });
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/test-db',
+      'test database query',
+      error,
+      null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -93,9 +110,15 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
       user: req.user
     });
   } catch (error) {
-    res.status(500).json({
-      error: 'Error fetching user data'
-    });
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.message,
+      'GET /api/auth/me',
+      'fetch user data',
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
   }
 });
 
@@ -129,6 +152,16 @@ const startServer = async () => {
       console.log(`📡 CORS enabled for: ${process.env.FRONTEND_URL}`);
     });
   } catch (error) {
+    ErrorLogger.serverLogError(
+      ERROR_CATALOG.SYS_SERVER_ERROR.code,
+      ERROR_CATALOG.SYS_SERVER_ERROR.message,
+      'SERVER_STARTUP',
+      'start server',
+      error,
+      null,
+      'server-startup'
+    );
+    
     console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
