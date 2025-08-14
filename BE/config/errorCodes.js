@@ -306,6 +306,11 @@ const ERROR_CATALOG = {
         code: 'SEC_RATE_LIMIT_VIOLATION',
         message: 'Rate limit violation detected'
       },
+
+    SECURITY_JSON_ATTACK: {
+        code: 'SEC_JSON_ATTACK',
+        message: 'JSON syntax attack detected'
+      },
     // Generic/Unknown Errors
     UNKNOWN_ERROR: {
         code: 'UNKNOWN_ERROR',
