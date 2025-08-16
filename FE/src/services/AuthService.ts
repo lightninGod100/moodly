@@ -1,5 +1,9 @@
 // src/services/AuthService.ts
 
+import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
+import { FE_VALIDATION_MESSAGES } from '../constants/validationMessages';
+
+
 // Types for API requests
 export interface RegisterRequest {
   username: string;
@@ -28,8 +32,8 @@ export interface AuthResponse {
   token: string;
 }
 
-export interface RegisterResponse extends AuthResponse {}
-export interface LoginResponse extends AuthResponse {}
+export interface RegisterResponse extends AuthResponse { }
+export interface LoginResponse extends AuthResponse { }
 
 // Types for service operations
 export interface AuthTokens {
@@ -48,34 +52,12 @@ interface PendingLogout {
   timestamp: number;
   token: string;
   attempts: number;
-  userId?: number;
 }
 
 // API configuration
 const API_BASE = 'http://localhost:5000/api';
 
-// Helper function to handle API errors (consistent with other services)
-const handleApiError = async (response: Response): Promise<never> => {
-  let errorMessage = 'Something went wrong. Please try again.';
-  
-  try {
-    const errorData = await response.json();
-    errorMessage = errorData.error || errorData.message || errorMessage;
-  } catch {
-    // If response is not JSON, use status-based messages
-    if (response.status === 401) {
-      errorMessage = 'Invalid credentials. Please check your email and password.';
-    } else if (response.status === 409) {
-      errorMessage = 'Account already exists with this email.';
-    } else if (response.status === 429) {
-      errorMessage = 'Too many requests. Please try again later.';
-    } else if (response.status >= 500) {
-      errorMessage = 'Server error. Please try again later.';
-    }
-  }
-  
-  throw new Error(errorMessage);
-};
+
 
 // Token management utilities
 const tokenManager = {
@@ -150,49 +132,56 @@ const userDataManager = {
 };
 
 // ✅ NEW: Hybrid logout retry mechanism variables
-let retryInterval: NodeJS.Timeout | null = null;
+let retryInterval: number | null = null;
 
 // ✅ NEW: Calculate retry delay with exponential backoff
 const calculateRetryDelay = (): number => {
   const pendingData = localStorage.getItem('pendingLogout');
   if (!pendingData) return 30000; // 30 seconds default
-  
+
   const pending: PendingLogout = JSON.parse(pendingData);
-  
+
   // Exponential backoff: 30s, 1min, 2min, 4min, 8min, max 10min
   const baseDelay = 30000; // 30 seconds
   const maxDelay = 600000; // 10 minutes
   const delay = Math.min(baseDelay * Math.pow(2, pending.attempts - 1), maxDelay);
-  
-  console.log(`⏰ Next logout retry in ${delay / 1000} seconds`);
+
   return delay;
 };
 
 // ✅ NEW: Background retry mechanism for failed logouts
+// Updated startLogoutRetryMechanism with proper console logging
 const startLogoutRetryMechanism = (): void => {
   // Prevent multiple retry intervals
   if (retryInterval) return;
-  
-  console.log('🔄 Starting logout retry mechanism');
-  
+
+  // Only log when retry mechanism starts for the first time (not for pending)
+  const pending = localStorage.getItem('pendingLogout');
+  if (pending) {
+    const pendingData: PendingLogout = JSON.parse(pending);
+    if (pendingData.attempts === 1) {
+      console.warn('🔄 Retry mechanism started');
+    }
+  }
+
   retryInterval = setInterval(async () => {
     const pendingData = localStorage.getItem('pendingLogout');
-    
+
     if (!pendingData) {
-      console.log('✅ No pending logout, stopping retry mechanism');
+      // No pending logout, stop retry mechanism (no console message)
       if (retryInterval) {
         clearInterval(retryInterval);
         retryInterval = null;
       }
       return;
     }
-    
+
     const pending: PendingLogout = JSON.parse(pendingData);
     const now = Date.now();
-    
+
     // Give up after 24 hours or 10 attempts
     if (now - pending.timestamp > 24 * 60 * 60 * 1000 || pending.attempts > 10) {
-      console.warn('❌ Logout retry timeout - giving up');
+      console.error('Failed to register previous logout to server');
       localStorage.removeItem('pendingLogout');
       if (retryInterval) {
         clearInterval(retryInterval);
@@ -200,10 +189,8 @@ const startLogoutRetryMechanism = (): void => {
       }
       return;
     }
-    
+
     try {
-      console.log(`🔄 Logout retry attempt #${pending.attempts}`);
-      
       const response = await fetch(`${API_BASE}/auth/logout`, {
         method: 'POST',
         headers: {
@@ -215,32 +202,39 @@ const startLogoutRetryMechanism = (): void => {
           retryAttempt: pending.attempts
         })
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`✅ Logout retry #${pending.attempts} successful:`, data.message);
+
+      if (!response.ok) {
+        // Parse backend error response - NO LOGGING HERE
+        let backendError: BackendErrorResponse | null = null;
         
-        localStorage.removeItem('pendingLogout');
-        if (retryInterval) {
-          clearInterval(retryInterval);
-          retryInterval = null;
+        try {
+          backendError = await response.json();
+        } catch (parseError) {
+          // Create synthetic network error object - NO LOGGING HERE
+          throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
         }
-      } else if (response.status === 429) {
-        console.log(`⏰ Logout retry #${pending.attempts} rate limited, will retry`);
-        pending.attempts += 1;
-        localStorage.setItem('pendingLogout', JSON.stringify(pending));
-      } else {
-        console.warn(`⚠️ Logout retry #${pending.attempts} failed:`, response.status);
-        pending.attempts += 1;
-        localStorage.setItem('pendingLogout', JSON.stringify(pending));
+
+        // Throw parsed backend error - NO LOGGING HERE
+        if (backendError) {
+          throw backendError;
+        }
       }
+
+      // Success: Server logout successful (retry) - NO CONSOLE MESSAGE
       
+      localStorage.removeItem('pendingLogout');
+      if (retryInterval) {
+        clearInterval(retryInterval);
+        retryInterval = null;
+      }
+
     } catch (error) {
-      console.error(`❌ Logout retry #${pending.attempts} error:`, error);
+      // Silent retry error - no console logging to prevent spam
+      // Just increment attempts and continue
       pending.attempts += 1;
       localStorage.setItem('pendingLogout', JSON.stringify(pending));
     }
-    
+
   }, calculateRetryDelay());
 };
 
@@ -251,23 +245,27 @@ export const authApiService = {
    */
   async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
-      // Basic validation
+      // Frontend validation with centralized messages
       if (!userData.username || !userData.email || !userData.password || !userData.country || !userData.gender) {
-        throw new Error('All fields are required');
+        throw new Error(FE_VALIDATION_MESSAGES.REGISTRATION_FIELDS_REQUIRED);
       }
 
       if (userData.username.length < 3 || userData.username.length > 16) {
-        throw new Error('Username must be between 3 and 16 characters');
+        if (userData.username.length < 3) {
+          throw new Error(FE_VALIDATION_MESSAGES.USERNAME_TOO_SHORT);
+        } else {
+          throw new Error(FE_VALIDATION_MESSAGES.USERNAME_TOO_LONG);
+        }
       }
 
       if (userData.password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
+        throw new Error(FE_VALIDATION_MESSAGES.PASSWORD_TOO_SHORT);
       }
 
       // Email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(userData.email)) {
-        throw new Error('Invalid email format');
+        throw new Error(FE_VALIDATION_MESSAGES.EMAIL_INVALID);
       }
 
       const response = await fetch(`${API_BASE}/auth/register`, {
@@ -285,7 +283,20 @@ export const authApiService = {
       });
 
       if (!response.ok) {
-        await handleApiError(response);
+        // Parse backend error response - NO LOGGING HERE
+        let backendError: BackendErrorResponse | null = null;
+
+        try {
+          backendError = await response.json();
+        } catch (parseError) {
+          // Create synthetic network error object - NO LOGGING HERE
+          throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Throw parsed backend error - NO LOGGING HERE
+        if (backendError) {
+          throw backendError;
+        }
       }
 
       const data: AuthResponse = await response.json();
@@ -296,25 +307,46 @@ export const authApiService = {
 
       return data;
     } catch (error) {
-      console.error('Registration error:', error);
-      throw error;
+      // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+
+      // Frontend validation errors: throw as-is (no logging needed)
+      if (error instanceof Error && Object.values(FE_VALIDATION_MESSAGES).includes(error.message as any)) {
+        throw error;
+      }
+
+      // All other errors: backend errors, network errors, unexpected errors
+      const uiMessage = ErrorLogger.logError(
+        error,
+        { service: "AuthService", action: "userRegister" },
+        { logToConsole: true, logToUI: true }
+      );
+      throw new Error(uiMessage);
     }
   },
 
   /**
    * Login user with email and password
    */
+  // Updated login method with Single Point Logging pattern
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      // Basic validation
+      // Frontend validation with centralized messages
       if (!credentials.email || !credentials.password) {
-        throw new Error('Email and password are required');
+        throw new Error(FE_VALIDATION_MESSAGES.LOGIN_CREDENTIALS_REQUIRED);
+      }
+
+      if (!credentials.email.trim()) {
+        throw new Error(FE_VALIDATION_MESSAGES.EMAIL_REQUIRED);
+      }
+
+      if (!credentials.password.trim()) {
+        throw new Error(FE_VALIDATION_MESSAGES.PASSWORD_REQUIRED);
       }
 
       // Email format validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(credentials.email)) {
-        throw new Error('Invalid email format');
+        throw new Error(FE_VALIDATION_MESSAGES.EMAIL_INVALID);
       }
 
       const response = await fetch(`${API_BASE}/auth/login`, {
@@ -329,7 +361,20 @@ export const authApiService = {
       });
 
       if (!response.ok) {
-        await handleApiError(response);
+        // Parse backend error response - NO LOGGING HERE
+        let backendError: BackendErrorResponse | null = null;
+
+        try {
+          backendError = await response.json();
+        } catch (parseError) {
+          // Create synthetic network error object - NO LOGGING HERE
+          throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Throw parsed backend error - NO LOGGING HERE
+        if (backendError) {
+          throw backendError;
+        }
       }
 
       const data: AuthResponse = await response.json();
@@ -340,8 +385,20 @@ export const authApiService = {
 
       return data;
     } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+      // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+
+      // Frontend validation errors: throw as-is (no logging needed)
+      if (error instanceof Error && Object.values(FE_VALIDATION_MESSAGES).includes(error.message as any)) {
+        throw error;
+      }
+
+      // All other errors: backend errors, network errors, unexpected errors
+      const uiMessage = ErrorLogger.logError(
+        error,
+        { service: "AuthService", action: "userLogin" },
+        { logToConsole: true, logToUI: true }
+      );
+      throw new Error(uiMessage);
     }
   },
 
@@ -349,15 +406,16 @@ export const authApiService = {
    * ✅ UPDATED: Hybrid logout with retry mechanism
    * Immediately clears local tokens but ensures server-side logging
    */
+  // Updated logout method with Single Point Logging pattern
   async logout(): Promise<void> {
     const logoutTimestamp = Date.now(); // Capture REAL logout time
     const token = tokenManager.getAuthToken();
-    
+
     if (!token) {
       // No token, just clear local data
       tokenManager.clearTokens();
       userDataManager.clearUserData();
-      console.log('Local logout completed (no token)');
+      console.info('🔓 Local logout completed (no token)');
       return;
     }
 
@@ -374,36 +432,57 @@ export const authApiService = {
         })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Immediate logout successful:', data.message);
-        
-        // Clear any pending logout (in case of duplicate calls)
-        localStorage.removeItem('pendingLogout');
-      } else {
-        // Server logout failed - queue for retry
-        throw new Error(`Server logout failed: ${response.status}`);
+      if (!response.ok) {
+        // Parse backend error response - NO LOGGING HERE
+        let backendError: BackendErrorResponse | null = null;
+
+        try {
+          backendError = await response.json();
+        } catch (parseError) {
+          // Create synthetic network error object - NO LOGGING HERE
+          throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Throw parsed backend error - NO LOGGING HERE
+        if (backendError) {
+          throw backendError;
+        }
       }
-      
+
+      // Success: Log server logout success only
+      const data = await response.json();
+      console.info('✅ Server logout successful:', data.message);
+
+      // Clear any pending logout (in case of duplicate calls)
+      localStorage.removeItem('pendingLogout');
+
     } catch (error) {
-      console.warn('⚠️ Immediate logout failed, queuing for retry:', error);
-      
+      // 🎯 SINGLE POINT OF LOGGING - Server logout failed
+
+      // Log server logout failure with ErrorLogger (console only)
+      ErrorLogger.logError(
+        error,
+        { service: "AuthService", action: "userLogout" },
+        { logToConsole: true, logToUI: false }
+      );
+
       // Store failed logout for background retry
       const pendingLogout: PendingLogout = {
         timestamp: logoutTimestamp,
         token: token,
         attempts: 1
       };
-      
+
       localStorage.setItem('pendingLogout', JSON.stringify(pendingLogout));
-      
+
       // Start retry mechanism if not already running
       startLogoutRetryMechanism();
+
     } finally {
-      // ALWAYS clear local tokens for immediate UX
+      // ALWAYS clear local tokens for immediate UX (unchanged)
       tokenManager.clearTokens();
       userDataManager.clearUserData();
-      console.log('🔓 Local logout completed');
+      console.info('🔓 Local logout completed');
     }
   },
 
@@ -413,87 +492,11 @@ export const authApiService = {
   initializeLogoutRetry(): void {
     const pending = localStorage.getItem('pendingLogout');
     if (pending) {
-      console.log('📤 Found pending logout, starting retry mechanism');
       startLogoutRetryMechanism();
     }
   },
 
-  /**
-   * Get current authentication state
-   */
-  getAuthState(): AuthState {
-    const token = tokenManager.getAuthToken();
-    const user = userDataManager.getUserData();
-    
-    return {
-      isAuthenticated: !!token && !!user,
-      user: user,
-      token: token
-    };
-  },
 
-  /**
-   * Check if user is authenticated
-   */
-  isAuthenticated(): boolean {
-    return tokenManager.isAuthenticated();
-  },
-
-  /**
-   * Get stored user data
-   */
-  getCurrentUser(): AuthUser | null {
-    return userDataManager.getUserData();
-  },
-
-  /**
-   * Get current auth token
-   */
-  getToken(): string | null {
-    return tokenManager.getAuthToken();
-  },
-
-  // Future authentication methods (placeholders for planned features)
-  
-  /**
-   * Request password reset (Future implementation)
-   */
-  async requestPasswordReset(email: string): Promise<{ message: string }> {
-    // TODO: Implement when backend supports password reset
-    throw new Error('Password reset feature not yet implemented');
-  },
-
-  /**
-   * Reset password with token (Future implementation)
-   */
-  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
-    // TODO: Implement when backend supports password reset
-    throw new Error('Password reset feature not yet implemented');
-  },
-
-  /**
-   * Verify email address (Future implementation)
-   */
-  async verifyEmail(token: string): Promise<{ message: string }> {
-    // TODO: Implement when backend supports email verification
-    throw new Error('Email verification feature not yet implemented');
-  },
-
-  /**
-   * Refresh authentication token (Future implementation)
-   */
-  async refreshToken(): Promise<AuthResponse> {
-    // TODO: Implement when backend supports token refresh
-    throw new Error('Token refresh feature not yet implemented');
-  },
-
-  /**
-   * Enable two-factor authentication (Future implementation)
-   */
-  async enableTwoFactor(): Promise<{ qrCode: string; backupCodes: string[] }> {
-    // TODO: Implement when backend supports 2FA
-    throw new Error('Two-factor authentication feature not yet implemented');
-  }
 };
 
 // Export utilities for external use

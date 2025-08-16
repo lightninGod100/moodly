@@ -50,14 +50,15 @@ class ErrorLogger {
     
     // Default behavior: console logging enabled
     const shouldLogToConsole = options?.logToConsole ?? true;
-    
+    const shouldLogToUI = options?.logToUI ?? false;
+
     // Auto-detect error type and process accordingly
     if (this.isBackendError(error)) {
-      return this.processBackendError(error, context, shouldLogToConsole);
+      return this.processBackendError(error, context, shouldLogToConsole, shouldLogToUI);
     } else if (this.isNetworkError(error)) {
-      return this.processNetworkError(error, context, shouldLogToConsole);
+      return this.processNetworkError(error, context, shouldLogToConsole, shouldLogToUI);
     } else {
-      return this.processUnknownError(error, context, shouldLogToConsole);
+      return this.processUnknownError(error, context, shouldLogToConsole, shouldLogToUI);
     }
   }
 
@@ -84,7 +85,8 @@ class ErrorLogger {
   private static processBackendError(
     backendResponse: BackendErrorResponse,
     context: LogContext,
-    shouldLogToConsole: boolean
+    shouldLogToConsole: boolean,
+    shouldLogToUI: boolean
   ): string {
     
     const errorMapping: ErrorMappingItem = getErrorMapping(backendResponse.sys_error_code);
@@ -103,7 +105,7 @@ class ErrorLogger {
     }
     
     // Return UI message for throwing
-    return errorMapping.userMessage;
+    return shouldLogToUI ? errorMapping.userMessage : '';
   }
 
   /**
@@ -112,7 +114,8 @@ class ErrorLogger {
   private static processNetworkError(
     error: Error,
     context: LogContext,
-    shouldLogToConsole: boolean
+    shouldLogToConsole: boolean,
+    shouldLogToUI: boolean
   ): string {
     
     // Determine error type and get appropriate mapping
@@ -140,7 +143,7 @@ class ErrorLogger {
     }
     
     // Return UI message for throwing
-    return errorMapping.userMessage;
+    return shouldLogToUI ? errorMapping.userMessage : '';
   }
 
   /**
@@ -149,7 +152,8 @@ class ErrorLogger {
   private static processUnknownError(
     error: any,
     context: LogContext,
-    shouldLogToConsole: boolean
+    shouldLogToConsole: boolean,
+    shouldLogToUI: boolean
   ): string {
     
     const errorMapping = getErrorMapping('UNKNOWN_ERROR');
@@ -168,7 +172,7 @@ class ErrorLogger {
     }
     
     // Return UI message for throwing
-    return errorMapping.userMessage;
+    return shouldLogToUI ? errorMapping.userMessage : '';
   }
 }
 
