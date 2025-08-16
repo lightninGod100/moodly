@@ -57,16 +57,17 @@ export interface ErrorLogResult {
 class ErrorLogger {
   
   /**
-   * Unified error logging function - single entry point for all error processing
+   * SINGLE unified error logging function - handles ALL error types automatically
+   * API service layer only needs to call this one function for any error
    * Default behavior: console logging only (industry standard)
    * 
-   * @param backendResponse - Error response from backend API
+   * @param error - Any error: BackendErrorResponse | Error | any
    * @param context - Service and action context
    * @param options - Logging options (console/UI)
    * @returns Object with conditional console and UI log data
    */
   static logError(
-    backendResponse: BackendErrorResponse,
+    error: BackendErrorResponse | Error | any,
     context: LogContext,
     options?: LogOptions
   ): ErrorLogResult {
@@ -75,7 +76,43 @@ class ErrorLogger {
     const shouldLogToConsole = options?.logToConsole ?? true;
     const shouldLogToUI = options?.logToUI ?? false;
     
-    // Get error mapping for the backend error code
+    // Auto-detect error type and process accordingly
+    if (this.isBackendError(error)) {
+      return this.processBackendError(error, context, shouldLogToConsole, shouldLogToUI);
+    } else if (this.isNetworkError(error)) {
+      return this.processNetworkError(error, context, shouldLogToConsole, shouldLogToUI);
+    } else {
+      return this.processUnknownError(error, context, shouldLogToConsole, shouldLogToUI);
+    }
+  }
+
+  /**
+   * Check if error is a backend error response
+   */
+  private static isBackendError(error: any): error is BackendErrorResponse {
+    return error && 
+           typeof error === 'object' && 
+           'sys_error_code' in error && 
+           'sys_error_message' in error;
+  }
+
+  /**
+   * Check if error is a network/client error
+   */
+  private static isNetworkError(error: any): error is Error {
+    return error instanceof Error;
+  }
+
+  /**
+   * Process backend errors
+   */
+  private static processBackendError(
+    backendResponse: BackendErrorResponse,
+    context: LogContext,
+    shouldLogToConsole: boolean,
+    shouldLogToUI: boolean
+  ): ErrorLogResult {
+    
     const errorMapping: ErrorMappingItem = getErrorMapping(backendResponse.sys_error_code);
     
     // Console logging
@@ -93,8 +130,7 @@ class ErrorLogger {
     const uiLog: UILogData | {} = shouldLogToUI
       ? {
           message: errorMapping.userMessage,
-          errorCode: backendResponse.sys_error_code,
-          severity: errorMapping.severity || 'error'
+          errorCode: backendResponse.sys_error_code
         }
       : {};
     
@@ -106,23 +142,14 @@ class ErrorLogger {
   }
 
   /**
-   * Process network/client errors with unified approach
-   * Used for fetch failures, network timeouts, etc.
-   * 
-   * @param error - JavaScript Error object
-   * @param context - Service and action context
-   * @param options - Logging options (console/UI)
-   * @returns Object with conditional console and UI log data
+   * Process network/client errors
    */
-  static logNetworkError(
+  private static processNetworkError(
     error: Error,
     context: LogContext,
-    options?: LogOptions
+    shouldLogToConsole: boolean,
+    shouldLogToUI: boolean
   ): ErrorLogResult {
-    
-    // Default behavior: console only
-    const shouldLogToConsole = options?.logToConsole ?? true;
-    const shouldLogToUI = options?.logToUI ?? false;
     
     // Determine error type and get appropriate mapping
     let errorMapping: ErrorMappingItem;
@@ -163,23 +190,14 @@ class ErrorLogger {
   }
 
   /**
-   * Process unknown/unexpected errors with unified approach
-   * Fallback for any error that doesn't match expected patterns
-   * 
-   * @param error - Any error object or string
-   * @param context - Service and action context
-   * @param options - Logging options (console/UI)
-   * @returns Object with conditional console and UI log data
+   * Process unknown/unexpected errors
    */
-  static logUnknownError(
+  private static processUnknownError(
     error: any,
     context: LogContext,
-    options?: LogOptions
+    shouldLogToConsole: boolean,
+    shouldLogToUI: boolean
   ): ErrorLogResult {
-    
-    // Default behavior: console only
-    const shouldLogToConsole = options?.logToConsole ?? true;
-    const shouldLogToUI = options?.logToUI ?? false;
     
     const errorMapping = getErrorMapping('UNKNOWN_ERROR');
     
@@ -255,5 +273,104 @@ class ErrorLogger {
   }
 }
 
+// ==========================================
+// USAGE EXAMPLES (for documentation)
+// ==========================================
+
+/*
+// SINGLE FUNCTION FOR ALL ERROR TYPES - API Service Layer Consistency!
+
+// Example 1: Default behavior (console only) - works for ANY error type
+try {
+  const response = await fetch('/api/auth/login', { ... });
+  const data = await response.json();
+  
+  if (!response.ok) {
+    // Backend error - auto-detected
+    const result = ErrorLogger.logError(data, {
+      service: 'AuthService',
+      action: 'userLogin'
+    });
+    ErrorLogger.outputToConsole(result.consoleLog);
+  }
+} catch (error) {
+  // Network error - auto-detected  
+  const result = ErrorLogger.logError(error, {
+    service: 'AuthService', 
+    action: 'userLogin'
+  });
+  ErrorLogger.outputToConsole(result.consoleLog);
+}
+
+// Example 2: Console + UI logging - works for ANY error type
+try {
+  const response = await fetch('/api/users/update', { ... });
+  const data = await response.json();
+  
+  if (!response.ok) {
+    // Same function call regardless of error type!
+    const result = ErrorLogger.logError(data, {
+      service: 'UserService',
+      action: 'updateProfile'
+    }, {
+      logToConsole: true,
+      logToUI: true
+    });
+    
+    // Handle outputs
+    ErrorLogger.outputToConsole(result.consoleLog);
+    const uiMessage = ErrorLogger.getUIMessage(result);
+    if (uiMessage) {
+      setErrorMessage(uiMessage);
+    }
+  }
+} catch (networkError) {
+  // Same function call for network errors too!
+  const result = ErrorLogger.logError(networkError, {
+    service: 'UserService',
+    action: 'updateProfile'  
+  }, {
+    logToConsole: true,
+    logToUI: true
+  });
+  
+  ErrorLogger.outputToConsole(result.consoleLog);
+  const uiMessage = ErrorLogger.getUIMessage(result);
+  if (uiMessage) {
+    setErrorMessage(uiMessage);
+  }
+}
+
+// Example 3: UI only (no console logging)
+const result = ErrorLogger.logError(anyError, {
+  service: 'AuthService',
+  action: 'login'
+}, {
+  logToConsole: false,
+  logToUI: true
+});
+
+const uiMessage = ErrorLogger.getUIMessage(result);
+setErrorMessage(uiMessage);
+
+// Example 4: Generic error handler function for API service layer
+function handleApiError(error: any, service: string, action: string) {
+  const result = ErrorLogger.logError(error, { service, action }, {
+    logToConsole: true,
+    logToUI: true
+  });
+  
+  ErrorLogger.outputToConsole(result.consoleLog);
+  const uiMessage = ErrorLogger.getUIMessage(result);
+  if (uiMessage) {
+    showToast(uiMessage);
+  }
+}
+
+// Usage: Same function for ANY error type
+handleApiError(backendError, 'AuthService', 'login');
+handleApiError(networkError, 'UserService', 'update');  
+handleApiError(unknownError, 'ProfileService', 'upload');
+*/
 
 export default ErrorLogger;
