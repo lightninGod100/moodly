@@ -243,14 +243,13 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onNavigate }) => {
   
       const response = await authApiService.register(userData);
       
-      console.log('Registration successful:', response);
+      console.log('Registration successful');
   
       // Navigate directly to dashboard (token/userData storage handled by service)
       onNavigate('home');
       window.location.reload();
   
     } catch (error) {
-      console.error('Registration error:', error);
       setError(error instanceof Error ? error.message : 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);

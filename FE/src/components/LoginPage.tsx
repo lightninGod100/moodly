@@ -36,16 +36,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
         password: formData.password
       };
   
-      const response = await authApiService.login(credentials);
+      await authApiService.login(credentials);
       
-      console.log('Login successful:', response);
+     
   
       // Navigate to home (token/userData storage handled by service)
       onNavigate('home');
+      
       window.location.reload();
+      console.log('Login successful');
   
     } catch (error) {
-      console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);

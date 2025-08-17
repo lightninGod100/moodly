@@ -113,7 +113,7 @@ export interface PasswordValidationResponse {
         }
   
         const data: UserSettingsResponse = await response.json();
-        console.log(data.settings);
+        
         return data.settings;
       } catch (error) {
         console.error('Error fetching user settings:', error);

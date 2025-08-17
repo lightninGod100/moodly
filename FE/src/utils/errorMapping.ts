@@ -96,7 +96,7 @@ export const ERROR_MAPPING: ErrorMapping = {
   },
   
   "VAL_EMAIL_DOMAIN_NOT_ALLOWED": {
-    userMessage: "Please use an email from a common provider like Gmail, Yahoo, or Outlook for security reasons",
+    userMessage: "Please use an email from a common provider like Gmail, Yahoo, or Outlook etc",
     consoleMessage: "Email domain not allowed",
     type: "error"
   },
@@ -276,7 +276,7 @@ export const ERROR_MAPPING: ErrorMapping = {
   // ==========================================
   
   "NET_CONNECTION_ERROR": {
-    userMessage: "Please check your internet connection and try again",
+    userMessage: "Please check your internet connection or try again later",
     consoleMessage: "Network connection error",
     type: "error"
   },
