@@ -16,6 +16,7 @@ const { globalErrorHandler } = require('./middleware/errorHandler');
 // Import middleware
 const { authenticateToken } = require('./middleware/auth');
 const { arl_healthCheck } = require('./middleware/rateLimiting');
+const { enhancedJsonParser } = require('./middleware/jsonParser');
 
 const { ERROR_CATALOG } = require('./config/errorCodes');
 const ErrorLogger = require('./services/errorLogger');
@@ -29,8 +30,8 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(enhancedJsonParser());
+app.use(express.urlencoded({ extended: true, limit: '150kb' }));
 
 // Test route
 app.get('/', (req, res) => {
@@ -46,7 +47,7 @@ app.get('/api/health', arl_healthCheck, async (req, res) => {
   try {
     // Test database connection
     const dbConnected = await testConnection();
-    
+
     res.json({
       status: 'healthy',
       database: dbConnected ? 'connected' : 'disconnected',
@@ -63,7 +64,7 @@ app.get('/api/health', arl_healthCheck, async (req, res) => {
       null,
       'health-check'
     );
-    
+
     res.status(500).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString()
@@ -126,11 +127,14 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
 app.use(globalErrorHandler);
 
 // 404 handler
+// BE/server.js - Updated 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Route not found',
-    message: `Cannot ${req.method} ${req.originalUrl}`
-  });
+  const errorResponse = ErrorLogger.createErrorResponse(
+    ERROR_CATALOG.API_ENDPOINT_NOT_FOUND.code,
+    ERROR_CATALOG.API_ENDPOINT_NOT_FOUND.message
+  );
+
+  res.status(404).json(errorResponse);
 });
 
 // Start server function
@@ -138,13 +142,13 @@ const startServer = async () => {
   try {
     // Test database connection first
     console.log('🚀 Starting Moodly Backend Server...');
-    
+
     const dbConnected = await testConnection();
     if (!dbConnected) {
       console.error('❌ Failed to connect to database. Exiting...');
       process.exit(1);
     }
-    
+
     // Start listening
     app.listen(PORT, () => {
       console.log(`✅ Server running on http://localhost:${PORT}`);
@@ -161,7 +165,7 @@ const startServer = async () => {
       null,
       'server-startup'
     );
-    
+
     console.error('❌ Failed to start server:', error);
     process.exit(1);
   }

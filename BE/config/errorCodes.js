@@ -104,6 +104,10 @@ const ERROR_CATALOG = {
         code: 'VAL_INVALID_JSON',
         message: 'Invalid request format'
       },
+    VAL_REQUEST_TOO_LARGE: {
+        code: 'VAL_REQUEST_TOO_LARGE',
+        message: 'Request size exceeds limit'
+    },
 
     // Authentication Errors (AUTH_xxx)
     AUTH_INVALID_CREDENTIALS: {
@@ -172,7 +176,7 @@ const ERROR_CATALOG = {
         code: 'SYS_LOGGING_ERROR',
         message: 'Failed to log system event'
       },
-
+      
     // Network Errors (NET_xxx)
     NET_CONNECTION_ERROR: {
         code: 'NET_CONNECTION_ERROR',
@@ -191,10 +195,6 @@ const ERROR_CATALOG = {
     RATE_LIMIT_EXCEEDED: {
         code: 'RATE_LIMIT_EXCEEDED',
         message: 'Rate limit exceeded'
-    },
-    RATE_TOO_MANY_REQUESTS: {
-        code: 'RATE_TOO_MANY_REQUESTS',
-        message: 'Too many requests'
     },
     RATE_TOO_MANY_LOGIN_ATTEMPTS: {
         code: 'RATE_TOO_MANY_LOGIN_ATTEMPTS',
@@ -319,7 +319,17 @@ const ERROR_CATALOG = {
     OPERATION_FAILED: {
         code: 'OPERATION_FAILED',
         message: 'Operation failed'
-    }
+    },
+
+     // API/Route Errors (API_xxx)
+     API_ENDPOINT_NOT_FOUND: {
+        code: 'API_ENDPOINT_NOT_FOUND',
+        message: 'API endpoint not found'
+    },
+    API_METHOD_NOT_ALLOWED: {
+        code: 'API_METHOD_NOT_ALLOWED', 
+        message: 'HTTP method not allowed for this endpoint'
+    },
 };
 
 // Helper function to get error by code

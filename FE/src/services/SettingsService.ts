@@ -86,6 +86,8 @@ export interface PasswordValidationResponse {
         errorMessage = 'Authentication failed. Please login again.';
       } else if (response.status === 403) {
         errorMessage = 'You do not have permission to perform this action.';
+      } else if (response.status === 413) {
+        errorMessage = 'File too large. Please choose a smaller image.';
       } else if (response.status === 429) {
         errorMessage = 'Too many requests. Please try again later.';
       } else if (response.status >= 500) {

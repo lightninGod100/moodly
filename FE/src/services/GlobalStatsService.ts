@@ -1,4 +1,8 @@
 // src/services/WorldStatsService.ts
+
+import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
+import { FE_VALIDATION_MESSAGES } from '../constants/validationMessages';
+
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export interface GlobalMoodStats {
@@ -32,12 +36,15 @@ const periodMap: { [key: string]: string } = {
 /**
  * Fetch global mood statistics for a specific time period
  */
+/**
+ * Fetch global mood statistics for a specific time period
+ */
 export const fetchGlobalStats = async (period: string): Promise<GlobalMoodStats> => {
   try {
-    // Map frontend period to backend period
+    // Frontend validation with centralized message
     const backendPeriod = periodMap[period.toLowerCase()];
     if (!backendPeriod) {
-      throw new Error(`Invalid period: ${period}`);
+      throw new Error(FE_VALIDATION_MESSAGES.INVALID_PERIOD);
     }
 
     const response = await fetch(
@@ -51,35 +58,55 @@ export const fetchGlobalStats = async (period: string): Promise<GlobalMoodStats>
     );
 
     if (!response.ok) {
-      if (response.status >= 500) {
-        throw new Error('Something seems wrong, please refresh or come back later');
-      } else if (response.status >= 400) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || 'Invalid request parameters');
+      // Parse backend error response - NO LOGGING HERE
+      let backendError: BackendErrorResponse | null = null;
+
+      try {
+        backendError = await response.json();
+      } catch (parseError) {
+        // Create synthetic network error object - NO LOGGING HERE
+        throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
       }
-      throw new Error('Something seems wrong, please refresh or come back later');
+
+      // Throw parsed backend error - NO LOGGING HERE
+      if (backendError) {
+        throw backendError;
+      }
     }
 
     const data: GlobalMoodStats = await response.json();
     return data;
 
   } catch (error) {
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Something seems wrong, please refresh or come back later');
+    // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+
+    // Frontend validation errors: throw as-is (no logging needed)
+    if (error instanceof Error && Object.values(FE_VALIDATION_MESSAGES).includes(error.message as any)) {
+      throw error;
     }
-    throw error;
+
+    // All other errors: backend errors, network errors, unexpected errors
+    const uiMessage = ErrorLogger.logError(
+      error,
+      { service: "GlobalStatsService", action: "fetchGlobalStats" },
+      { logToConsole: true, logToUI: true }
+    );
+    throw new Error(uiMessage);
   }
 };
 
 /**
  * Fetch country-wise mood statistics for a specific time period
  */
+/**
+ * Fetch country-wise mood statistics for a specific time period
+ */
 export const fetchCountryStats = async (period: string): Promise<CountryStats> => {
   try {
-    // Map frontend period to backend period
+    // Frontend validation
     const backendPeriod = periodMap[period.toLowerCase()];
     if (!backendPeriod) {
-      throw new Error(`Invalid period: ${period}`);
+      throw new Error(FE_VALIDATION_MESSAGES.INVALID_PERIOD);
     }
 
     const response = await fetch(
@@ -93,23 +120,40 @@ export const fetchCountryStats = async (period: string): Promise<CountryStats> =
     );
 
     if (!response.ok) {
-      if (response.status >= 500) {
-        throw new Error('Something seems wrong, please refresh or come back later');
-      } else if (response.status >= 400) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || 'Invalid request parameters');
+      // Parse backend error response - NO LOGGING HERE
+      let backendError: BackendErrorResponse | null = null;
+
+      try {
+        backendError = await response.json();
+      } catch (parseError) {
+        // Create synthetic network error object - NO LOGGING HERE
+        throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
       }
-      throw new Error('Something seems wrong, please refresh or come back later');
+
+      // Throw parsed backend error - NO LOGGING HERE
+      if (backendError) {
+        throw backendError;
+      }
     }
 
     const data: CountryStats = await response.json();
     return data;
 
   } catch (error) {
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Something seems wrong, please refresh or come back later');
+    // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+
+    // Frontend validation errors: throw as-is (no logging needed)
+    if (error instanceof Error && Object.values(FE_VALIDATION_MESSAGES).includes(error.message as any)) {
+      throw error;
     }
-    throw error;
+
+    // All other errors: backend errors, network errors, unexpected errors
+    const uiMessage = ErrorLogger.logError(
+      error,
+      { service: "GlobalStatsService", action: "fetchCountryStats" },
+      { logToConsole: true, logToUI: true }
+    );
+    throw new Error(uiMessage);
   }
 };
 
@@ -118,10 +162,11 @@ export const fetchCountryStats = async (period: string): Promise<CountryStats> =
  */
 export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStats> => {
   try {
-    // Map frontend period to backend period
+    // Frontend validation
     const backendPeriod = periodMap[period.toLowerCase()];
     if (!backendPeriod) {
-      throw new Error(`Invalid period: ${period}`);
+      // Use consistent validation message (add to FE_VALIDATION_MESSAGES if needed)
+      throw new Error(FE_VALIDATION_MESSAGES.INVALID_PERIOD);
     }
 
     const response = await fetch(
@@ -135,13 +180,20 @@ export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStat
     );
 
     if (!response.ok) {
-      if (response.status >= 500) {
-        throw new Error('Something seems wrong, please refresh or come back later');
-      } else if (response.status >= 400) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.error || 'Invalid request parameters');
+      // Parse backend error response - NO LOGGING HERE
+      let backendError: BackendErrorResponse | null = null;
+
+      try {
+        backendError = await response.json();
+      } catch (parseError) {
+        // Create synthetic network error object - NO LOGGING HERE
+        throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
       }
-      throw new Error('Something seems wrong, please refresh or come back later');
+
+      // Throw parsed backend error - NO LOGGING HERE
+      if (backendError) {
+        throw backendError;
+      }
     }
 
     const rawData: GlobalMoodStats = await response.json();
@@ -160,10 +212,20 @@ export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStat
     return percentageData;
 
   } catch (error) {
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Something seems wrong, please refresh or come back later');
+    // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+
+    // Frontend validation errors: throw as-is (no logging needed)
+    if (error instanceof Error && Object.values(FE_VALIDATION_MESSAGES).includes(error.message as any)) {
+      throw error;
     }
-    throw error;
+
+    // All other errors: backend errors, network errors, unexpected errors
+    const uiMessage = ErrorLogger.logError(
+      error,
+      { service: "GlobalStatsService", action: "fetchMoodFrequency" },
+      { logToConsole: true, logToUI: true }
+    );
+    throw new Error(uiMessage);
   }
 };
 

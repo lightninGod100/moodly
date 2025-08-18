@@ -8,6 +8,7 @@ const ERROR_LOG_THRESHOLDS = {
   'JSON_SYNTAX': [1, 5, 25, 100, 500],      // Low severity
   'JWT_ERROR': [1, 3, 10, 50, 200],         // Medium severity  
   'DATABASE_ERROR': [1, 3, 10, 50, 100],      // High severity
+  'SIZE_LIMIT': [1, 5, 25, 100, 500],       // Medium severity - could be attacks
   'SYSTEM_ERROR': [1, 3, 10, 50, 100]         // High severity
 };
 
@@ -40,6 +41,12 @@ const globalErrorHandler = (err, req, res, next) => {
     errorMessage = ERROR_CATALOG.VAL_INVALID_JSON.message;
     context = 'JSON parsing';
     errorType = 'JSON_SYNTAX';
+  }
+  else if (err.status === 413 || err.type === 'entity.too.large' || err.message?.includes('too large')) {
+    errorCode = ERROR_CATALOG.VAL_REQUEST_TOO_LARGE.code;
+    errorMessage = ERROR_CATALOG.VAL_REQUEST_TOO_LARGE.message;
+    context = 'request size validation';
+    errorType = 'SIZE_LIMIT';
   }
   else if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
     errorCode = ERROR_CATALOG.AUTH_TOKEN_MALFORMED.code;
@@ -84,7 +91,24 @@ if (shouldLogError(ip, errorType)) {
   
   // Always send response to client (don't rate limit responses)
   const errorResponse = ErrorLogger.createErrorResponse(errorCode, errorMessage);
-  res.status(500).json(errorResponse);
+  
+  // Send appropriate HTTP status code based on error type
+  let httpStatus = 500; // Default to 500 for system errors
+  
+  if (errorType === 'JSON_SYNTAX' || errorType === 'SIZE_LIMIT') {
+    httpStatus = 400; // Bad Request for client-side errors
+  } else if (errorType === 'JWT_ERROR') {
+    httpStatus = 401; // Unauthorized for auth errors
+  } else if (errorType === 'DATABASE_ERROR' || errorType === 'SYSTEM_ERROR') {
+    httpStatus = 500; // Internal Server Error for server-side errors
+  }
+  
+  // For size limit errors, use 413 (Request Entity Too Large) instead of 400
+  if (errorType === 'SIZE_LIMIT') {
+    httpStatus = 413;
+  }
+  
+  res.status(httpStatus).json(errorResponse);
 };
 
 module.exports = {

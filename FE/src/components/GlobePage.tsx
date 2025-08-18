@@ -56,7 +56,7 @@ const GlobePage: React.FC = () => {
       const stats = await fetchWorldStats(period);
       setWorldStats(stats);
     } catch (err) {
-      console.error('Failed to load world stats:', err);
+      
       setError(err instanceof Error ? err.message : 'Something seems wrong, please refresh or come back later');
     } finally {
       setIsLoading(false);
@@ -140,6 +140,7 @@ const GlobePage: React.FC = () => {
   }}
 >
         {/* Time Filter Tabs - Make clickable */}
+        {!error && !isLoading && (
         <div style={{ marginBottom: '1rem' }} className="pointer-events-auto">
           <div className="flex border border-gray-600 rounded overflow-hidden" style={{ backgroundColor: 'rgba(31, 41, 55, 0.9)' }}>
             {['live', 'today', 'week', 'month'].map((period) => (
@@ -159,7 +160,8 @@ const GlobePage: React.FC = () => {
             ))}
           </div>
         </div>
-
+        )}
+                
         {!isLoading && !error && worldStats && (
           <div className="flex flex-col pointer-events-auto" style={{ gap: '1rem' }}>
             {/* Dominant Mood Stats - Semi-transparent dark gray */}

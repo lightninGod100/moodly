@@ -27,7 +27,7 @@ const shouldLogJsonAttack = (ip) => {
 
 const enhancedJsonParser = () => {
   return express.json({
-    limit: '1mb',
+    limit: '150kb',
     verify: (req, res, buf, encoding) => {
       try {
         JSON.parse(buf);
