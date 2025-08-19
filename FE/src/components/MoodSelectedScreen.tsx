@@ -3,12 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
 import { moodSelectedStatsApiService } from '../services/MoodSelectedStatsService';
-import type { 
-  MoodTransitionResponse,
-  GlobalPercentageResponse,
-  WeeklySentimentResponse,
-  AchievementsResponse
-} from '../services/MoodSelectedStatsService';
+import type { MoodSelectedStatsData } from '../services/MoodSelectedStatsService';
 
 // Define valid mood types
 type MoodType = 'Happy' | 'Excited' | 'Calm' | 'Tired' | 'Anxious' | 'Angry' | 'Sad';
@@ -163,7 +158,7 @@ const getRandomRecommendations = (mood: string, count: number = 3): string[] => 
   if (!recommendations || recommendations.length === 0) {
     return ["Keep tracking your mood for personalized insights."];
   }
-  
+
   // Shuffle array and take first 'count' to avoid repetition
   const shuffled = [...recommendations].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
@@ -231,22 +226,12 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
   const vantaEffect = useRef<any>(null);
 
   // API Data States
-  const [moodTransition, setMoodTransition] = useState<MoodTransitionResponse | null>(null);
-  const [globalPercentage, setGlobalPercentage] = useState<GlobalPercentageResponse | null>(null);
-  const [weeklySentiment, setWeeklySentiment] = useState<WeeklySentimentResponse | null>(null);
-  const [achievements, setAchievements] = useState<AchievementsResponse | null>(null);
+  // ✅ ADD - Single combined state
 
-  // Loading States
-  const [isLoadingTransition, setIsLoadingTransition] = useState(true);
-  const [isLoadingGlobal, setIsLoadingGlobal] = useState(true);
-  const [isLoadingWeekly, setIsLoadingWeekly] = useState(true);
-  const [isLoadingAchievements, setIsLoadingAchievements] = useState(true);
 
-  // Error States
-  const [transitionError, setTransitionError] = useState(false);
-  const [globalError, setGlobalError] = useState(false);
-  const [weeklyError, setWeeklyError] = useState(false);
-  const [achievementsError, setAchievementsError] = useState(false);
+  const [allStats, setAllStats] = useState<MoodSelectedStatsData | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [hasStatsError, setHasStatsError] = useState(false);
 
   // Get color for current mood
   const getMoodColor = (mood: string): number => {
@@ -255,11 +240,11 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
   };
 
   // Loading Skeleton Component
-  const LoadingSkeleton: React.FC<{ width?: string; height?: string }> = ({ 
-    width = '100%', 
-    height = '1rem' 
+  const LoadingSkeleton: React.FC<{ width?: string; height?: string }> = ({
+    width = '100%',
+    height = '1rem'
   }) => (
-    <div 
+    <div
       style={{
         width,
         height,
@@ -272,62 +257,24 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
 
   // Fetch API Data
   useEffect(() => {
-    const fetchMoodSelectedData = async () => {
-      // Fetch Mood Transition
+    const fetchAllMoodSelectedData = async () => {
       try {
-        setIsLoadingTransition(true);
-        setTransitionError(false);
-        const transitionData = await moodSelectedStatsApiService.getMoodTransition();
-        setMoodTransition(transitionData);
-      } catch (error) {
-        console.error('Failed to fetch mood transition:', error);
-        setTransitionError(true);
-      } finally {
-        setIsLoadingTransition(false);
-      }
+        setIsLoadingStats(true);
+        setHasStatsError(false);
 
-      // Fetch Global Percentage
-      try {
-        setIsLoadingGlobal(true);
-        setGlobalError(false);
-        const globalData = await moodSelectedStatsApiService.getGlobalPercentage(currentMood);
-        setGlobalPercentage(globalData);
-      } catch (error) {
-        console.error('Failed to fetch global percentage:', error);
-        setGlobalError(true);
-      } finally {
-        setIsLoadingGlobal(false);
-      }
+        const statsData = await moodSelectedStatsApiService.getAllMoodSelectedStats(currentMood);
+        setAllStats(statsData);
 
-      // Fetch Weekly Sentiment
-      try {
-        setIsLoadingWeekly(true);
-        setWeeklyError(false);
-        const weeklyData = await moodSelectedStatsApiService.getWeeklySentiment();
-        setWeeklySentiment(weeklyData);
       } catch (error) {
-        console.error('Failed to fetch weekly sentiment:', error);
-        setWeeklyError(true);
+        // Only set error flag - no console.error needed
+        setHasStatsError(true);
       } finally {
-        setIsLoadingWeekly(false);
-      }
-
-      // Fetch Achievements
-      try {
-        setIsLoadingAchievements(true);
-        setAchievementsError(false);
-        const achievementsData = await moodSelectedStatsApiService.getAchievements();
-        setAchievements(achievementsData);
-      } catch (error) {
-        console.error('Failed to fetch achievements:', error);
-        setAchievementsError(true);
-      } finally {
-        setIsLoadingAchievements(false);
+        setIsLoadingStats(false);
       }
     };
 
     if (currentMood) {
-      fetchMoodSelectedData();
+      fetchAllMoodSelectedData();
     }
   }, [currentMood]);
 
@@ -336,7 +283,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
       try {
         if (!vantaEffect.current && vantaRef.current) {
           console.log('Initializing Vanta Waves...');
-          
+
           vantaEffect.current = WAVES({
             el: vantaRef.current,
             THREE: THREE,
@@ -353,7 +300,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
             waveSpeed: 1.2,
             zoom: 0.75
           });
-          
+
           console.log('Vanta effect created');
         }
       } catch (error) {
@@ -379,93 +326,18 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
     if (vantaEffect.current && currentMood) {
       try {
         const newColor = getMoodColor(currentMood);
-        console.log('Updating Vanta color for mood:', currentMood);
-        
+        //console.log('Updating Vanta color for mood:', currentMood);
+
         if (vantaEffect.current.options) {
           vantaEffect.current.options.color = newColor;
         }
       } catch (error) {
-        console.error('Error updating Vanta color:', error);
+        //console.error('Error updating Vanta color:', error);
       }
     }
   }, [currentMood]);
 
-  // Keep existing testing useEffect
-  useEffect(() => {
-    const testMoodSelectedStatsService = async () => {
-      try {
-        console.log('🧪 Testing MoodSelectedStats Service...');
-        console.log('Current mood for testing:', currentMood);
-        
-        // Test 1: Mood Transition
-        console.log('\n📊 Testing Mood Transition...');
-        const moodTransition = await moodSelectedStatsApiService.getMoodTransition();
-        console.log('✅ Mood Transition Result:', moodTransition);
-        
-        // Test 2: Global Percentage
-        console.log('\n🌍 Testing Global Percentage...');
-        const globalPercentage = await moodSelectedStatsApiService.getGlobalPercentage(currentMood);
-        console.log('✅ Global Percentage Result:', globalPercentage);
-        
-        // Test 3: Weekly Sentiment
-        console.log('\n📈 Testing Weekly Sentiment...');
-        const weeklySentiment = await moodSelectedStatsApiService.getWeeklySentiment();
-        console.log('✅ Weekly Sentiment Result:', weeklySentiment);
-        
-        // Test 4: Achievements (Enhanced Logging)
-        console.log('\n🏆 Testing Achievements...');
-        const achievements = await moodSelectedStatsApiService.getAchievements();
-        console.log('✅ Achievements Raw Response:', achievements);
 
-        // Enhanced achievements logging
-        if (achievements.hasAchievement && achievements.achievements) {
-          console.log('\n🎯 ACHIEVEMENTS DETAILS:');
-          console.log(`📊 Total Achievements Unlocked: ${achievements.achievements.length}`);
-          
-          achievements.achievements.forEach((achievement, index) => {
-            console.log(`\n🏅 Achievement ${index + 1}:`);
-            console.log(`   Name: ${achievement.name}`);
-            console.log(`   Message: ${achievement.message}`);
-          });
-          
-          console.log('\n📋 All Achievement Names:', achievements.achievements.map(a => a.name));
-          console.log('📝 All Achievement Messages:', achievements.achievements.map(a => a.message));
-          
-        } else {
-          console.log('\n❌ No Achievements Found');
-          console.log('Fallback Message:', achievements.message);
-        }
-        
-        // Test 5: Combined Call (Promise.all)
-        console.log('\n🚀 Testing Combined API Call...');
-        const allStats = await moodSelectedStatsApiService.getAllMoodSelectedStats(currentMood);
-        console.log('✅ All Stats Combined Result:', allStats);
-        
-        console.log('\n🎉 All MoodSelectedStats service tests completed successfully!');
-        console.log('📋 Summary:');
-        console.log('  - Mood Transition:', moodTransition.message);
-        console.log('  - Global Percentage:', globalPercentage.message);
-        console.log('  - Weekly Sentiment:', weeklySentiment.hasData ? weeklySentiment.sentimentMessage : weeklySentiment.message);
-        console.log('  - Achievements:', achievements.hasAchievement ? `${achievements.achievements?.length} achievements` : achievements.message);
-        
-      } catch (error) {
-        console.error('❌ MoodSelectedStats service test failed:', error);
-        console.error('Error details:', {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          currentMood: currentMood,
-          timestamp: new Date().toISOString()
-        });
-      }
-    };
-    
-    // Only run test if we have a current mood and after component is fully mounted
-    if (currentMood) {
-      console.log('⏳ Starting MoodSelectedStats service test in 2 seconds...');
-      const timer = setTimeout(testMoodSelectedStatsService, 2000);
-      
-      return () => clearTimeout(timer); // Cleanup timer on unmount
-    }
-  }, [currentMood]); // Re-run test if mood changes
 
   // Working bubble positions from the sample code
   const moodPhrases = getMoodPhrases(currentMood);
@@ -473,23 +345,23 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
 
   return (
     <div ref={vantaRef} style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
-      
-     {/* Enhanced Professional Main Content */}
-     <div style={{ 
-  position: 'absolute', 
-  top: '1.1rem',                   // ← Fixed top position
-  left: '50%', 
-  transform: 'translateX(-50%)', // ← Only X centering
-  zIndex: 5, 
-  color: 'white',
-  width: '85%',
-  maxWidth: '1050px'
-}}>
-        
+
+      {/* Enhanced Professional Main Content */}
+      <div style={{
+        position: 'absolute',
+        top: '1.1rem',                   // ← Fixed top position
+        left: '50%',
+        transform: 'translateX(-50%)', // ← Only X centering
+        zIndex: 5,
+        color: 'white',
+        width: '85%',
+        maxWidth: '1050px'
+      }}>
+
         {/* Hero Section - Current Mood Display */}
-        <div style={{ textAlign: 'center', marginBottom: '1rem',paddingTop: '4.75rem'}}>
-          
-          
+        <div style={{ textAlign: 'center', marginBottom: '1rem', paddingTop: '4.75rem' }}>
+
+
           {/* Enhanced Mood Display */}
           <div style={{ marginBottom: '0.8rem' }}>
             <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -503,7 +375,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 transform: 'scale(1.3)',
                 animation: 'pulse 3s infinite'
               }}></div>
-              
+
               {/* Main Mood Container */}
               <div style={{
                 position: 'relative',
@@ -518,17 +390,17 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 minWidth: '800px'
 
               }}>
-                <div style={{ 
-                  fontSize: '5rem', 
-                  marginBottom: '0rem', 
+                <div style={{
+                  fontSize: '5rem',
+                  marginBottom: '0rem',
                   animation: 'bounce 2s infinite',
                   filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
                 }}>
                   {moodEmoji}
                 </div>
-                <div style={{ 
-                  fontSize: '2rem', 
-                  fontWeight: '600', 
+                <div style={{
+                  fontSize: '2rem',
+                  fontWeight: '600',
                   letterSpacing: '0.05em',
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)'
                 }}>
@@ -537,12 +409,12 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
               </div>
             </div>
           </div>
-          
+
           {/* Enhanced Mood Message */}
           <div style={{ marginBottom: '0rem' }}>
-            <p style={{ 
-              fontSize: '1.35rem', 
-              fontWeight: '500', 
+            <p style={{
+              fontSize: '1.35rem',
+              fontWeight: '500',
               lineHeight: '1.6',
               maxWidth: '600px',
               margin: '0 auto',
@@ -554,8 +426,8 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
         </div>
 
         {/* Global Connection - NOW WITH REAL API DATA */}
-        <div style={{ 
-          display: 'flex', 
+        <div style={{
+          display: 'flex',
           justifyContent: 'center',
           marginBottom: '1.5rem'
         }}>
@@ -571,40 +443,40 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
               <div style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🌍</div>
-              <h3 style={{ 
-                fontWeight: '600', 
-                fontSize: '1rem', 
+              <h3 style={{
+                fontWeight: '600',
+                fontSize: '1rem',
                 margin: 0,
                 color: 'rgba(255, 255, 255, 0.95)'
               }}>
                 Global Connection
               </h3>
             </div>
-            <p style={{ 
-              fontSize: '0.9rem', 
+            <p style={{
+              fontSize: '0.9rem',
               margin: 0,
               color: 'rgba(255, 255, 255, 0.8)',
               lineHeight: '1.4'
             }}>
-              {isLoadingGlobal ? (
+              {isLoadingStats ? (
                 <LoadingSkeleton height="1.2rem" />
-              ) : globalError ? (
-                "Moodly seems to be tired, come back later"
+              ) : hasStatsError ? (
+                "Something went wrong, please try again"
               ) : (
-                globalPercentage?.message || "Loading global data..."
+                allStats?.globalPercentage?.message || "Unable to load global percentage data"
               )}
             </p>
           </div>
         </div>
 
         {/* Professional Insights Grid - 2x2 Layout WITH REAL API DATA */}
-        <div style={{ 
-  display: 'grid', 
-  gridTemplateColumns: '12fr 13fr',  // ← This creates 40-60 split
-  gap: '1rem',
-  marginBottom: '2.5rem'
-}}>
-          
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '12fr 13fr',  // ← This creates 40-60 split
+          gap: '1rem',
+          marginBottom: '2.5rem'
+        }}>
+
           {/* Mood Transition Card - NOW WITH REAL API DATA */}
           <div style={{
             border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -616,19 +488,19 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
             transition: 'transform 0.3s ease, box-shadow 0.3s ease',
             cursor: 'pointer'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-          }}>
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+            }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
               <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🔄</div>
-              <h3 style={{ 
-                fontWeight: '600', 
-                fontSize: '1.1rem', 
+              <h3 style={{
+                fontWeight: '600',
+                fontSize: '1.1rem',
                 margin: 0,
                 color: 'rgba(255, 255, 255, 0.95)',
                 textAlign: 'center'
@@ -636,232 +508,216 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 Mood Transition
               </h3>
             </div>
-            <div style={{ 
-              fontSize: '0.95rem', 
+            <div style={{
+              fontSize: '0.95rem',
               lineHeight: '1.5',
               color: 'rgba(255, 255, 255, 0.8)'
             }}>
-              {isLoadingTransition ? (
+              {isLoadingStats ? (
                 <div>
                   <LoadingSkeleton height="1rem" />
-                  <div style={{ marginTop: '0.5rem'}}>
+                  <div style={{ marginTop: '0.5rem' }}>
                     <LoadingSkeleton height="1rem" />
                   </div>
                 </div>
-              ) : transitionError ? (
-                "Moodly seems to be tired, come back later"
-              ) : moodTransition ? (
-                <div>
-                  <div style={{ marginBottom: '0.5rem',marginLeft: '0.5rem' }}>
-                  •  {moodTransition.message}
-                  </div>
-                 
-                </div>
               ) : (
-                "Loading transition data..."
+                <div>
+                  <div style={{ marginBottom: '0.5rem', marginLeft: '0.5rem' }}>
+                    • {allStats?.moodTransition?.message || "Unable to load mood transition data"}
+                  </div>
+                </div>
               )}
             </div>
           </div>
 
           {/* Weekly Sentiment Card - NOW WITH REAL API DATA */}
           {/* Weekly Sentiment Card - NOW WITH REAL API DATA */}
-         <div style={{
-           border: '1px solid rgba(255, 255, 255, 0.2)',
-           background: 'rgba(255, 255, 255, 0.1)',
-           backdropFilter: 'blur(20px)',
-           padding: '1rem',
-           borderRadius: '1rem',
-           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-           cursor: 'pointer'
-         }}
-         onMouseEnter={(e) => {
-           e.currentTarget.style.transform = 'translateY(-4px)';
-           e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-         }}
-         onMouseLeave={(e) => {
-           e.currentTarget.style.transform = 'translateY(0)';
-           e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-         }}>
-           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-             <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>📊</div>
-             <h3 style={{ 
-               fontWeight: '600', 
-               fontSize: '1.1rem', 
-               margin: 0,
-               color: 'rgba(255, 255, 255, 0.95)'
-             }}>
-               Weekly Sentiment
-             </h3>
-           </div>
-           <div style={{ 
-             fontSize: '0.95rem', 
-             lineHeight: '1.5',
-             color: 'rgba(255, 255, 255, 0.8)'
-           }}>
-             {isLoadingWeekly ? (
-               <div>
-                 <LoadingSkeleton height="1rem" />
-                 <div style={{ marginTop: '0.5rem' }}>
-                   <LoadingSkeleton height="0.8rem" />
-                 </div>
-               </div>
-             ) : weeklyError ? (
-               "Moodly seems to be tired, come back later"
-             ) : weeklySentiment ? (
-               weeklySentiment.hasData ? (
-                 <div>
-                   <div style={{ marginBottom: '0.5rem' }}>
-                     {weeklySentiment.sentimentMessage}
-                   </div>
-                   {weeklySentiment.hasCurrentMood && weeklySentiment.frequencyMessage && (
-                     <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-                       {weeklySentiment.frequencyMessage}
-                     </div>
-                   )}
-                  
-                 </div>
-               ) : (
-                 <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
-                   {weeklySentiment.message}
-                 </div>
-               )
-             ) : (
-               "Loading weekly data..."
-             )}
-           </div>
-         </div>
+          <div style={{
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            padding: '1rem',
+            borderRadius: '1rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer'
+          }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+            }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>📊</div>
+              <h3 style={{
+                fontWeight: '600',
+                fontSize: '1.1rem',
+                margin: 0,
+                color: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                Weekly Sentiment
+              </h3>
+            </div>
+            <div style={{
+              fontSize: '0.95rem',
+              lineHeight: '1.5',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              {isLoadingStats ? (
+                <div>
+                  <LoadingSkeleton height="1rem" />
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <LoadingSkeleton height="0.8rem" />
+                  </div>
+                </div>
+              ) : allStats?.weeklySentiment?.hasData ? (
+                <div>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    {allStats.weeklySentiment.sentimentMessage}
+                  </div>
+                  {allStats.weeklySentiment.hasCurrentMood && allStats.weeklySentiment.frequencyMessage && (
+                    <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
+                      {allStats.weeklySentiment.frequencyMessage}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
+                  {allStats?.weeklySentiment?.message || "Unable to load weekly sentiment data"}
+                </div>
+              )}
+            </div>
+          </div>
 
-         {/* Achievements Card - NOW WITH REAL API DATA */}
-         <div style={{
-           border: '1px solid rgba(255, 255, 255, 0.2)',
-           background: 'rgba(255, 255, 255, 0.1)',
-           backdropFilter: 'blur(20px)',
-           padding: '1rem',
-           borderRadius: '1rem',
-           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-           cursor: 'pointer'
-         }}
-         onMouseEnter={(e) => {
-           e.currentTarget.style.transform = 'translateY(-4px)';
-           e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-         }}
-         onMouseLeave={(e) => {
-           e.currentTarget.style.transform = 'translateY(0)';
-           e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-         }}>
-           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-             <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🏆</div>
-             <h3 style={{ 
-               fontWeight: '600', 
-               fontSize: '1.1rem', 
-               margin: 0,
-               color: 'rgba(255, 255, 255, 0.95)'
-             }}>
-               Achievements
-             </h3>
-           </div>
-           <div style={{ 
-             fontSize: '0.95rem', 
-             lineHeight: '1.5',
-             color: 'rgba(255, 255, 255, 0.8)'
-           }}>
-             {isLoadingAchievements ? (
-  <div>
-    <LoadingSkeleton height="1rem" />
-    <div style={{ marginTop: '0.5rem' }}>
-      <LoadingSkeleton height="0.8rem" />
-    </div>
-  </div>
-) : achievementsError ? (
-  "Moodly seems to be tired, come back later"
-) : achievements ? (
-  achievements.hasAchievement && achievements.achievements && achievements.achievements.length > 0 ? (
-    <div>
-      {achievements.achievements.map((achievement, index) => (
-  <div key={index} style={{ 
-    marginBottom: index < achievements.achievements!.length - 1 ? '0.5rem' : '0',
-    fontSize: '0.95rem',
-    lineHeight: '1.4'
-    
-  }}>
-    🎯 <span style={{ fontWeight: '500' }}>{achievement.name}</span> : {achievement.message}
-  </div>
-))}
-    </div>
-  ) : (
-    <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
-      {achievements.message || "No achievements yet"}
-    </div>
-  )
-) : (
-  "Loading achievements..."
-)}
-</div>
-</div>
+          {/* Achievements Card - NOW WITH REAL API DATA */}
+          <div style={{
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            padding: '1rem',
+            borderRadius: '1rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer'
+          }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+            }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🏆</div>
+              <h3 style={{
+                fontWeight: '600',
+                fontSize: '1.1rem',
+                margin: 0,
+                color: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                Achievements
+              </h3>
+            </div>
+            <div style={{
+              fontSize: '0.95rem',
+              lineHeight: '1.5',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              {isLoadingStats ? (
+                // Loading state
+                <div>
+                  <LoadingSkeleton height="1rem" />
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <LoadingSkeleton height="0.8rem" />
+                  </div>
+                </div>
+              ) : allStats?.achievements?.hasAchievement && allStats.achievements.achievements && allStats.achievements.achievements.length > 0 ? (
+                // Has achievements - show them
+                <div>
+                  {allStats.achievements.achievements.map((achievement, index) => (
+                    <div key={index} style={{
+                      marginBottom: index < allStats.achievements!.achievements!.length - 1 ? '0.5rem' : '0',
+                      fontSize: '0.95rem',
+                      lineHeight: '1.4'
+                    }}>
+                      🎯 <span style={{ fontWeight: '500' }}>{achievement.name}</span> : {achievement.message}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // No achievements OR error - show appropriate message
+                <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
+                  {allStats?.achievements?.message || "No achievements yet"}
+                </div>
+              )}
+            </div>
+          </div>
 
-         {/* Recommendations Card - UNCHANGED (static recommendations) */}
-         <div style={{
-           border: '1px solid rgba(255, 255, 255, 0.2)',
-           background: 'rgba(255, 255, 255, 0.1)',
-           backdropFilter: 'blur(20px)',
-           padding: '1rem',
-           borderRadius: '1rem',
-           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-           cursor: 'pointer'
-         }}
-         onMouseEnter={(e) => {
-           e.currentTarget.style.transform = 'translateY(-4px)';
-           e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-         }}
-         onMouseLeave={(e) => {
-           e.currentTarget.style.transform = 'translateY(0)';
-           e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-         }}>
-           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-             <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>💡</div>
-             <h3 style={{ 
-               fontWeight: '600', 
-               fontSize: '1.1rem', 
-               margin: 0,
-               color: 'rgba(255, 255, 255, 0.95)'
-             }}>
-               Recommendations
-             </h3>
-           </div>
-           <div style={{ 
-             fontSize: '0.94rem', 
-             lineHeight: '1.4',
-             color: 'rgba(255, 255, 255, 0.8)'
-           }}>
-             {getRandomRecommendations(currentMood, 3).map((recommendation, index) => (
-               <div key={index} style={{ marginBottom: '0.5rem' }}>
-                 • {recommendation}
-               </div>
-             ))}
-           </div>
-         </div>
-       </div>
-     </div>
+          {/* Recommendations Card - UNCHANGED (static recommendations) */}
+          <div style={{
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            padding: '1rem',
+            borderRadius: '1rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+            cursor: 'pointer'
+          }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+            }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>💡</div>
+              <h3 style={{
+                fontWeight: '600',
+                fontSize: '1.1rem',
+                margin: 0,
+                color: 'rgba(255, 255, 255, 0.95)'
+              }}>
+                Recommendations
+              </h3>
+            </div>
+            <div style={{
+              fontSize: '0.94rem',
+              lineHeight: '1.4',
+              color: 'rgba(255, 255, 255, 0.8)'
+            }}>
+              {getRandomRecommendations(currentMood, 3).map((recommendation, index) => (
+                <div key={index} style={{ marginBottom: '0.5rem' }}>
+                  • {recommendation}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
-     {/* Left bubbles - UNCHANGED (animations and phrases) */}
-     <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
-       {[...Array(5)].map((_, index) => {
-         const bubbleSize = 110 + moodPhrases[index].length/5;
-         return (
-           <React.Fragment key={`left-bubble-group-${index}`}>
-             <div
-               key={`left-${index}`}
-               style={{
-                 position: 'absolute',
-                 bottom: '-30px',
-                 left: index % 2 === 0 ? '15%' : '25%',
-                 opacity: 0,
-                 animation: `floatUpLeft 20s linear ${index * 4}s infinite`,
-                 color: 'rgba(0, 0, 0, 0.8)',
-                 background: `
+      {/* Left bubbles - UNCHANGED (animations and phrases) */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
+        {[...Array(5)].map((_, index) => {
+          const bubbleSize = 110 + moodPhrases[index].length / 5;
+          return (
+            <React.Fragment key={`left-bubble-group-${index}`}>
+              <div
+                key={`left-${index}`}
+                style={{
+                  position: 'absolute',
+                  bottom: '-30px',
+                  left: index % 2 === 0 ? '15%' : '25%',
+                  opacity: 0,
+                  animation: `floatUpLeft 20s linear ${index * 4}s infinite`,
+                  color: 'rgba(0, 0, 0, 0.8)',
+                  background: `
                    radial-gradient(circle at 30% 30%, 
                      rgba(255, 255, 255, 0.8) 0%, 
                      rgba(255, 255, 255, 0.4) 30%, 
@@ -869,68 +725,68 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                      rgba(255, 255, 255, 0.05) 100%
                    )
                  `,
-                 borderRadius: '50%',
-                 border: '1px solid rgba(255, 255, 255, 0.6)',
-                 padding: '1rem',
-                 backdropFilter: 'blur(8px)',
-                 fontSize: '1rem',
-                 fontWeight: '500',
-                 textAlign: 'center',
-                 width: `${bubbleSize}px`,
-                 height: `${bubbleSize}px`,
-                 display: 'flex',
-                 alignItems: 'center',
-                 justifyContent: 'center',
-                 boxShadow: `
+                  borderRadius: '50%',
+                  border: '1px solid rgba(255, 255, 255, 0.6)',
+                  padding: '1rem',
+                  backdropFilter: 'blur(8px)',
+                  fontSize: '1rem',
+                  fontWeight: '500',
+                  textAlign: 'center',
+                  width: `${bubbleSize}px`,
+                  height: `${bubbleSize}px`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: `
                    inset -10px -10px 20px rgba(255, 255, 255, 0.3),
                    inset 10px 10px 20px rgba(0, 0, 0, 0.1),
                    0 5px 15px rgba(0, 0, 0, 0.2)
                  `
-               }}
-             >
-               {moodPhrases[index]}
-             </div>
-             {[1, 2, 3, 4].map(fragIndex => (
-               <div
-                 key={`left-fragment-${fragIndex}-${index}`}
-                 style={{
-                   position: 'absolute',
-                   bottom: '-30px',
-                   left: index % 2 === 0 ? '20%' : '30%',
-                   animation: `fragmentBurstLeft${fragIndex} 20s linear ${index * 4}s infinite`,
-                   color: 'rgba(0, 0, 0, 0.6)',
-                   background: 'radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 100%)',
-                   borderRadius: '50%',
-                   border: '1px solid rgba(255, 255, 255, 0.5)',
-                   backdropFilter: 'blur(4px)',
-                   width: '20px',
-                   height: '20px',
-                   opacity: 0,
-                   boxShadow: 'inset -3px -3px 6px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.1)'
-                 }}
-               />
-             ))}
-           </React.Fragment>
-         );
-       })}
-     </div>
-  
-     {/* Right bubbles - UNCHANGED (animations and quotes) */}
-     <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
-       {[...Array(5)].map((_, index) => {
-         const bubbleSize = 170 + quotes[index].length/5;
-         return (
-           <React.Fragment key={`right-bubble-group-${index}`}>
-             <div
-               key={`right-${index}`}
-               style={{
-                 position: 'absolute',
-                 bottom: '-30px',
-                 left: index % 2 === 0 ? '63%' : '73%',
-                 opacity: 0,
-                 animation: `floatUpRight 20s linear ${index * 4}s infinite`,
-                 color: 'rgba(0, 0, 0, 0.8)',
-                 background: `
+                }}
+              >
+                {moodPhrases[index]}
+              </div>
+              {[1, 2, 3, 4].map(fragIndex => (
+                <div
+                  key={`left-fragment-${fragIndex}-${index}`}
+                  style={{
+                    position: 'absolute',
+                    bottom: '-30px',
+                    left: index % 2 === 0 ? '20%' : '30%',
+                    animation: `fragmentBurstLeft${fragIndex} 20s linear ${index * 4}s infinite`,
+                    color: 'rgba(0, 0, 0, 0.6)',
+                    background: 'radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 100%)',
+                    borderRadius: '50%',
+                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    backdropFilter: 'blur(4px)',
+                    width: '20px',
+                    height: '20px',
+                    opacity: 0,
+                    boxShadow: 'inset -3px -3px 6px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                />
+              ))}
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Right bubbles - UNCHANGED (animations and quotes) */}
+      <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
+        {[...Array(5)].map((_, index) => {
+          const bubbleSize = 170 + quotes[index].length / 5;
+          return (
+            <React.Fragment key={`right-bubble-group-${index}`}>
+              <div
+                key={`right-${index}`}
+                style={{
+                  position: 'absolute',
+                  bottom: '-30px',
+                  left: index % 2 === 0 ? '63%' : '73%',
+                  opacity: 0,
+                  animation: `floatUpRight 20s linear ${index * 4}s infinite`,
+                  color: 'rgba(0, 0, 0, 0.8)',
+                  background: `
                    radial-gradient(circle at 25% 25%, 
                      rgba(255, 255, 255, 0.9) 0%, 
                      rgba(255, 255, 255, 0.5) 25%, 
@@ -938,82 +794,82 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                      rgba(255, 255, 255, 0.05) 100%
                    )
                  `,
-                 borderRadius: '50%',
-                 border: '1.5px solid rgba(255, 255, 255, 0.7)',
-                 padding: '1.5rem',
-                 backdropFilter: 'blur(12px)',
-                 fontSize: '0.8rem',
-                 fontWeight: '500',
-                 textAlign: 'center',
-                 width: `${bubbleSize}px`,
-                 height: `${bubbleSize}px`,
-                 display: 'flex',
-                 alignItems: 'center',
-                 justifyContent: 'center',
-                 lineHeight: '1.3',
-                 wordWrap: 'break-word',
-                 boxShadow: `
+                  borderRadius: '50%',
+                  border: '1.5px solid rgba(255, 255, 255, 0.7)',
+                  padding: '1.5rem',
+                  backdropFilter: 'blur(12px)',
+                  fontSize: '0.8rem',
+                  fontWeight: '500',
+                  textAlign: 'center',
+                  width: `${bubbleSize}px`,
+                  height: `${bubbleSize}px`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: '1.3',
+                  wordWrap: 'break-word',
+                  boxShadow: `
                    inset -15px -15px 30px rgba(255, 255, 255, 0.4),
                    inset 15px 15px 30px rgba(0, 0, 0, 0.1),
                    0 8px 25px rgba(0, 0, 0, 0.25)
                  `
-               }}
-             >
-               {(() => {
-                 const fullQuote = quotes[index];
-                 const parts = fullQuote.split(' — ');
-                 const quoteText = parts[0];
-                 const author = parts[1] || '';
-                 
-                 return (
-                   <div>
-                     <div style={{ marginBottom: '0.5rem' }}>
-                       {quoteText}
-                     </div>
-                     {author && (
-                       <div style={{ 
-                         fontSize: '0.65rem', 
-                         fontStyle: 'italic', 
-                         opacity: 0.9,
-                         marginTop: '0.5rem',
-                         fontWeight: 'bold'
-                       }}>
-                         — {author}
-                       </div>
-                     )}
-                   </div>
-                 );
-               })()}
-             </div>
-             {/* Fragment bubbles for realistic burst */}
-             {[1, 2, 3, 4].map(fragIndex => (
-               <div
-                 key={`right-fragment-${fragIndex}-${index}`}
-                 style={{
-                   position: 'absolute',
-                   bottom: '-200px',
-                   left: index % 2 === 0 ? '65%' : '75%',
-                   animation: `fragmentBurstRight${fragIndex} 12s linear ${index * 2.4}s infinite`,
-                   color: 'rgba(0, 0, 0, 0.6)',
-                   background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 100%)',
-                   borderRadius: '50%',
-                   border: '0.5px solid rgba(255, 255, 255, 0.6)',
-                   backdropFilter: 'blur(4px)',
-                   width: '34px',
-                   height: '34px',
-                   opacity: 0,
-                   boxShadow: 'inset -4px -4px 8px rgba(255,255,255,0.4), 0 3px 6px rgba(0,0,0,0.15)'
-                 }}
-               />
-             ))}
-           </React.Fragment>
-         );
-       })}
-     </div>
-       
-     {/* Working animations with immediate start - ADD PULSE ANIMATION */}
-     <style>
-       {`
+                }}
+              >
+                {(() => {
+                  const fullQuote = quotes[index];
+                  const parts = fullQuote.split(' — ');
+                  const quoteText = parts[0];
+                  const author = parts[1] || '';
+
+                  return (
+                    <div>
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        {quoteText}
+                      </div>
+                      {author && (
+                        <div style={{
+                          fontSize: '0.65rem',
+                          fontStyle: 'italic',
+                          opacity: 0.9,
+                          marginTop: '0.5rem',
+                          fontWeight: 'bold'
+                        }}>
+                          — {author}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+              {/* Fragment bubbles for realistic burst */}
+              {[1, 2, 3, 4].map(fragIndex => (
+                <div
+                  key={`right-fragment-${fragIndex}-${index}`}
+                  style={{
+                    position: 'absolute',
+                    bottom: '-200px',
+                    left: index % 2 === 0 ? '65%' : '75%',
+                    animation: `fragmentBurstRight${fragIndex} 12s linear ${index * 2.4}s infinite`,
+                    color: 'rgba(0, 0, 0, 0.6)',
+                    background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 100%)',
+                    borderRadius: '50%',
+                    border: '0.5px solid rgba(255, 255, 255, 0.6)',
+                    backdropFilter: 'blur(4px)',
+                    width: '34px',
+                    height: '34px',
+                    opacity: 0,
+                    boxShadow: 'inset -4px -4px 8px rgba(255,255,255,0.4), 0 3px 6px rgba(0,0,0,0.15)'
+                  }}
+                />
+              ))}
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Working animations with immediate start - ADD PULSE ANIMATION */}
+      <style>
+        {`
          @keyframes pulse {
            0%, 100% { opacity: 1; }
            50% { opacity: 0.5; }
@@ -1109,8 +965,8 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
            100% { opacity: 1; transform: translateY(-103vh) translateX(35px) scale(1); }
          }
        `}
-     </style>
-   </div>
+      </style>
+    </div>
   );
 };
 

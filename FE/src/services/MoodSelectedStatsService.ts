@@ -1,5 +1,5 @@
 // src/services/MoodSelectedStatsService.ts
-
+import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
 // Types for API responses
 interface MoodTransitionResponse {
     transition: boolean;
@@ -73,16 +73,36 @@ interface MoodTransitionResponse {
           method: 'GET',
           headers: getAuthHeaders()
         });
-  
+    
         if (!response.ok) {
-          throw new Error(`Failed to fetch mood transition: ${response.status} ${response.statusText}`);
+          // Parse backend error response - NO LOGGING HERE
+          let backendError: BackendErrorResponse | null = null;
+    
+          try {
+            backendError = await response.json();
+          } catch (parseError) {
+            // Create synthetic network error object - NO LOGGING HERE
+            throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+          }
+    
+          // Throw parsed backend error - NO LOGGING HERE
+          if (backendError) {
+            throw backendError;
+          }
         }
-  
+    
         const data: MoodTransitionResponse = await response.json();
         return data;
       } catch (error) {
-        console.error('Error fetching mood transition:', error);
-        throw error;
+        // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+    
+        // All errors: backend errors, network errors, unexpected errors
+        const uiMessage = ErrorLogger.logError(
+          error,
+          { service: "MoodSelectedStatsService", action: "getMoodTransition" },
+          { logToConsole: true, logToUI: true }
+        );
+        throw new Error(uiMessage);
       }
     },
   
@@ -96,16 +116,36 @@ interface MoodTransitionResponse {
           method: 'GET',
           headers: getAuthHeaders()
         });
-  
+    
         if (!response.ok) {
-          throw new Error(`Failed to fetch global percentage: ${response.status} ${response.statusText}`);
+          // Parse backend error response - NO LOGGING HERE
+          let backendError: BackendErrorResponse | null = null;
+    
+          try {
+            backendError = await response.json();
+          } catch (parseError) {
+            // Create synthetic network error object - NO LOGGING HERE
+            throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+          }
+    
+          // Throw parsed backend error - NO LOGGING HERE
+          if (backendError) {
+            throw backendError;
+          }
         }
-  
+    
         const data: GlobalPercentageResponse = await response.json();
         return data;
       } catch (error) {
-        console.error('Error fetching global percentage:', error);
-        throw error;
+        // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+    
+        // All errors: backend errors, network errors, unexpected errors
+        const uiMessage = ErrorLogger.logError(
+          error,
+          { service: "MoodSelectedStatsService", action: "getGlobalPercentage" },
+          { logToConsole: true, logToUI: true }
+        );
+        throw new Error(uiMessage);
       }
     },
   
@@ -119,16 +159,36 @@ interface MoodTransitionResponse {
           method: 'GET',
           headers: getAuthHeaders()
         });
-  
+    
         if (!response.ok) {
-          throw new Error(`Failed to fetch weekly sentiment: ${response.status} ${response.statusText}`);
+          // Parse backend error response - NO LOGGING HERE
+          let backendError: BackendErrorResponse | null = null;
+    
+          try {
+            backendError = await response.json();
+          } catch (parseError) {
+            // Create synthetic network error object - NO LOGGING HERE
+            throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+          }
+    
+          // Throw parsed backend error - NO LOGGING HERE
+          if (backendError) {
+            throw backendError;
+          }
         }
-  
+    
         const data: WeeklySentimentResponse = await response.json();
         return data;
       } catch (error) {
-        console.error('Error fetching weekly sentiment:', error);
-        throw error;
+        // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+    
+        // All errors: backend errors, network errors, unexpected errors
+        const uiMessage = ErrorLogger.logError(
+          error,
+          { service: "MoodSelectedStatsService", action: "getWeeklySentiment" },
+          { logToConsole: true, logToUI: true }
+        );
+        throw new Error(uiMessage);
       }
     },
   
@@ -142,16 +202,36 @@ interface MoodTransitionResponse {
           method: 'GET',
           headers: getAuthHeaders()
         });
-  
+    
         if (!response.ok) {
-          throw new Error(`Failed to fetch achievements: ${response.status} ${response.statusText}`);
+          // Parse backend error response - NO LOGGING HERE
+          let backendError: BackendErrorResponse | null = null;
+    
+          try {
+            backendError = await response.json();
+          } catch (parseError) {
+            // Create synthetic network error object - NO LOGGING HERE
+            throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+          }
+    
+          // Throw parsed backend error - NO LOGGING HERE
+          if (backendError) {
+            throw backendError;
+          }
         }
-  
+    
         const data: AchievementsResponse = await response.json();
         return data;
       } catch (error) {
-        console.error('Error fetching achievements:', error);
-        throw error;
+        // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+    
+        // All errors: backend errors, network errors, unexpected errors
+        const uiMessage = ErrorLogger.logError(
+          error,
+          { service: "MoodSelectedStatsService", action: "getAchievements" },
+          { logToConsole: true, logToUI: true }
+        );
+        throw new Error(uiMessage);
       }
     },
   
@@ -161,13 +241,31 @@ interface MoodTransitionResponse {
      */
     async getAllMoodSelectedStats(currentMood: string): Promise<MoodSelectedStatsData> {
       try {
-        const [moodTransition, globalPercentage, weeklySentiment, achievements] = await Promise.all([
+        const results = await Promise.allSettled([
           this.getMoodTransition(),
           this.getGlobalPercentage(currentMood),
           this.getWeeklySentiment(),
           this.getAchievements()
         ]);
-  
+    
+        // Extract successful results, provide fallbacks for failures
+        const moodTransition = results[0].status === 'fulfilled' 
+          ? results[0].value 
+          : { transition: false, message: "Unable to load mood transition data" };
+    
+        const globalPercentage = results[1].status === 'fulfilled' 
+          ? results[1].value 
+          : { percentage: 0, message: "Unable to load global percentage data" };
+    
+        const weeklySentiment = results[2].status === 'fulfilled' 
+          ? results[2].value 
+          : { hasData: false, message: "Unable to load weekly sentiment data" };
+    
+        const achievements = results[3].status === 'fulfilled' 
+          ? results[3].value 
+          : { hasAchievement: false, message: "Unable to load achievements data" };
+    
+    
         return {
           moodTransition,
           globalPercentage,
@@ -175,8 +273,13 @@ interface MoodTransitionResponse {
           achievements
         };
       } catch (error) {
-        console.error('Error fetching all mood selected stats:', error);
-        throw error;
+        // 🎯 SINGLE POINT OF LOGGING - Handle unexpected errors in Promise.allSettled
+        const uiMessage = ErrorLogger.logError(
+          error,
+          { service: "MoodSelectedStatsService", action: "getAllMoodSelectedStats" },
+          { logToConsole: true, logToUI: true}
+        );
+        throw new Error(uiMessage);
       }
     }
   };
