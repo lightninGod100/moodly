@@ -20,6 +20,7 @@ const { enhancedJsonParser } = require('./middleware/jsonParser');
 
 const { ERROR_CATALOG } = require('./config/errorCodes');
 const ErrorLogger = require('./services/errorLogger');
+const { createTimeoutMiddleware, timeoutDurations } = require('./middleware/timeout');
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,7 +33,7 @@ app.use(cors({
 }));
 app.use(enhancedJsonParser());
 app.use(express.urlencoded({ extended: true, limit: '150kb' }));
-
+app.use(createTimeoutMiddleware(timeoutDurations.fast));
 // Test route
 app.get('/', (req, res) => {
   res.json({

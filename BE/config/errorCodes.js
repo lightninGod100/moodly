@@ -103,7 +103,7 @@ const ERROR_CATALOG = {
     VAL_INVALID_JSON: {
         code: 'VAL_INVALID_JSON',
         message: 'Invalid request format'
-      },
+    },
     VAL_REQUEST_TOO_LARGE: {
         code: 'VAL_REQUEST_TOO_LARGE',
         message: 'Request size exceeds limit'
@@ -175,8 +175,14 @@ const ERROR_CATALOG = {
     SYS_LOGGING_ERROR: {
         code: 'SYS_LOGGING_ERROR',
         message: 'Failed to log system event'
-      },
-      
+    },
+
+    // In BE/config/errorCodes.js, add:
+    SYS_TIMEOUT_ERROR: {
+        code: 'SYS_TIMEOUT_ERROR',
+        message: 'Request timed out'
+    },
+
     // Network Errors (NET_xxx)
     NET_CONNECTION_ERROR: {
         code: 'NET_CONNECTION_ERROR',
@@ -271,7 +277,7 @@ const ERROR_CATALOG = {
         message: 'Email is required'
     },
 
-    
+
 
     // Mood-specific validation errors (MOOD_xxx)
     MOOD_REQUIRED: {
@@ -296,7 +302,7 @@ const ERROR_CATALOG = {
         code: 'MOOD_CREATION_ERROR',
         message: 'Failed to create mood entry'
     },
-    
+
     //security errors
     SECURITY_PROGRESSIVE_VIOLATION: {
         code: 'SECURITY_PROGRESSIVE_VIOLATION',
@@ -305,12 +311,12 @@ const ERROR_CATALOG = {
     SECURITY_RATE_LIMIT_VIOLATION: {
         code: 'SEC_RATE_LIMIT_VIOLATION',
         message: 'Rate limit violation detected'
-      },
+    },
 
     SECURITY_JSON_ATTACK: {
         code: 'SEC_JSON_ATTACK',
         message: 'JSON syntax attack detected'
-      },
+    },
     // Generic/Unknown Errors
     UNKNOWN_ERROR: {
         code: 'UNKNOWN_ERROR',
@@ -321,13 +327,13 @@ const ERROR_CATALOG = {
         message: 'Operation failed'
     },
 
-     // API/Route Errors (API_xxx)
-     API_ENDPOINT_NOT_FOUND: {
+    // API/Route Errors (API_xxx)
+    API_ENDPOINT_NOT_FOUND: {
         code: 'API_ENDPOINT_NOT_FOUND',
         message: 'API endpoint not found'
     },
     API_METHOD_NOT_ALLOWED: {
-        code: 'API_METHOD_NOT_ALLOWED', 
+        code: 'API_METHOD_NOT_ALLOWED',
         message: 'HTTP method not allowed for this endpoint'
     },
 };

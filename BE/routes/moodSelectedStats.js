@@ -462,7 +462,7 @@ router.get('/weekly-sentiment', arl_mood_selected_stats, authenticateToken, asyn
 // GET /api/mood-selected-stats/mood-transition
 router.get('/mood-transition', arl_mood_selected_stats, authenticateToken, async (req, res) => {
   try {
-    await new Promise(resolve => setTimeout(resolve, 5000)); 
+    await new Promise(resolve => setTimeout(resolve, 7000)); 
     const userId = req.user.id;
 
     // Get user's last 2 mood entries

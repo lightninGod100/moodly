@@ -276,6 +276,12 @@ export const ERROR_MAPPING: ErrorMapping = {
     consoleMessage: "System logging failed",
     type: "error"
   },
+  // In the SYSTEM ERRORS (SYS_xxx) section
+  "SYS_TIMEOUT_ERROR": {
+    userMessage: "The request is taking longer than expected. Please try again",
+    consoleMessage: "Request timeout from server",
+    type: "error"
+  },
 
   // ==========================================
   // NETWORK ERRORS (NET_xxx)
@@ -300,16 +306,16 @@ export const ERROR_MAPPING: ErrorMapping = {
   },
 
   "API_ENDPOINT_NOT_FOUND": {
-        userMessage: "The requested feature is not available. Please refresh the page or try again later.",
-        consoleMessage: "API endpoint not found - route does not exist",
-        type: "error"
-    },
-    
-    "API_METHOD_NOT_ALLOWED": {
-        userMessage: "Invalid request method. Please try again later.",
-        consoleMessage: "HTTP method not allowed for endpoint",
-        type: "error"
-    },
+    userMessage: "The requested feature is not available. Please refresh the page or try again later.",
+    consoleMessage: "API endpoint not found - route does not exist",
+    type: "error"
+  },
+
+  "API_METHOD_NOT_ALLOWED": {
+    userMessage: "Invalid request method. Please try again later.",
+    consoleMessage: "HTTP method not allowed for endpoint",
+    type: "error"
+  },
   // ==========================================
   // RATE LIMITING ERRORS (RATE_xxx)
   // ==========================================
