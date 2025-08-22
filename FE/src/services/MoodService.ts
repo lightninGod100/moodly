@@ -1,5 +1,5 @@
 // src/services/moodService.ts
-
+import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
 // Types for API responses
 interface LastMoodResponse {
     message: string;
@@ -23,10 +23,10 @@ interface LastMoodResponse {
     };
   }
   
-  interface CurrentMoodResponse {
-    mood: string;
-    createdAt: string;
-  }
+  // interface CurrentMoodResponse {
+  //   mood: string;
+  //   createdAt: string;
+  // }
   
   // API configuration
   const API_BASE = 'http://localhost:5000/api';
@@ -52,20 +52,40 @@ interface LastMoodResponse {
      */
     async getLastMood(): Promise<LastMoodResponse['mood']> {
       try {
-        const response = await fetch(`${API_BASE}/moods/last`, {
+        const response = await fetch(`${API_BASE}/moods/last1`, {
           method: 'GET',
           headers: getAuthHeaders()
         });
-  
+
         if (!response.ok) {
-          throw new Error(`Failed to fetch last mood: ${response.status} ${response.statusText}`);
+          // Parse backend error response - NO LOGGING HERE
+          let backendError: BackendErrorResponse | null = null;
+
+          try {
+            backendError = await response.json();
+          } catch (parseError) {
+            // Create synthetic network error object - NO LOGGING HERE
+            throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          // Throw parsed backend error - NO LOGGING HERE
+          if (backendError) {
+            throw backendError;
+          }
         }
-  
+
         const data: LastMoodResponse = await response.json();
         return data.mood;
       } catch (error) {
-        console.error('Error fetching last mood:', error);
-        throw error;
+        // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+
+        // All errors: backend errors, network errors, unexpected errors
+        const uiMessage = ErrorLogger.logError(
+          error,
+          { service: "MoodService", action: "getLastMood" },
+          { logToConsole: true, logToUI: true }
+        );
+        throw new Error(uiMessage);
       }
     },
   
@@ -80,18 +100,38 @@ interface LastMoodResponse {
           headers: getAuthHeaders(),
           body: JSON.stringify({ mood })
         });
-  
+
         if (!response.ok) {
-          throw new Error(`Failed to create mood: ${response.status} ${response.statusText}`);
+          // Parse backend error response - NO LOGGING HERE
+          let backendError: BackendErrorResponse | null = null;
+
+          try {
+            backendError = await response.json();
+          } catch (parseError) {
+            // Create synthetic network error object - NO LOGGING HERE
+            throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          // Throw parsed backend error - NO LOGGING HERE
+          if (backendError) {
+            throw backendError;
+          }
         }
-  
+
         const data: CreateMoodResponse = await response.json();
         return data.mood;
       } catch (error) {
-        console.error('Error creating mood:', error);
-        throw error;
+        // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+
+        // All errors: backend errors, network errors, unexpected errors
+        const uiMessage = ErrorLogger.logError(
+          error,
+          { service: "MoodService", action: "createMood" },
+          { logToConsole: true, logToUI: true }
+        );
+        throw new Error(uiMessage);
       }
-    },
+    }
   
     /**
      * Get user's current mood (most recent)

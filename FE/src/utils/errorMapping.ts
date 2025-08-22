@@ -402,7 +402,7 @@ export const ERROR_MAPPING: ErrorMapping = {
   },
 
   "MOOD_CREATION_ERROR": {
-    userMessage: "Unable to save your mood. Please try again",
+    userMessage: "Unable to save your mood. Please try again later.",
     consoleMessage: "Failed to create mood entry",
     type: "error"
   },

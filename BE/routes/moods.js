@@ -35,6 +35,12 @@ router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
       return res.status(400).json(errorResponse);
     }
 
+    // CHECK: Does user have mood within last 10 minutes?
+    const recentMood = await pool.query(
+      'SELECT * FROM moods WHERE user_id = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT 1',
+      [userId, Date.now() - (10 * 60 * 1000)]
+    );
+
     // Insert mood into database
     const now = Date.now();
     const newMood = await pool.query(
@@ -45,8 +51,6 @@ router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
     res.status(201).json({
       message: 'Mood recorded successfully',
       mood: {
-        id: newMood.rows[0].id,
-        userId: newMood.rows[0].user_id,
         mood: newMood.rows[0].mood,
         createdAt: newMood.rows[0].created_at
       }
@@ -61,7 +65,7 @@ router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
       'POST /api/moods',
       'write to database', // Specific context - only INSERT operation can fail
       error,
-      userId
+      req.user?.id || null
     );
     res.status(500).json(errorResponse);
   }

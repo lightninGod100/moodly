@@ -46,7 +46,7 @@ const arl_user_settings_password_change = rateLimit({
 
 const arl_userSettingsRead = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // 20 requests per hour per user
+  max: 10, // 20 requests per hour per user
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('user_settings_read', 'GET /api/user-settings', 'user'),
   standardHeaders: false,
