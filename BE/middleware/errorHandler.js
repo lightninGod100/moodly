@@ -36,7 +36,7 @@ const globalErrorHandler = (err, req, res, next) => {
   let errorCode, errorMessage, context, errorType;
   
   // Determine error type and logging strategy
-  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+  if (err instanceof SyntaxError && (err.status === 400 || err.message.includes('JSON'))) {
     errorCode = ERROR_CATALOG.VAL_INVALID_JSON.code;
     errorMessage = ERROR_CATALOG.VAL_INVALID_JSON.message;
     context = 'JSON parsing';
