@@ -5,7 +5,7 @@ const ErrorLogger = require('../services/errorLogger');
 
 // JSON attack tracking with thresholds
 const jsonAttackTracking = new Map();
-const JSON_ATTACK_THRESHOLDS = [1, 5, 25, 100, 500]; // Similar to rate limiters
+const JSON_ATTACK_THRESHOLDS = [5, 25, 100, 250, 500]; // Similar to rate limiters
 
 const shouldLogJsonAttack = (ip) => {
   const key = `json-attack-${ip}`;
