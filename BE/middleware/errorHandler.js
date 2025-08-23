@@ -47,6 +47,7 @@ const globalErrorHandler = (err, req, res, next) => {
     errorMessage = ERROR_CATALOG.VAL_REQUEST_TOO_LARGE.message;
     context = 'request size validation';
     errorType = 'SIZE_LIMIT';
+    
   }
   else if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
     errorCode = ERROR_CATALOG.AUTH_TOKEN_MALFORMED.code;

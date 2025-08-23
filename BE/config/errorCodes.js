@@ -114,6 +114,10 @@ const ERROR_CATALOG = {
         code: 'AUTH_INVALID_CREDENTIALS',
         message: 'Invalid email or password'
     },
+    AUTH_INVALID_PASSWORD: {
+        code: 'AUTH_INVALID_PASSWORD',
+        message: 'Invalid password'
+    },
     AUTH_TOKEN_EXPIRED: {
         code: 'AUTH_TOKEN_EXPIRED',
         message: 'Your session has expired'

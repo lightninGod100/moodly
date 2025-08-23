@@ -166,10 +166,10 @@ router.put('/password_change', arl_user_settings_password_change, authenticateTo
 
     if (!validCurrentPassword) {
       const errorResponse = ErrorLogger.createErrorResponse(
-        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.code,
-        ERROR_CATALOG.AUTH_INVALID_CREDENTIALS.message
+        ERROR_CATALOG.AUTH_INVALID_PASSWORD.code,
+        ERROR_CATALOG.AUTH_INVALID_PASSWORD.message
       );
-      return res.status(400).json(errorResponse);
+      return res.status(401).json(errorResponse);
     }
 
     // Hash new password and update
