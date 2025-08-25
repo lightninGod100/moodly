@@ -48,6 +48,22 @@ export const FE_VALIDATION_MESSAGES = {
   PASSWORD_CONFIRMATION_REQUIRED: 'Please confirm your new password',
   PASSWORDS_DO_NOT_MATCH: 'New passwords do not match',
   PASSWORD_SAME_AS_CURRENT: 'New password must be different from current password',
+  BOTH_PASSWORDS_REQUIRED: 'Both current and new passwords are required',
+  NEW_PASSWORD_TOO_SHORT: 'New password must be at least 6 characters long',
+  
+  // ==========================================
+  // PROFILE/ACCOUNT VALIDATION
+  // ==========================================
+  COUNTRY_IS_REQUIRED: 'Country is required',
+  PHOTO_DATA_REQUIRED: 'Photo data is required',
+  INVALID_IMAGE_FORMAT: 'Invalid image format',
+  IMAGE_TOO_LARGE: 'Image size must be less than 100KB',
+  INVALID_IMAGE_TYPE: 'Only PNG and JPEG images are allowed',
+  IMAGE_DIMENSIONS_TOO_LARGE: 'Image dimensions must be 256x256 pixels or smaller',
+  FAILED_TO_READ_IMAGE: 'Failed to read image file',
+  INVALID_IMAGE_FILE: 'Invalid image file',
+  PASSWORD_REQUIRED_FOR_DELETION: 'Password is required to delete account',
+  PASSWORD_VALIDATION_REQUIRED: 'Password is required',
 
   // ==========================================
   // GENERIC VALIDATION

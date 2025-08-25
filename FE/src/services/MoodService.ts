@@ -52,7 +52,7 @@ interface LastMoodResponse {
      */
     async getLastMood(): Promise<LastMoodResponse['mood']> {
       try {
-        const response = await fetch(`${API_BASE}/moods/last1`, {
+        const response = await fetch(`${API_BASE}/moods/last`, {
           method: 'GET',
           headers: getAuthHeaders()
         });

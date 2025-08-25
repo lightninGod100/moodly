@@ -32,12 +32,12 @@ const SettingsPage: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [deletionReason, setDeletionReason] = useState('');
   const [showFinalConfirmation, setShowFinalConfirmation] = useState(false);
-
+  const [showSettingsToast, setShowSettingsToast] = useState(false);
   // Load user settings from API
   // Initialize form with context data
   const initializeForm = () => {
     if (user) {
-      setSelectedCountry(user.country);
+      setSelectedCountry(userData.country);
     }
   };
 
@@ -47,7 +47,7 @@ const SettingsPage: React.FC = () => {
       try {
         if (!vantaEffect.current && vantaRef.current) {
           console.log('Initializing Vanta Waves for Settings...');
-          
+
           vantaEffect.current = WAVES({
             el: vantaRef.current,
             THREE: THREE,
@@ -64,9 +64,9 @@ const SettingsPage: React.FC = () => {
             waveSpeed: 1.2,
             zoom: 0.75
           });
-          
+
           console.log('Vanta effect created for Settings');
-          
+
           // Force a resize after creation
           setTimeout(() => {
             if (vantaEffect.current && vantaEffect.current.resize) {
@@ -93,11 +93,16 @@ const SettingsPage: React.FC = () => {
     };
   }, []);
 
-  // Load data on component mount
-  // Initialize form when user data is available
-  useEffect(() => {
-    initializeForm();
-  }, [user]);
+// Show toast when user data is not available
+useEffect(() => {
+  if (!user) {
+    setShowSettingsToast(true);
+    const timer = setTimeout(() => {
+      setShowSettingsToast(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }
+}, [user]);
 
   // Countries list
   const countries = [
@@ -129,52 +134,32 @@ const SettingsPage: React.FC = () => {
     'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
   ];
 
-  // Show error state if failed to load data
-  if (!user) {
-    return (
-      <div ref={vantaRef} className="vanta-waves-container">
-        <div style={{ 
-          position: 'relative', 
-          zIndex: 1, 
-          color: 'white',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '200vh',
-          overflow: 'scroll'
-          
-        }}>
-          <div style={{
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            padding: '2rem',
-            borderRadius: '1rem',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-            textAlign: 'center',
-            maxWidth: '400px',
-            
-          }}>
-            <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', color: 'white' }}>
-              Account Settings
-            </h1>
-            <div style={{ padding: '1rem', border: '1px solid rgba(220, 38, 38, 0.5)', borderRadius: '8px', backgroundColor: 'rgba(254, 242, 242, 0.1)' }}>
-              <p style={{ color: '#fca5a5', marginBottom: 0 }}>
-                Failed to load your settings
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+ 
+// Create default userData when user is null
+const userData = user || {
+  id: 0,
+  username: '',
+  email: '',
+  country: '',
+  gender: '',
+  profilePhoto: null,
+  lastCountryChangeAt: 0,
+  canChangeCountry: false,
+  nextCountryChangeDate: null,
+  markForDeletion: false,
+  deletionTimestamp: null
+};
 
+// Helper functions
   // Helper functions
   const clearMessages = () => {
     setErrors({});
     setSuccessMessages({});
   };
-
+// Handle toast close
+const handleCloseToast = () => {
+  setShowSettingsToast(false);
+};
   // Handle password change with real API
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,15 +195,15 @@ const SettingsPage: React.FC = () => {
 
   // Handle country change with real API
   const handleCountryChange = async () => {
-    if (!user.canChangeCountry) {
-      const nextDate = user.nextCountryChangeDate
-        ? new Date(user.nextCountryChangeDate).toLocaleDateString()
+    if (!userData.canChangeCountry) {
+      const nextDate = userData.nextCountryChangeDate
+        ? new Date(userData.nextCountryChangeDate).toLocaleDateString()
         : 'Unknown';
       setErrors({ country: `Country can only be changed once per month. Next change: ${nextDate}` });
       return;
     }
 
-    if (selectedCountry === user.country) {
+    if (selectedCountry === userData.country) {
       setErrors({ country: 'Please select a different country' });
       return;
     }
@@ -314,28 +299,28 @@ const SettingsPage: React.FC = () => {
   // Handle initial form submission - show final confirmation
   const handleInitialSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!deletionPassword || !deletionReason) {
       setErrors({ deletion: 'Please fill all required fields' });
       return;
     }
-    
+
     // Clear any existing errors
     setErrors({});
-    
+
     try {
       setIsLoading(true);
-  
+
       // Step 1: Validate password first (industry standard)
       const passwordValidation: PasswordValidationRequest = {
         password: deletionPassword
       };
-  
+
       await settingsApiService.validatePassword(passwordValidation);
-      
+
       // Password is correct, show final confirmation
       setShowFinalConfirmation(true);
-      
+
     } catch (error) {
       // Password validation failed - show error immediately
       setErrors({ deletion: error instanceof Error ? error.message : 'Password validation failed' });
@@ -367,9 +352,9 @@ const SettingsPage: React.FC = () => {
         type: 'MARK_FOR_DELETION',
         payload: { markForDeletion: true, deletionTimestamp: deletionTimestamp }
       });
-      
+
       alert(message);
-      
+
       // Auto-logout after 2 seconds and redirect
       setTimeout(() => {
         localStorage.removeItem('authToken');
@@ -404,40 +389,40 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div ref={vantaRef} className="vanta-waves-container">
-      <div style={{ 
-        position: 'relative', 
-        zIndex: 1, 
+      <div style={{
+        position: 'relative',
+        zIndex: 1,
         color: 'white',
         padding: '2rem',
         minHeight: '100vh',
         display: 'flex',
         justifyContent: 'center'
       }}>
-        <div style={{ width: '100%', minWidth: '700px', maxWidth: '700px',paddingTop: '2rem' }}>
+        <div style={{ width: '100%', minWidth: '700px', maxWidth: '700px', paddingTop: '2rem' }}>
 
           {/* Header Tile */}
-         
+
 
           {/* Basic Information & Country Tile */}
           <div style={glassStyle}>
-            <h3 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: '600', 
-              marginBottom: '2rem', 
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              marginBottom: '2rem',
               color: 'white',
-              textAlign: 'center' 
+              textAlign: 'center'
             }}>
               Basic Information
             </h3>
 
             {/* Profile Photo Section */}
             <div style={{ marginBottom: '2rem' }}>
-              <h4 style={{ 
-                fontSize: '1.25rem', 
-                fontWeight: '600', 
-                marginBottom: '1rem', 
-                color: 'rgba(255, 255, 255, 0.9)', 
-                textAlign: 'center' 
+              <h4 style={{
+                fontSize: '1.25rem',
+                fontWeight: '600',
+                marginBottom: '1rem',
+                color: 'rgba(255, 255, 255, 0.9)',
+                textAlign: 'center'
               }}>
                 Profile Photo
               </h4>
@@ -450,10 +435,10 @@ const SettingsPage: React.FC = () => {
                   onMouseEnter={() => setIsPhotoHovered(true)}
                   onMouseLeave={() => setIsPhotoHovered(false)}
                 >
-                  {user.profilePhoto ? (
+                  {userData.profilePhoto ? (
                     <>
                       <img
-                        src={user.profilePhoto}
+                        src={userData.profilePhoto}
                         alt="Profile"
                         style={{
                           width: '120px',
@@ -555,11 +540,11 @@ const SettingsPage: React.FC = () => {
                 />
 
                 {/* Instructions */}
-                <p style={{ 
-                  fontSize: '0.875rem', 
-                  color: 'rgba(255, 255, 255, 0.7)', 
-                  textAlign: 'center', 
-                  marginBottom: '0.5rem' 
+                <p style={{
+                  fontSize: '0.875rem',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  textAlign: 'center',
+                  marginBottom: '0.5rem'
                 }}>
                   PNG or JPEG only, max 100KB, max 256×256px
                 </p>
@@ -582,17 +567,17 @@ const SettingsPage: React.FC = () => {
             <div style={{ display: 'grid', gap: '1.5rem' }}>
               {/* Username */}
               <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontWeight: '500', 
-                  color: 'rgba(255, 255, 255, 0.9)' 
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontWeight: '500',
+                  color: 'rgba(255, 255, 255, 0.9)'
                 }}>
                   Username
                 </label>
                 <input
                   type="text"
-                  value={user.username}
+                  value={userData.username}
                   disabled
                   style={{
                     width: '100%',
@@ -611,17 +596,17 @@ const SettingsPage: React.FC = () => {
 
               {/* Email */}
               <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontWeight: '500', 
-                  color: 'rgba(255, 255, 255, 0.9)' 
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontWeight: '500',
+                  color: 'rgba(255, 255, 255, 0.9)'
                 }}>
                   Email
                 </label>
                 <input
                   type="email"
-                  value={user.email}
+                  value={userData.email}
                   disabled
                   style={{
                     width: '100%',
@@ -640,17 +625,17 @@ const SettingsPage: React.FC = () => {
 
               {/* Gender */}
               <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontWeight: '500', 
-                  color: 'rgba(255, 255, 255, 0.9)' 
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontWeight: '500',
+                  color: 'rgba(255, 255, 255, 0.9)'
                 }}>
                   Gender
                 </label>
                 <input
                   type="text"
-                  value={user.gender}
+                  value={userData.gender}
                   disabled
                   style={{
                     width: '100%',
@@ -669,25 +654,25 @@ const SettingsPage: React.FC = () => {
 
               {/* Country */}
               <div>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontWeight: '500', 
-                  color: 'rgba(255, 255, 255, 0.9)' 
+                <label style={{
+                  display: 'block',
+                  marginBottom: '0.5rem',
+                  fontWeight: '500',
+                  color: 'rgba(255, 255, 255, 0.9)'
                 }}>
                   Current Country
                 </label>
                 <select
                   value={selectedCountry}
                   onChange={(e) => setSelectedCountry(e.target.value)}
-                  disabled={!user.canChangeCountry}
+                  disabled={!userData.canChangeCountry}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
                     borderRadius: '8px',
-                    backgroundColor: user.canChangeCountry ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                    color: user.canChangeCountry ? 'white' : 'rgba(255, 255, 255, 0.7)',
+                    backgroundColor: userData.canChangeCountry ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                    color: userData.canChangeCountry ? 'white' : 'rgba(255, 255, 255, 0.7)',
                     backdropFilter: 'blur(10px)'
                   }}
                 >
@@ -698,13 +683,13 @@ const SettingsPage: React.FC = () => {
                   ))}
                 </select>
 
-                {!user.canChangeCountry && user.nextCountryChangeDate && (
+                {!userData.canChangeCountry && userData.nextCountryChangeDate && (
                   <p style={{ fontSize: '0.875rem', color: '#fbbf24', marginTop: '0.5rem' }}>
-                    Next change available: {new Date(user.nextCountryChangeDate).toLocaleDateString('en-GB')}
+                    Next change available: {new Date(userData.nextCountryChangeDate).toLocaleDateString('en-GB')}
                   </p>
                 )}
 
-                {user.canChangeCountry && selectedCountry !== user.country && (
+                {userData.canChangeCountry && selectedCountry !== userData.country && (
                   <button
                     onClick={handleCountryChange}
                     disabled={isLoading}
@@ -732,12 +717,12 @@ const SettingsPage: React.FC = () => {
 
           {/* Change Password Tile */}
           <div style={glassStyle}>
-            <h3 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: '600', 
-              marginBottom: '2rem', 
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              marginBottom: '2rem',
               color: 'white',
-              textAlign: 'center' 
+              textAlign: 'center'
             }}>
               Change Password
             </h3>
@@ -746,11 +731,11 @@ const SettingsPage: React.FC = () => {
               <div style={{ display: 'grid', gap: '1.5rem' }}>
                 {/* Current Password */}
                 <div>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500', 
-                    color: 'rgba(255, 255, 255, 0.9)' 
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    fontWeight: '500',
+                    color: 'rgba(255, 255, 255, 0.9)'
                   }}>
                     Current Password
                   </label>
@@ -759,11 +744,11 @@ const SettingsPage: React.FC = () => {
                       type={showCurrentPassword ? "text" : "password"}
                       value={passwords.current}
                       onChange={(e) => setPasswords(prev => ({ ...prev, current: e.target.value }))}
-                      style={{ 
-                        width: '100%', 
-                        padding: '0.75rem', 
-                        paddingRight: '3rem', 
-                        border: '1px solid rgba(255, 255, 255, 0.2)', 
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        paddingRight: '3rem',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
                         borderRadius: '8px',
                         backgroundColor: 'rgba(255, 255, 255, 0.1)',
                         color: 'white',
@@ -808,11 +793,11 @@ const SettingsPage: React.FC = () => {
 
                 {/* New Password */}
                 <div>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500', 
-                    color: 'rgba(255, 255, 255, 0.9)' 
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    fontWeight: '500',
+                    color: 'rgba(255, 255, 255, 0.9)'
                   }}>
                     New Password
                   </label>
@@ -821,11 +806,11 @@ const SettingsPage: React.FC = () => {
                       type={showNewPassword ? "text" : "password"}
                       value={passwords.new}
                       onChange={(e) => setPasswords(prev => ({ ...prev, new: e.target.value }))}
-                      style={{ 
-                        width: '100%', 
-                        padding: '0.75rem', 
-                        paddingRight: '3rem', 
-                        border: '1px solid rgba(255, 255, 255, 0.2)', 
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        paddingRight: '3rem',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
                         borderRadius: '8px',
                         backgroundColor: 'rgba(255, 255, 255, 0.1)',
                         color: 'white',
@@ -870,11 +855,11 @@ const SettingsPage: React.FC = () => {
 
                 {/* Confirm New Password */}
                 <div>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500', 
-                    color: 'rgba(255, 255, 255, 0.9)' 
+                  <label style={{
+                    display: 'block',
+                    marginBottom: '0.5rem',
+                    fontWeight: '500',
+                    color: 'rgba(255, 255, 255, 0.9)'
                   }}>
                     Confirm New Password
                   </label>
@@ -882,10 +867,10 @@ const SettingsPage: React.FC = () => {
                     type="password"
                     value={passwords.confirm}
                     onChange={(e) => setPasswords(prev => ({ ...prev, confirm: e.target.value }))}
-                    style={{ 
-                      width: '100%', 
-                      padding: '0.75rem', 
-                      border: '1px solid rgba(255, 255, 255, 0.2)', 
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
                       borderRadius: '8px',
                       backgroundColor: 'rgba(255, 255, 255, 0.1)',
                       color: 'white',
@@ -928,29 +913,29 @@ const SettingsPage: React.FC = () => {
             background: 'rgba(220, 38, 38, 0.1)',
             marginBottom: 0
           }}>
-            <h3 style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: '600', 
-              marginBottom: '1rem', 
+            <h3 style={{
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              marginBottom: '1rem',
               color: 'red',
               textAlign: 'center'
-    
+
             }}>
               Danger Zone
             </h3>
 
-            {user.markForDeletion ? (
+            {userData.markForDeletion ? (
               <div>
                 <p style={{ fontSize: '0.875rem', color: '#fca5a5', marginBottom: '1rem', fontWeight: 'bold' }}>
                   ⚠️ Your account has been marked for deletion and will be permanently deleted in next 7 days.
                 </p>
                 <p style={{ fontSize: '0.875rem', color: '#86efac', marginBottom: '1rem', fontWeight: 'bold' }}>
-                  ✅ You can cancel this request anytime by logging into Moodly before {user.deletionTimestamp ? new Date(user.deletionTimestamp).toLocaleDateString('en-GB') : 'Unknown Date'}.
+                  ✅ You can cancel this request anytime by logging into Moodly before {userData.deletionTimestamp ? new Date(userData.deletionTimestamp).toLocaleDateString('en-GB') : 'Unknown Date'}.
                 </p>
               </div>
             ) : !showDeletionConfirm ? (
-              <div style={{textAlign: 'center'}}>
-                
+              <div style={{ textAlign: 'center' }}>
+
                 <button
                   onClick={() => setShowDeletionConfirm(true)}
                   style={{
@@ -968,24 +953,30 @@ const SettingsPage: React.FC = () => {
               </div>
             ) : showFinalConfirmation ? (
               /* FINAL CONFIRMATION SCREEN */
-              <div className="glass-card" style={{ 
+              <div className="glass-card" style={{
                 //backgroundColor: 'rgba(0, 0, 0, 0.9)', 
                 color: 'white',
                 //border: '2px solid rgba(220,38,38,0.4)', 
-                borderRadius: '8px', 
+                borderRadius: '8px',
                 padding: '0.5rem',
                 textAlign: 'center',
-               
+
 
               }}>
-               
+
                 <h4 style={{ fontSize: '1.35rem', fontWeight: '700', marginBottom: '0.5rem' }}>
                   There is no going back after this.
                 </h4>
                 <p style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1.5rem' }}>
                   Please be certain.
                 </p>
-                
+
+                {/* Error message display - matching existing style */}
+                {errors.deletion && (
+                  <p style={{ color: '#fca5a5', fontSize: '0.875rem', marginBottom: '1rem', fontWeight: '500' }}>
+                    ⌛ {errors.deletion}
+                  </p>
+                )}
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                   <button
                     onClick={() => setShowFinalConfirmation(false)}
@@ -1089,11 +1080,11 @@ const SettingsPage: React.FC = () => {
                   <form onSubmit={handleInitialSubmission}>
                     {/* Deletion Reason Dropdown */}
                     <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ 
-                        display: 'block', 
-                        marginBottom: '0.5rem', 
-                        fontWeight: '500', 
-                        color: 'rgba(255, 255, 255, 0.9)' 
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '0.5rem',
+                        fontWeight: '500',
+                        color: 'rgba(255, 255, 255, 0.9)'
                       }}>
                         Why are you leaving us? <span style={{ color: '#fca5a5' }}>*</span>
                       </label>
@@ -1124,11 +1115,11 @@ const SettingsPage: React.FC = () => {
 
                     {/* Password Confirmation */}
                     <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ 
-                        display: 'block', 
-                        marginBottom: '0.5rem', 
-                        fontWeight: '500', 
-                        color: 'rgba(255, 255, 255, 0.9)' 
+                      <label style={{
+                        display: 'block',
+                        marginBottom: '0.5rem',
+                        fontWeight: '500',
+                        color: 'rgba(255, 255, 255, 0.9)'
                       }}>
                         Enter your password to confirm: <span style={{ color: '#fca5a5' }}>*</span>
                       </label>
@@ -1235,6 +1226,51 @@ const SettingsPage: React.FC = () => {
 
         </div>
       </div>
+      {/* Settings Load Error Toast */}
+      {!user && (
+  <div
+    style={{
+      position: 'fixed',
+      bottom: '24px',
+      left: '24px',
+      zIndex: 9999,
+      maxWidth: '384px',
+      minWidth: '300px',
+      transform: showSettingsToast ? 'translateX(0)' : 'translateX(-120%)',
+      opacity: showSettingsToast ? 1 : 0, 
+      transition: 'all 500ms ease-in-out',
+      backgroundColor: '#ef4444',
+      color: 'white',
+      padding: '16px 24px',
+      borderRadius: '8px',
+      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>Error</div>
+        <div style={{ fontSize: '14px' }}>Unable to load User Settings</div>
+      </div>
+      <button
+        onClick={handleCloseToast}
+        style={{
+          marginLeft: '16px',
+          color: 'white',
+          fontSize: '20px',
+          fontWeight: 'bold',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '0',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+      >
+        ×
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };
