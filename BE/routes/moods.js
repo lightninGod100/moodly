@@ -40,19 +40,15 @@ router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
       'SELECT * FROM moods WHERE user_id = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT 1',
       [userId, Date.now() - (10 * 60 * 1000)]
     );
-    // CHECK: Does user have mood within last 10 minutes?
-    const lastMood = await pool.query(
-      'SELECT * FROM moods WHERE user_id = $1 AND created_at > $2 ORDER BY created_at DESC LIMIT 1',
-      [userId, Date.now() - (10 * 60 * 1000)]
-    );
 
-    if (recentMood.rows.length > 0) {
-      return res.status(429).json({ 
-        error: 'MOOD_TOO_SOON',
-        message: 'Please wait 10 minutes between mood entries',
-        nextAllowedTime: recentMood.rows[0].created_at + (10 * 60 * 1000)
-      });
-    }
+
+    // if (recentMood.rows.length > 0) {
+    //   return res.status(429).json({ 
+    //     error: 'MOOD_TOO_SOON',
+    //     message: 'Please wait 10 minutes between mood entries',
+    //     nextAllowedTime: recentMood.rows[0].created_at + (10 * 60 * 1000)
+    //   });
+    // }
     // Insert mood into database
     const now = Date.now();
     const newMood = await pool.query(

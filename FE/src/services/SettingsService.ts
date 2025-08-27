@@ -85,7 +85,7 @@ export const settingsApiService = {
 
 async getUserSettings(): Promise<UserSettings> {
   try {
-    const response = await fetch(`${API_BASE}/user-settings1`, {
+    const response = await fetch(`${API_BASE}/user-settings`, {
       method: 'GET',
       headers: getAuthHeaders()
     });

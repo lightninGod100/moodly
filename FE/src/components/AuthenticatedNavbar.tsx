@@ -2,11 +2,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 import ContactPopup from './ContactPopup';
+import NotificationToast, { type NotificationToastRef } from './NotificationToast';
 
 
-interface AuthNavbarProps {
+interface AuthenticatedNavbarProps {
   onNavigate: (page: string) => void;
   currentPage: string;
+  // Add notification prop
+  errorToShow: 'userSettings' | 'lastMood' | null;
 }
 // Profile Photo Component
 const ProfilePhoto: React.FC = () => {
@@ -22,7 +25,7 @@ const ProfilePhoto: React.FC = () => {
     backgroundSize: 'cover',
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat',
-     
+
   };
 
   if (user?.profilePhoto) {
@@ -49,36 +52,47 @@ const ProfilePhoto: React.FC = () => {
 };
 
 
-const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPage }) => {
+const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, currentPage, errorToShow }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSupportPopup, setShowSupportPopup] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isScrollingUp, setIsScrollingUp] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Add notification ref
+  const notificationRef = useRef<NotificationToastRef>(null);
+
+    // Expose notification function to parent
+    useEffect(() => {
+      if (errorToShow && notificationRef.current) {
+        notificationRef.current.showNotification(errorToShow);
+      }
+    }, [errorToShow]);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const windowHeight = window.innerHeight;
-      
+
       // Check if scrolled past 10% of viewport
       const scrolled = currentScrollY > windowHeight * 0.1;
-      
+
       // Check scroll direction
       const scrollingUp = currentScrollY < lastScrollY;
-      
+
       setIsScrolled(scrolled);
       setIsScrollingUp(scrollingUp);
       setLastScrollY(currentScrollY);
     };
-  
+
     // Only add scroll listener on settings page
     if (currentPage === 'settings' || currentPage === 'privacy-and-terms') {
       window.addEventListener('scroll', handleScroll);
       handleScroll(); // Check initial scroll position
     }
-  
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -364,6 +378,8 @@ const AuthenticatedNavbar: React.FC<AuthNavbarProps> = ({ onNavigate, currentPag
         onClose={handleSupportClose}
         onSubmit={handleSupportSubmit}
       />
+      {/* Notification Toast */}
+      <NotificationToast ref={notificationRef} />
     </>
   );
 };

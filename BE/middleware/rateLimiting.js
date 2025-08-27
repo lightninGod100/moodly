@@ -64,7 +64,7 @@ const arl_mediumUsage = rateLimit({
 
 const arl_moodCreation = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 8, // 20 mood entries per hour
+  max: 10, // 20 mood entries per hour
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('moods', 'POST /api/moods', 'user'),
   standardHeaders: false,

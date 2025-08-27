@@ -61,6 +61,8 @@ function AppContent() {
 
   const [currentMoodData, setCurrentMoodData] = useState<{ mood: string, timestamp: number } | null>(null);
   const [moodError, setMoodError] = useState<string | null>(null);
+  const [notificationError, setNotificationError] = useState<'userSettings' | 'lastMood' | null>(null);
+
   // Load mood history from localStorage on initial render
   useEffect(() => {
     const initializeApp = async () => {
@@ -68,56 +70,86 @@ function AppContent() {
       if (token) {
         setIsAuthenticated(true);
         setCurrentPage('home');
-        
+
+        // Try to fetch user settings but don't block the app if it fails
         try {
           const userSettings = await settingsApiService.getUserSettings();
           dispatch({ type: 'SET_USER', payload: userSettings });
-          setApiStatus('healthy');
-          
-          // Try to fetch last mood
-          moodApiService.getLastMood()
-            .then(lastMood => {
-              if (lastMood) {
-                const moodData = {
-                  mood: lastMood.mood,
-                  timestamp: new Date(lastMood.createdAt).getTime()
-                };
-                setCurrentMoodData(moodData);
-                // Update localStorage with server data
-                localStorage.setItem('lastMoodData', JSON.stringify(moodData));
-              }
-            })
-            .catch(error => {
-              console.warn('Could not load last mood from server:');
-              // ADDED: Check localStorage fallback
-              const stored = localStorage.getItem('lastMoodData');
-              if (stored) {
-                try {
-                  const data = JSON.parse(stored);
-                  if (isWithin10Minutes(data.timestamp)) {
-                    console.log('Using cached mood data from localStorage');
-                    setCurrentMoodData(data);
-                  } else {
-                    // Expired cached data, remove it
-                    localStorage.removeItem('lastMoodData');
-                  }
-                } catch (e) {
-                  console.error('Invalid cached mood data');
-                  localStorage.removeItem('lastMoodData');
-                }
-              }
-            });
+
+          // Save to localStorage as backup
+          localStorage.setItem('userSettings', JSON.stringify(userSettings));
+          console.log('User settings loaded from server');
         } catch (error) {
-          console.error('Failed to fetch user settings:', error);
-          setApiStatus('error');
+          console.warn('Failed to fetch user settings from server');
+
+          // Try to use cached settings from localStorage as fallback
+          const cachedSettings = localStorage.getItem('userSettings');
+          if (cachedSettings) {
+            try {
+              const settings = JSON.parse(cachedSettings);
+              dispatch({ type: 'SET_USER', payload: settings });
+              console.log('Using cached user settings from localStorage');
+              setNotificationError(null);
+            } catch (e) {
+              console.error('Invalid cached settings:', e);
+              // Continue without user settings - app still works
+            }
+          }
+          else {
+            setNotificationError('userSettings');
+          }
+          // Don't set apiStatus to 'error' - let the app continue
         }
+
+        // Set API status to healthy regardless of getUserSettings result
+        setApiStatus('healthy');
+
+        // Try to fetch last mood (already handles errors gracefully)
+        // Try to fetch last mood
+        moodApiService.getLastMood()
+          .then(lastMood => {
+            if (lastMood) {
+              const moodData = {
+                mood: lastMood.mood,
+                timestamp: new Date(lastMood.createdAt).getTime()
+              };
+              setCurrentMoodData(moodData);
+              localStorage.setItem('lastMoodData', JSON.stringify(moodData));
+            }
+            // API success (even if no mood found) - no error
+          })
+          .catch(error => {
+            console.warn('Could not load last mood from server:');
+
+            // Check localStorage fallback first
+            const stored = localStorage.getItem('lastMoodData');
+            if (stored) {
+              try {
+                const data = JSON.parse(stored);
+                if (isWithin10Minutes(data.timestamp)) {
+                  console.log('Using cached mood data from localStorage');
+                  setCurrentMoodData(data);
+                  setNotificationError(null); // ✅ Successfully recovered, no error
+                } else {
+                  localStorage.removeItem('lastMoodData');
+                  setNotificationError('lastMood'); // ✅ Cache expired, show error
+                }
+              } catch (e) {
+                console.error('Invalid cached mood data');
+                localStorage.removeItem('lastMoodData');
+                setNotificationError('lastMood'); // ✅ Invalid cache, show error
+              }
+            } else {
+              setNotificationError('lastMood'); // ✅ No cached data, show error
+            }
+          });
       } else {
         setIsAuthenticated(false);
         setCurrentPage('landing');
         setApiStatus('healthy');
       }
     };
-  
+
     initializeApp();
   }, [dispatch]);
 
@@ -129,11 +161,14 @@ function AppContent() {
       authApiService.logout().then(() => {
         setIsAuthenticated(false);
         setCurrentPage('landing');
-        localStorage.removeItem('lastMoodData'); 
+        localStorage.removeItem('lastMoodData');
+        localStorage.removeItem('userSettings');
       }).catch(() => {
         // Even if logout API fails, clear local state
         setIsAuthenticated(false);
         setCurrentPage('landing');
+        localStorage.removeItem('lastMoodData');
+        localStorage.removeItem('userSettings');
       });
       return;
     }
@@ -262,7 +297,11 @@ function AppContent() {
     <div>
       {/* Render appropriate navbar based on auth state */}
       {currentPage !== 'signup' && currentPage !== 'login' && (isAuthenticated ? (
-        <AuthenticatedNavbar onNavigate={handleNavigate} currentPage={currentPage} />
+        <AuthenticatedNavbar
+          onNavigate={handleNavigate}
+          currentPage={currentPage}
+          errorToShow={notificationError}
+        />
       ) : (
         <PublicNavbar onNavigate={handleNavigate} currentPage={currentPage} />
       ))}
