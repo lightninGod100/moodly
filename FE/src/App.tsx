@@ -91,7 +91,7 @@ function AppContent() {
               console.log('Using cached user settings from localStorage');
               setNotificationError(null);
             } catch (e) {
-              console.error('Invalid cached settings:', e);
+              console.error('Invalid cached settings:');
               // Continue without user settings - app still works
             }
           }
@@ -119,7 +119,7 @@ function AppContent() {
             // API success (even if no mood found) - no error
           })
           .catch(error => {
-            console.warn('Could not load last mood from server:');
+            console.warn('Could not load last mood from server');
 
             // Check localStorage fallback first
             const stored = localStorage.getItem('lastMoodData');
