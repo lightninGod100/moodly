@@ -1,5 +1,6 @@
 // src/App.tsx
 import { useState, useEffect } from 'react';
+
 import MoodSelector from './components/MoodSelector';
 import AuthenticatedNavbar from './components/AuthenticatedNavbar';
 import PublicNavbar from './components/PublicNavbar';
@@ -21,6 +22,13 @@ import { UserProvider, useUser } from './contexts/UserContext';
 import { settingsApiService } from './services/SettingsService';
 // Add this import
 import { authApiService } from './services/AuthService';
+
+interface MoodCacheData {
+  mood: string;
+  timestamp: number;      // When mood was created
+  lastApiFetch: number;   // When API was last called
+}
+
 //Helper function to check if timestamp is within 10 minutes
 const isWithin10Minutes = (timestamp: number): boolean => {
   const now = Date.now();
@@ -59,7 +67,7 @@ function AppContent() {
   // Current page state
   const [currentPage, setCurrentPage] = useState('home');
 
-  const [currentMoodData, setCurrentMoodData] = useState<{ mood: string, timestamp: number } | null>(null);
+  const [currentMoodData, setCurrentMoodData] = useState<MoodCacheData | null>(null);
   const [moodError, setMoodError] = useState<string | null>(null);
   const [notificationError, setNotificationError] = useState<'userSettings' | 'lastMood' | null>(null);
 
@@ -106,42 +114,49 @@ function AppContent() {
 
         // Try to fetch last mood (already handles errors gracefully)
         // Try to fetch last mood
+        // Check cache first
+        const stored = localStorage.getItem('lastMoodData');
+        if (stored) {
+          try {
+            const cachedData: MoodCacheData = JSON.parse(stored);
+
+            // Always set cached data first
+            setCurrentMoodData(cachedData);
+
+            // Check if API data is fresh (within 10 minutes)
+            const apiAge = Date.now() - (cachedData.lastApiFetch || 0);
+            const isApiDataFresh = apiAge <= (10 * 60 * 1000);
+
+            if (isApiDataFresh) {
+              console.log('Using cached data, API called recently');
+              setNotificationError(null);
+              return; // Exit early, no API call needed
+            }
+
+            console.log('Cache exists but API data is stale, refreshing...');
+          } catch (e) {
+            console.error('Invalid cached mood data');
+            localStorage.removeItem('lastMoodData');
+          }
+        }
+
+        // Call API (no cache OR stale API data)
         moodApiService.getLastMood()
           .then(lastMood => {
             if (lastMood) {
-              const moodData = {
+              const moodData: MoodCacheData = {
                 mood: lastMood.mood,
-                timestamp: new Date(lastMood.createdAt).getTime()
+                timestamp: parseInt(lastMood.createdAt),
+                lastApiFetch: Date.now()
               };
               setCurrentMoodData(moodData);
               localStorage.setItem('lastMoodData', JSON.stringify(moodData));
             }
-            // API success (even if no mood found) - no error
+            setNotificationError(null);
           })
           .catch(error => {
             console.warn('Could not load last mood from server');
-
-            // Check localStorage fallback first
-            const stored = localStorage.getItem('lastMoodData');
-            if (stored) {
-              try {
-                const data = JSON.parse(stored);
-                if (isWithin10Minutes(data.timestamp)) {
-                  console.log('Using cached mood data from localStorage');
-                  setCurrentMoodData(data);
-                  setNotificationError(null); // ✅ Successfully recovered, no error
-                } else {
-                  localStorage.removeItem('lastMoodData');
-                  setNotificationError('lastMood'); // ✅ Cache expired, show error
-                }
-              } catch (e) {
-                console.error('Invalid cached mood data');
-                localStorage.removeItem('lastMoodData');
-                setNotificationError('lastMood'); // ✅ Invalid cache, show error
-              }
-            } else {
-              setNotificationError('lastMood'); // ✅ No cached data, show error
-            }
+            setNotificationError('lastMood'); // Always show sync error
           });
       } else {
         setIsAuthenticated(false);
@@ -185,9 +200,10 @@ function AppContent() {
       // ADDED: Update local state after successful API call
 
       // ADDED: Update local state after successful API call
-      const newMoodData = {
+      const newMoodData: MoodCacheData = {
         mood,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        lastApiFetch: Date.now()
       };
       setCurrentMoodData(newMoodData);
       // ADDED: Save to localStorage as backup
@@ -207,7 +223,7 @@ function AppContent() {
     return currentMoodData?.mood || null;
   };
 
-  // Temporary content display for testing
+  // content display for testing
   const renderContent = () => {
     // ADDED: Handle API error state for authenticated users - show error screen if mood API failed
     if (isAuthenticated && apiStatus === 'error') {
@@ -284,7 +300,7 @@ function AppContent() {
       // Show mood selector (no recent mood or > 10 minutes ago)
       return (
         <MoodSelector
-          selectedMood={getCurrentMood()}
+          selectedMood={null}
           onSelectMood={handleSelectMood}
           error={moodError}
           onClearError={() => setMoodError(null)}
