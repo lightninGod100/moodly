@@ -23,6 +23,7 @@ import { settingsApiService } from './services/SettingsService';
 // Add this import
 import { authApiService } from './services/AuthService';
 
+
 interface MoodCacheData {
   mood: string;
   timestamp: number;      // When mood was created
