@@ -4,12 +4,13 @@ const { pool } = require('../config/database');
 const { ERROR_CATALOG, getError } = require('../config/errorCodes');
 const ErrorLogger = require('../services/errorLogger');
 
-// Middleware to verify JWT token
+// Middleware to verify JWT token from cookies
 const authenticateToken = async (req, res, next) => {
+  let decoded = null; // Declare decoded in outer scope
+  
   try {
-    // Get token from Authorization header
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    // Get token from cookies (NOT from headers anymore)
+    const token = req.cookies.accessToken;
 
     if (!token) {
       const errorResponse = ErrorLogger.createErrorResponse(
@@ -20,7 +21,7 @@ const authenticateToken = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Get user from database to ensure user still exists
     const user = await pool.query(
@@ -67,9 +68,9 @@ const authenticateToken = async (req, res, next) => {
       ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
       ERROR_CATALOG.SYS_INTERNAL_ERROR.message,
       'AUTH_MIDDLEWARE',
-      'authentication verification', // Custom context for middleware
+      'authentication verification',
       error,
-      decoded?.userId || null // Pass user ID if available from token
+      decoded?.userId || null // Now decoded is in scope
     );
     res.status(500).json(errorResponse);
   }

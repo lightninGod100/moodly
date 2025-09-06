@@ -56,3 +56,13 @@ CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_moods_user_id ON moods(user_id);
 CREATE INDEX idx_moods_created_at ON moods(created_at);
 CREATE INDEX idx_moods_user_time ON moods(user_id, created_at DESC);
+
+
+
+CREATE TABLE refresh_tokens (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(500) UNIQUE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

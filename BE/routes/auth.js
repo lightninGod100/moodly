@@ -13,6 +13,41 @@ const { ERROR_CATALOG, getError } = require('../config/errorCodes');
 const ErrorLogger = require('../services/errorLogger');
 const router = express.Router();
 
+// Helper function to generate tokens
+const generateTokens = (userId) => {
+  const accessToken = jwt.sign(
+    { userId },
+    process.env.JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+
+  const refreshToken = jwt.sign(
+    { userId, type: 'refresh' },
+    process.env.JWT_SECRET,
+    { expiresIn: '14d' }
+  );
+
+  return { accessToken, refreshToken };
+};
+
+// Helper function to save refresh token to database
+const saveRefreshToken = async (userId, refreshToken) => {
+  const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
+
+  await pool.query(
+    'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
+    [userId, refreshToken, expiresAt]
+  );
+};
+
+// Cookie configuration
+const getCookieConfig = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  path: '/'
+});
+
 // Register new user
 router.post('/register', registerProgressiveLimiter, validateEmail, async (req, res) => {
   try {
@@ -136,25 +171,32 @@ router.post('/register', registerProgressiveLimiter, validateEmail, async (req, 
       [username.toLowerCase(), email.toLowerCase(), passwordHash, country, gender.toLowerCase(), now]
     );
 
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        userId: newUser.rows[0].id,
-        email: newUser.rows[0].email
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+
+    const { accessToken, refreshToken } = generateTokens(newUser.rows[0].id);
+    await saveRefreshToken(newUser.rows[0].id, refreshToken);
+
+    // Set cookies
+    const cookieConfig = getCookieConfig();
+
+    res.cookie('accessToken', accessToken, {
+      ...cookieConfig,
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      ...cookieConfig,
+      maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
+    });
+
 
     res.status(201).json({
-      message: 'User registered successfully',
+      message: 'Registration successful',
       user: {
-        id: newUser.rows[0].id,
+        username: newUser.rows[0].username,
         email: newUser.rows[0].email,
         country: newUser.rows[0].country,
         createdAt: newUser.rows[0].created_at
-      },
-      token
+      }
     });
 
   } catch (error) {
@@ -203,7 +245,8 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
 
     // Find user
     const user = await pool.query(
-      'SELECT id, email, password_hash, country, created_at, mark_for_deletion FROM users WHERE email = $1',
+      'SELECT id, username, email, password_hash, country, created_at, mark_for_deletion FROM users WHERE email = $1',
+      //           ↑ add username here
       [email.toLowerCase()]
     );
 
@@ -260,24 +303,31 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      {
-        userId: user.rows[0].id,
-        email: user.rows[0].email
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    // Generate both tokens
+    const { accessToken, refreshToken } = generateTokens(user.rows[0].id);
 
+    // Save refresh token to database (WITHOUT deleting existing ones)
+    await saveRefreshToken(user.rows[0].id, refreshToken);
+
+    // Set cookies
+    const cookieConfig = getCookieConfig();
+
+    res.cookie('accessToken', accessToken, {
+      ...cookieConfig,
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      ...cookieConfig,
+      maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
+    });
+
+    // Send response
     res.json({
       message: 'Login successful',
       user: {
-        id: user.rows[0].id,
-        email: user.rows[0].email,
-        country: user.rows[0].country,
-        createdAt: user.rows[0].created_at
-      },
-      token
+        username: user.rows[0].username,
+      }
     });
 
   } catch (error) {
@@ -331,6 +381,27 @@ router.post('/logout', arl_logoutLimiter, authenticateToken, async (req, res) =>
       ]
     );
 
+    // Delete only this device's refresh token from database
+    const refreshToken = req.cookies.refreshToken;
+    if (refreshToken) {
+      await pool.query(
+        'DELETE FROM refresh_tokens WHERE token = $1',
+        [refreshToken]
+      );
+    }
+
+    // Clear ALL auth-related cookies
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/'
+    };
+
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+    res.clearCookie('userData', cookieOptions);
+
     console.log(`✅ User ${userId} logout logged: ${new Date(logoutTimestamp).toISOString()} (attempt: ${retryAttempt})`);
 
     res.json({
@@ -349,6 +420,97 @@ router.post('/logout', arl_logoutLimiter, authenticateToken, async (req, res) =>
       'write to database', // Specific context - only INSERT operation can fail
       error,
       req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
+  }
+});
+
+// POST /api/auth/refresh - Refresh access token using refresh token
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.cookies;
+
+    // Check if refresh token exists
+    if (!refreshToken) {
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_REFRESH_TOKEN_REQUIRED.code,
+        'Refresh token required'
+      );
+      return res.status(401).json(errorResponse);
+    }
+
+    // Verify refresh token JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    } catch (error) {
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_REFRESH_TOKEN_INVALID.code,
+        'Invalid refresh token'
+      );
+      return res.status(401).json(errorResponse);
+    }
+
+    // Check if refresh token exists in database
+    const tokenResult = await pool.query(
+      'SELECT * FROM refresh_tokens WHERE token = $1 AND user_id = $2',
+      [refreshToken, decoded.userId]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_REFRESH_TOKEN_REVOKED.code,
+        'Refresh token has been revoked'
+      );
+      return res.status(401).json(errorResponse);
+    }
+
+    // Check if token is expired in database
+    if (new Date(tokenResult.rows[0].expires_at) < new Date()) {
+      // Clean up expired token
+      await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
+
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_REFRESH_TOKEN_EXPIRED.code,
+        'Refresh token has expired'
+      );
+      return res.status(401).json(errorResponse);
+    }
+
+    // Generate new token pair (rotation)
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
+
+    // Delete old refresh token
+    await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
+
+    // Save new refresh token
+    await saveRefreshToken(decoded.userId, newRefreshToken);
+
+    // Set new cookies
+    const cookieConfig = getCookieConfig();
+
+    res.cookie('accessToken', newAccessToken, {
+      ...cookieConfig,
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
+    res.cookie('refreshToken', newRefreshToken, {
+      ...cookieConfig,
+      maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
+    });
+
+    res.json({
+      message: 'Token refreshed successfully'
+    });
+
+  } catch (error) {
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'POST /api/auth/refresh',
+      '',
+      error,
+      null
     );
     res.status(500).json(errorResponse);
   }

@@ -130,6 +130,22 @@ const ERROR_CATALOG = {
         code: 'AUTH_TOKEN_INVALID',
         message: 'Invalid authentication token'
     },
+    AUTH_REFRESH_TOKEN_REVOKED: {
+        code: 'AUTH_REFRESH_TOKEN_REVOKED',
+        message: 'Refresh token has been revoked'
+    },
+    AUTH_REFRESH_TOKEN_INVALID: {
+        code: 'AUTH_REFRESH_TOKEN_INVALID',
+        message: 'Invalid refresh token'
+    },
+    AUTH_REFRESH_TOKEN_REQUIRED: {
+        code: 'AUTH_REFRESH_TOKEN_REQUIRED',
+        message: 'Refresh token is required'
+    },
+    AUTH_REFRESH_TOKEN_EXPIRED: {
+        code: 'AUTH_REFRESH_TOKEN_EXPIRED',
+        message: 'Refresh token has expired'
+    },
     AUTH_UNAUTHORIZED: {
         code: 'AUTH_UNAUTHORIZED',
         message: 'Unauthorized access'

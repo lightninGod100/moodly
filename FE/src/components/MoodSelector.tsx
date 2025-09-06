@@ -1,7 +1,7 @@
 // src/components/MoodSelector.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import NET from 'vanta/dist/vanta.net.min';
+// import NET from 'vanta/dist/vanta.net.min';
 import WAVES from 'vanta/dist/vanta.waves.min';
 
 type Mood = {
@@ -183,7 +183,7 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood,
       maxWidth: '384px',
       minWidth: '300px',
       transform: showToast ? 'translateX(0)' : 'translateX(-120%)',
-      opacity: showToast ? 1 : 0,
+      opacity: showToast ? 1 : 0, 
       transition: 'all 300ms ease-in-out',
       backgroundColor: '#ef4444',
       color: 'white',

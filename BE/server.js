@@ -24,6 +24,7 @@ const { createTimeoutMiddleware, timeoutDurations } = require('./middleware/time
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
+const cookieParser = require('cookie-parser');
 // ADD: Rate limiting import
 
 // Middleware
@@ -31,6 +32,7 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
+app.use(cookieParser());
 app.use(enhancedJsonParser());
 app.use(express.urlencoded({ extended: true, limit: '150kb' }));
 app.use(createTimeoutMiddleware(timeoutDurations.fast));
