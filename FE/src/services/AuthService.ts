@@ -20,7 +20,7 @@ export interface LoginRequest {
 
 // Types for API responses
 export interface AuthUser {
-  id: number;
+  username: string;  // Add username
   email: string;
   country: string;
   createdAt: string;
@@ -50,7 +50,6 @@ export interface AuthState {
 // ✅ NEW: Interface for pending logout (hybrid approach)
 interface PendingLogout {
   timestamp: number;
-  token: string;
   attempts: number;
 }
 
@@ -58,47 +57,13 @@ interface PendingLogout {
 const API_BASE = 'http://localhost:5000/api';
 
 
-
-// Token management utilities
 const tokenManager = {
-  /**
-   * Store authentication tokens
-   */
-  setTokens(authToken: string, refreshToken?: string): void {
-    localStorage.setItem('authToken', authToken);
-    if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken);
-    }
-  },
 
-  /**
-   * Get stored authentication token
-   */
-  getAuthToken(): string | null {
-    return localStorage.getItem('authToken');
-  },
-
-  /**
-   * Get stored refresh token
-   */
-  getRefreshToken(): string | null {
-    return localStorage.getItem('refreshToken');
-  },
-
-  /**
-   * Remove all authentication tokens
-   */
-  clearTokens(): void {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userData');
-  },
-
-  /**
-   * Check if user is currently authenticated
-   */
+  
   isAuthenticated(): boolean {
-    return !!this.getAuthToken();
+    // Can't check HttpOnly cookies from JS
+    // Will rely on API responses to determine auth status
+    return !!userDataManager.getUserData();
   }
 };
 
@@ -194,9 +159,9 @@ const startLogoutRetryMechanism = (): void => {
       const response = await fetch(`${API_BASE}/auth/logout`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${pending.token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include', // ADD THIS
         body: JSON.stringify({
           timestamp: pending.timestamp,
           retryAttempt: pending.attempts
@@ -273,6 +238,7 @@ export const authApiService = {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include', // ADD THIS LINE
         body: JSON.stringify({
           username: userData.username,
           email: userData.email,
@@ -302,7 +268,7 @@ export const authApiService = {
       const data: AuthResponse = await response.json();
 
       // Store tokens and user data
-      tokenManager.setTokens(data.token);
+      
       userDataManager.setUserData(data.user);
 
       return data;
@@ -354,6 +320,7 @@ export const authApiService = {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include', // ADD THIS LINE
         body: JSON.stringify({
           email: credentials.email,
           password: credentials.password
@@ -380,7 +347,6 @@ export const authApiService = {
       const data: AuthResponse = await response.json();
 
       // Store tokens and user data
-      tokenManager.setTokens(data.token);
       userDataManager.setUserData(data.user);
 
       return data;
@@ -409,26 +375,18 @@ export const authApiService = {
   // Updated logout method with Single Point Logging pattern
   async logout(): Promise<void> {
     const logoutTimestamp = Date.now(); // Capture REAL logout time
-    const token = tokenManager.getAuthToken();
-
-    if (!token) {
-      // No token, just clear local data
-      tokenManager.clearTokens();
-      userDataManager.clearUserData();
-      console.info('🔓 Local logout completed (no token)');
-      return;
-    }
+    
 
     try {
       // Attempt immediate server logout
       const response = await fetch(`${API_BASE}/auth/logout`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include', // ADD THIS
         body: JSON.stringify({
-          timestamp: logoutTimestamp // Send original logout time
+          timestamp: logoutTimestamp
         })
       });
 
@@ -469,7 +427,6 @@ export const authApiService = {
       // Store failed logout for background retry
       const pendingLogout: PendingLogout = {
         timestamp: logoutTimestamp,
-        token: token,
         attempts: 1
       };
 
@@ -479,8 +436,7 @@ export const authApiService = {
       startLogoutRetryMechanism();
 
     } finally {
-      // ALWAYS clear local tokens for immediate UX (unchanged)
-      tokenManager.clearTokens();
+      // Only clear user data, cookies cleared by backend
       userDataManager.clearUserData();
       console.info('🔓 Local logout completed');
     }
