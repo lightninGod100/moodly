@@ -65,17 +65,6 @@ export interface PasswordValidationResponse {
 const API_BASE = 'http://localhost:5000/api';
 
 // Helper function to get auth headers
-const getAuthHeaders = (): HeadersInit => {
-  const token = localStorage.getItem('authToken');
-  if (!token) {
-    throw new Error('No authentication token found. Please login again.');
-  }
-
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  };
-};
 
 // Settings API service functions
 export const settingsApiService = {
@@ -83,50 +72,53 @@ export const settingsApiService = {
    * Get current user settings
    */
 
-async getUserSettings(): Promise<UserSettings> {
-  try {
-    const response = await fetch(`${API_BASE}/user-settings`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
+  async getUserSettings(): Promise<UserSettings> {
+    try {
+      const response = await fetch(`${API_BASE}/user-settings`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
 
-    if (!response.ok) {
-      // Parse backend error response - NO LOGGING HERE
-      let backendError: BackendErrorResponse | null = null;
+      if (!response.ok) {
+        // Parse backend error response - NO LOGGING HERE
+        let backendError: BackendErrorResponse | null = null;
 
-      try {
-        backendError = await response.json();
-      } catch (parseError) {
-        // Create synthetic network error object - NO LOGGING HERE
-        throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+        try {
+          backendError = await response.json();
+        } catch (parseError) {
+          // Create synthetic network error object - NO LOGGING HERE
+          throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Throw parsed backend error - NO LOGGING HERE
+        if (backendError) {
+          throw backendError;
+        }
       }
 
-      // Throw parsed backend error - NO LOGGING HERE
-      if (backendError) {
-        throw backendError;
+      const data: UserSettingsResponse = await response.json();
+      return data.settings;
+
+    } catch (error) {
+      // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+
+      // Frontend validation errors: throw as-is (no logging needed)
+      if (error instanceof Error && Object.values(FE_VALIDATION_MESSAGES).includes(error.message as any)) {
+        throw error;
       }
+
+      // All other errors: backend errors, network errors, unexpected errors
+      const uiMessage = ErrorLogger.logError(
+        error,
+        { service: "SettingsService", action: "getUserSettings" },
+        { logToConsole: true, logToUI: true }
+      );
+      throw new Error(uiMessage);
     }
-
-    const data: UserSettingsResponse = await response.json();
-    return data.settings;
-
-  } catch (error) {
-    // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
-
-    // Frontend validation errors: throw as-is (no logging needed)
-    if (error instanceof Error && Object.values(FE_VALIDATION_MESSAGES).includes(error.message as any)) {
-      throw error;
-    }
-
-    // All other errors: backend errors, network errors, unexpected errors
-    const uiMessage = ErrorLogger.logError(
-      error,
-      { service: "SettingsService", action: "getUserSettings" },
-      { logToConsole: true, logToUI: true }
-    );
-    throw new Error(uiMessage);
-  }
-},
+  },
 
   /**
    * Change user password
@@ -148,7 +140,10 @@ async getUserSettings(): Promise<UserSettings> {
 
       const response = await fetch(`${API_BASE}/user-settings/password_change`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
         body: JSON.stringify(passwordData)
       });
 
@@ -203,7 +198,10 @@ async getUserSettings(): Promise<UserSettings> {
 
       const response = await fetch(`${API_BASE}/user-settings/country`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
         body: JSON.stringify(countryData)
       });
 
@@ -272,7 +270,10 @@ async getUserSettings(): Promise<UserSettings> {
 
       const response = await fetch(`${API_BASE}/user-settings/photo1`, {
         method: 'PUT',
-        headers: getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
         body: JSON.stringify(photoData)
       });
 
@@ -322,7 +323,10 @@ async getUserSettings(): Promise<UserSettings> {
     try {
       const response = await fetch(`${API_BASE}/user-settings/photo`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -376,7 +380,10 @@ async getUserSettings(): Promise<UserSettings> {
 
       const response = await fetch(`${API_BASE}/user-settings/account_deletion`, {
         method: 'DELETE',
-        headers: getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
         body: JSON.stringify(accountData)
       });
 
@@ -469,7 +476,10 @@ async getUserSettings(): Promise<UserSettings> {
 
       const response = await fetch(`${API_BASE}/user-settings/validate-password`, {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
         body: JSON.stringify(passwordData)
       });
 
