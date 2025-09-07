@@ -1,4 +1,4 @@
-// src/services/WorldStatsService.ts
+// src/services/GlobalStatsService.ts
 
 import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
 import { FE_VALIDATION_MESSAGES } from '../constants/validationMessages';
@@ -34,12 +34,101 @@ const periodMap: { [key: string]: string } = {
 };
 
 /**
- * Fetch global mood statistics for a specific time period
+ * Cache entry interface for localStorage storage
  */
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl: number;
+}
+
+/**
+ * Cache Manager for localStorage-based caching with TTL
+ */
+class CacheManager {
+  private static readonly TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+  /**
+   * Check if cache entry is expired (5 minutes TTL)
+   */
+  private static isExpired(timestamp: number, ttl: number): boolean {
+    return Date.now() - timestamp > ttl;
+  }
+
+  /**
+   * Get data from cache if valid, auto-invalidate if expired
+   */
+  static get<T>(key: string): T | null {
+    try {
+      const cached = localStorage.getItem(key);
+      if (!cached) return null;
+
+      const entry: CacheEntry<T> = JSON.parse(cached);
+
+      // Check if cache has expired (5 minutes)
+      if (this.isExpired(entry.timestamp, entry.ttl)) {
+        this.invalidate(key);
+        return null;
+      }
+
+      return entry.data;
+    } catch (error) {
+      // Handle localStorage or JSON parsing errors gracefully
+      this.invalidate(key);
+      return null;
+    }
+  }
+
+  /**
+   * Set data to cache with current timestamp
+   */
+  static set<T>(key: string, data: T): void {
+    try {
+      const entry: CacheEntry<T> = {
+        data,
+        timestamp: Date.now(),
+        ttl: this.TTL
+      };
+      localStorage.setItem(key, JSON.stringify(entry));
+    } catch (error) {
+      // Graceful degradation if localStorage fails (quota exceeded, etc.)
+      console.warn('Cache storage failed:', error);
+    }
+  }
+
+  /**
+   * Remove specific cache entry
+   */
+  static invalidate(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.warn('Cache invalidation failed:', error);
+    }
+  }
+
+  /**
+   * Generate standardized cache keys
+   */
+  static generateKey(action: string, period: string): string {
+    return `mood_stats_${action}_${period}`;
+  }
+
+  /**
+   * Invalidate all individual caches for a specific period
+   */
+  static invalidatePeriodCaches(period: string): void {
+    this.invalidate(this.generateKey('global', period));
+    this.invalidate(this.generateKey('countries', period));
+    this.invalidate(this.generateKey('frequency', period));
+  }
+}
+
 /**
  * Fetch global mood statistics for a specific time period
  */
 export const fetchGlobalStats = async (period: string): Promise<GlobalMoodStats> => {
+
   try {
     // Frontend validation with centralized message
     const backendPeriod = periodMap[period.toLowerCase()];
@@ -75,6 +164,11 @@ export const fetchGlobalStats = async (period: string): Promise<GlobalMoodStats>
     }
 
     const data: GlobalMoodStats = await response.json();
+    
+    // Cache the successful response (always cache on successful API call)
+    const cacheKey = CacheManager.generateKey('global', period);
+    CacheManager.set(cacheKey, data);
+    
     return data;
 
   } catch (error) {
@@ -98,10 +192,8 @@ export const fetchGlobalStats = async (period: string): Promise<GlobalMoodStats>
 /**
  * Fetch country-wise mood statistics for a specific time period
  */
-/**
- * Fetch country-wise mood statistics for a specific time period
- */
 export const fetchCountryStats = async (period: string): Promise<CountryStats> => {
+
   try {
     // Frontend validation
     const backendPeriod = periodMap[period.toLowerCase()];
@@ -137,6 +229,11 @@ export const fetchCountryStats = async (period: string): Promise<CountryStats> =
     }
 
     const data: CountryStats = await response.json();
+    
+    // Cache the successful response (always cache on successful API call)
+    const cacheKey = CacheManager.generateKey('countries', period);
+    CacheManager.set(cacheKey, data);
+    
     return data;
 
   } catch (error) {
@@ -161,6 +258,8 @@ export const fetchCountryStats = async (period: string): Promise<CountryStats> =
  * Fetch mood frequency statistics and convert to percentages
  */
 export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStats> => {
+
+
   try {
     // Frontend validation
     const backendPeriod = periodMap[period.toLowerCase()];
@@ -209,6 +308,10 @@ export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStat
         : 0;
     });
 
+    // Cache the processed percentage data (always cache on successful API call)
+    const cacheKey = CacheManager.generateKey('frequency', period);
+    CacheManager.set(cacheKey, percentageData);
+
     return percentageData;
 
   } catch (error) {
@@ -230,21 +333,45 @@ export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStat
 };
 
 /**
- * Fetch global, country, and frequency stats for a specific time period
+ * Combined world stats interface for caching
  */
-export const fetchWorldStats = async (period: string) => {
+interface WorldStatsData {
+  global: GlobalMoodStats;
+  countries: CountryStats;
+  frequency: GlobalMoodStats;
+}
+
+/**
+ * Fetch global, country, and frequency stats for a specific time period
+ * Uses combined caching strategy for optimal performance
+ */
+export const fetchWorldStats = async (period: string): Promise<WorldStatsData> => {
+  // Check combined cache first
+  const worldCacheKey = CacheManager.generateKey('world', period);
+  const cachedWorldData = CacheManager.get<WorldStatsData>(worldCacheKey);
+
+  if (cachedWorldData) {
+    return cachedWorldData;
+  }
+
   try {
+    // Cache miss - fetch all data with forceRefresh to ensure data consistency
     const [globalStats, countryStats, frequencyStats] = await Promise.all([
-      fetchGlobalStats(period),
-      fetchCountryStats(period),
-      fetchMoodFrequency(period)
+      fetchGlobalStats(period),   // forceRefresh: true ensures fresh data
+      fetchCountryStats(period),  //forceRefresh: true ensures fresh data
+      fetchMoodFrequency(period)  // forceRefresh: true ensures fresh data
     ]);
 
-    return {
+    const worldData: WorldStatsData = {
       global: globalStats,      // First row: "X% Users" (dominant mood)
       countries: countryStats,  // Map data: country tooltips
       frequency: frequencyStats // Second row: "X% Times" (frequency percentages)
     };
+
+    // Cache the combined result for future requests
+    CacheManager.set(worldCacheKey, worldData);
+
+    return worldData;
   } catch (error) {
     throw error;
   }

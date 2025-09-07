@@ -268,7 +268,7 @@ export const settingsApiService = {
         throw new Error(`${FE_VALIDATION_MESSAGES.IMAGE_TOO_LARGE}. Current size: ${Math.round(sizeInBytes / 1024)}KB`);
       }
 
-      const response = await fetch(`${API_BASE}/user-settings/photo1`, {
+      const response = await fetch(`${API_BASE}/user-settings/photo`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
