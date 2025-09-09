@@ -81,34 +81,19 @@ function AppContent() {
         setCurrentPage('home');
 
         // Try to fetch user settings but don't block the app if it fails
-        try {
-          const userSettings = await settingsApiService.getUserSettings();
-          dispatch({ type: 'SET_USER', payload: userSettings });
-
-          // Save to localStorage as backup
-          localStorage.setItem('userSettings', JSON.stringify(userSettings));
-          console.log('User settings loaded from server');
-        } catch (error) {
-          console.warn('Failed to fetch user settings from server');
-
-          // Try to use cached settings from localStorage as fallback
-          const cachedSettings = localStorage.getItem('userSettings');
-          if (cachedSettings) {
-            try {
-              const settings = JSON.parse(cachedSettings);
-              dispatch({ type: 'SET_USER', payload: settings });
-              console.log('Using cached user settings from localStorage');
-              setNotificationError(null);
-            } catch (e) {
-              console.error('Invalid cached settings:');
-              // Continue without user settings - app still works
-            }
-          }
-          else {
-            setNotificationError('userSettings');
-          }
-          // Don't set apiStatus to 'error' - let the app continue
-        }
+        // Try to fetch user settings but don't block the app if it fails
+try {
+  const userSettings = await settingsApiService.getUserSettings();
+  dispatch({ type: 'SET_USER', payload: userSettings });
+  console.log('User settings loaded from server');
+  setNotificationError(null);
+} catch (error) {
+  console.warn('Failed to fetch user settings from server, Using defaults');
+  // Don't set any default user - let it remain null
+  // Components will handle null state gracefully
+  setNotificationError('userSettings');
+  // Don't set apiStatus to 'error' - let the app continue
+}
 
         // Set API status to healthy regardless of getUserSettings result
         setApiStatus('healthy');

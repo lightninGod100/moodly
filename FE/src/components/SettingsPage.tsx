@@ -41,6 +41,11 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  // Initialize form when user data loads
+  useEffect(() => {
+    initializeForm();
+  }, [user]);
+
   // Initialize Vanta effect
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -137,12 +142,11 @@ useEffect(() => {
  
 // Create default userData when user is null
 const userData = user || {
-  id: 0,
-  username: '',
+  username: 'user_1',
   email: '',
   country: '',
   gender: '',
-  profilePhoto: null,
+  profilePhoto: '/images/pp.jpg',
   lastCountryChangeAt: 0,
   canChangeCountry: false,
   nextCountryChangeDate: null,

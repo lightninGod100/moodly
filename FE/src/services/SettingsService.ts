@@ -5,7 +5,6 @@ import { FE_VALIDATION_MESSAGES } from '../constants/validationMessages';
 
 // Types for API responses and requests
 export interface UserSettings {
-  id: number;
   username: string;
   email: string;
   country: string;

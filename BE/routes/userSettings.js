@@ -95,7 +95,6 @@ router.get('/', arl_userSettingsRead, authenticateToken, async (req, res) => {
     return res.json({
       message: 'User settings retrieved successfully',
       settings: {
-        id: user.id,
         username: user.username,
         email: user.email,
         country: user.country,

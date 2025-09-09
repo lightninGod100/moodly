@@ -1,6 +1,5 @@
 // User state interface
 export interface UserState {
-    id: number;
     username: string;
     email: string;
     country: string;

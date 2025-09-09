@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 
 // Notification types and their corresponding messages
-type NotificationType = 'userSettings' | 'lastMood';
+type NotificationType = 'userSettings' | 'lastMood' | 'moodCreation';
 
 interface NotificationConfig {
   message: string;
@@ -19,16 +19,6 @@ const NOTIFICATION_MESSAGES: Record<NotificationType, NotificationConfig> = {
   },
   lastMood: {
     message: "Unable to load recent mood data",
-    type: 'error',
-    icon: '❌'
-  },
-  worldStats: {
-    message: "Unable to load global statistics",
-    type: 'error',
-    icon: '❌'
-  },
-  userStats: {
-    message: "Unable to load personal statistics",
     type: 'error',
     icon: '❌'
   },
