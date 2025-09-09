@@ -195,6 +195,7 @@ function AppContent() {
 
   // Handle mood selection
   const handleSelectMood = async (mood: string) => {
+    localStorage.removeItem('mood_selected_stats_all');
     try {
       await moodApiService.createMood(mood);
 
