@@ -59,7 +59,7 @@ const API_BASE = 'http://localhost:5000/api';
 
 const tokenManager = {
 
-  
+
   isAuthenticated(): boolean {
     // Can't check HttpOnly cookies from JS
     // Will rely on API responses to determine auth status
@@ -171,7 +171,7 @@ const startLogoutRetryMechanism = (): void => {
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
         let backendError: BackendErrorResponse | null = null;
-        
+
         try {
           backendError = await response.json();
         } catch (parseError) {
@@ -186,7 +186,7 @@ const startLogoutRetryMechanism = (): void => {
       }
 
       // Success: Server logout successful (retry) - NO CONSOLE MESSAGE
-      
+
       localStorage.removeItem('pendingLogout');
       if (retryInterval) {
         clearInterval(retryInterval);
@@ -268,7 +268,7 @@ export const authApiService = {
       const data: AuthResponse = await response.json();
 
       // Store tokens and user data
-      
+
       userDataManager.setUserData(data.user);
 
       return data;
@@ -375,7 +375,7 @@ export const authApiService = {
   // Updated logout method with Single Point Logging pattern
   async logout(): Promise<void> {
     const logoutTimestamp = Date.now(); // Capture REAL logout time
-    
+
 
     try {
       // Attempt immediate server logout
@@ -451,7 +451,31 @@ export const authApiService = {
       startLogoutRetryMechanism();
     }
   },
+  /* Verify if user is authenticated via cookie
+  * @returns username if authenticated, null otherwise
+  */
+  async verifyAuth(): Promise<string | null> {
+    try {
+      const response = await fetch(`${API_BASE}/auth/verify`, {
+        method: 'GET',
+        credentials: 'include', // Sends cookie automatically
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authenticated && data.username) {
+          return data.username;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.warn('Auth verification failed:', error);
+      return null;
+    }
+  }
 
 };
 

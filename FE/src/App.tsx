@@ -75,25 +75,29 @@ function AppContent() {
   // Load mood history from localStorage on initial render
   useEffect(() => {
     const initializeApp = async () => {
-      const token = localStorage.getItem('authToken');
-      if (token) {
+      setApiStatus('loading');
+      
+      // Verify authentication with backend
+      const username = await authApiService.verifyAuth();
+      
+      if (username) {
         setIsAuthenticated(true);
         setCurrentPage('home');
+        setApiStatus('healthy');
 
         // Try to fetch user settings but don't block the app if it fails
-        // Try to fetch user settings but don't block the app if it fails
-try {
-  const userSettings = await settingsApiService.getUserSettings();
-  dispatch({ type: 'SET_USER', payload: userSettings });
-  console.log('User settings loaded from server');
-  setNotificationError(null);
-} catch (error) {
-  console.warn('Failed to fetch user settings from server, Using defaults');
-  // Don't set any default user - let it remain null
-  // Components will handle null state gracefully
-  setNotificationError('userSettings');
-  // Don't set apiStatus to 'error' - let the app continue
-}
+        try {
+          const userSettings = await settingsApiService.getUserSettings();
+          dispatch({ type: 'SET_USER', payload: userSettings });
+          console.log('User settings loaded from server');
+          setNotificationError(null);
+        } catch (error) {
+          console.warn('Failed to fetch user settings from server, Using defaults');
+          // Don't set any default user - let it remain null
+          // Components will handle null state gracefully
+          setNotificationError('userSettings');
+          // Don't set apiStatus to 'error' - let the app continue
+        }
 
         // Set API status to healthy regardless of getUserSettings result
         setApiStatus('healthy');

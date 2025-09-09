@@ -536,4 +536,42 @@ router.get('/me', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/auth/verify - Verify authentication and return username
+router.get('/verify', authenticateToken, async (req, res) => {
+  try {
+    // The authenticateToken middleware has already verified the cookie and set req.user
+    // But we need to fetch the username since the middleware doesn't include it
+    
+    const userResult = await pool.query(
+      'SELECT username FROM users WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.AUTH_USER_NOT_EXISTS.code,
+        ERROR_CATALOG.AUTH_USER_NOT_EXISTS.message
+      );
+      return res.status(401).json(errorResponse);
+    }
+
+    // Return success with username only
+    res.status(200).json({ 
+      authenticated: true,
+      username: userResult.rows[0].username 
+    });
+
+  } catch (error) {
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/auth/verify',
+      'read from database',
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
+  }
+});
+
 module.exports = router;
