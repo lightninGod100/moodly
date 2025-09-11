@@ -15,8 +15,9 @@ const VALID_MOODS = ['Excited', 'Happy', 'Calm', 'Tired', 'Anxious', 'Angry', 'S
 // POST /api/moods - Create new mood entry
 router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
   try {
-    const { mood } = req.body;
+    const { mood, local_timestamp, day_view } = req.body;
     const userId = req.user.id;
+    const timezone = req.headers['timezone'];
 
     // Validate mood value - NO SERVER LOGGING (validation errors)
     if (!mood) {
@@ -52,8 +53,22 @@ router.post('/', arl_moodCreation, authenticateToken, async (req, res) => {
     // Insert mood into database
     const now = Date.now();
     const newMood = await pool.query(
-      'INSERT INTO moods (user_id, mood, created_at, created_at_utc) VALUES ($1, $2, $3, to_timestamp($3::bigint/1000.0)) RETURNING id, user_id, mood, created_at, created_at_utc',
-      [userId, mood, now]
+      `INSERT INTO moods (
+        user_id, 
+        mood, 
+        created_at,  
+        created_at_local, 
+        day_view, 
+        timezone
+      ) VALUES (
+        $1, 
+        $2, 
+        $3, 
+        $4::timestamptz, 
+        $5, 
+        $6
+      ) RETURNING  mood, created_at`,
+      [userId, mood, now, local_timestamp, day_view, timezone]
     );
 
     res.status(201).json({

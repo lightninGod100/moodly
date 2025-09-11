@@ -16,8 +16,6 @@ interface LastMoodResponse {
 interface CreateMoodResponse {
   message: string;
   mood: {
-    id: number;
-    userId: number;
     mood: string;
     createdAt: string;
   };
@@ -85,15 +83,59 @@ export const moodApiService = {
    * Create a new mood entry
    * Calls POST /api/moods
    */
+
   async createMood(mood: string): Promise<CreateMoodResponse['mood']> {
+    // Frontend - Get timestamp in PostgreSQL format with timezone offset
+    function getLocalTimestampWithOffset() {
+      const now = new Date();
+
+      // Get timezone offset in minutes
+      const offset = -now.getTimezoneOffset();
+      const offsetHours = Math.floor(Math.abs(offset) / 60);
+      const offsetMinutes = Math.abs(offset) % 60;
+      const offsetSign = offset >= 0 ? '+' : '-';
+      const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
+
+      // Format: YYYY-MM-DD HH:mm:ss.SSS
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}${offsetString}`;
+    }
+
+    function getTimePeriod(): string {
+      const hour = new Date().getHours(); // 0-23
+
+      if (hour >= 5 && hour < 12) {
+        return 'morning';
+      } else if (hour >= 12 && hour < 17) {
+        return 'afternoon';
+      } else if (hour >= 17 && hour < 21) {
+        return 'evening';
+      } else {
+        return 'night'; // 22-4
+      }
+    }
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     try {
+
       const response = await fetch(`${API_BASE}/moods`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Timezone': timezone
         },
         credentials: 'include',
-        body: JSON.stringify({ mood })
+        body: JSON.stringify({
+          mood,
+          local_timestamp: getLocalTimestampWithOffset(), // "2025-01-15 15:30:45.123+05:30"
+          day_view: getTimePeriod() //Mprning Afternoon Evening Night
+        })
       });
 
       if (!response.ok) {
