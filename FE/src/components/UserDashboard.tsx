@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { userStatsApiService } from '../services/UserStatsService';
-import type { DominantMoodResponse, HappinessDataPoint, MoodFrequencyData } from '../services/UserStatsService';
+import type { DominantMoodResponse, HappinessDataPoint, MoodFrequencyData, ThroughDayViewData } from '../services/UserStatsService';
 import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
 import { useUser } from '../contexts/UserContext';
@@ -44,6 +44,7 @@ const UserDashboard = ({
   const [dominantMoodData, setDominantMoodData] = useState<DominantMoodResponse | null>(null);
   const [happinessData, setHappinessData] = useState<HappinessDataPoint[]>([]);
   const [frequencyData, setFrequencyData] = useState<MoodFrequencyData | null>(null);
+  const [throughDayViewData, setThroughDayViewData] = useState<ThroughDayViewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -129,7 +130,10 @@ const UserDashboard = ({
       if (stats.frequencyToday) {
         setFrequencyData(stats.frequencyToday);
       }
-      
+
+      if (stats.throughDayView) {
+        setThroughDayViewData(stats.throughDayView);
+      }
       // Optional: Show a warning if some APIs failed but don't block the UI
       // You could add a toast notification here if needed
       
@@ -294,18 +298,89 @@ const UserDashboard = ({
       </div>
     );
   };
-  interface AIInsightsProps {
-    // Future props can be added here when AI insights are implemented
-    // userMoodData?: any;
-    // insights?: string[];
-    // isLoading?: boolean;
+  interface ThroughDayViewProps {
+    // No props needed since data comes from parent state
   }
   
-  const AIInsights: React.FC<AIInsightsProps> = () => {
+  const ThroughDayView: React.FC<ThroughDayViewProps> = () => {
+    if (!throughDayViewData) {
+      return (
+        <div className="dashboard-box dashboard-ai-insights">
+          <h3 className="dashboard-box-title">Through the Day View</h3>
+          <p className="text-gray-300 text-sm">No data available</p>
+        </div>
+      );
+    }
+  
+    // Define time periods and moods for consistent ordering
+    const timePeriods = ['morning', 'afternoon', 'evening', 'night'] as const;
+    const moods = ['Excited', 'Happy', 'Calm', 'Tired', 'Anxious', 'Angry', 'Sad'] as const;
+  
+    // Function to find max value in each time period
+    const getMaxMoodForPeriod = (periodData: MoodFrequencyData): string => {
+      let maxMood = 'Excited';
+      let maxValue = periodData.Excited;
+      
+      moods.forEach(mood => {
+        if (periodData[mood] > maxValue) {
+          maxValue = periodData[mood];
+          maxMood = mood;
+        }
+      });
+      
+      return maxMood;
+    };
+  
     return (
       <div className="dashboard-box dashboard-ai-insights">
-        <h3 className="dashboard-box-title">AI Insights</h3>
-        <p>Coming Soon</p>
+        <h3 className="dashboard-box-title">Through the Day View</h3>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-600">
+                <th className="text-left py-2 px-2 text-gray-300 font-medium">Time</th>
+                {moods.map(mood => (
+                  <th key={mood} className="text-center py-2 px-2 text-gray-300 font-medium text-xs">
+                    <div>{MOOD_EMOJIS[mood]}</div>
+                    <div>{mood}</div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {timePeriods.map(period => {
+                const periodData = throughDayViewData[period];
+                const maxMood = getMaxMoodForPeriod(periodData);
+                
+                return (
+                  <tr key={period} className="border-b border-gray-700">
+                    <td className="py-3 px-2 text-white font-medium capitalize">
+                      {period}
+                    </td>
+                    {moods.map(mood => {
+                      const value = periodData[mood];
+                      const isMax = mood === maxMood && value > 0;
+                      
+                      return (
+                        <td 
+                          key={mood} 
+                          className={`text-center py-3 px-2 text-xs ${
+                            isMax 
+                              ? 'bg-blue-500 bg-opacity-30 text-white font-bold border border-blue-400' 
+                              : 'text-gray-300'
+                          }`}
+                        >
+                          {value.toFixed(1)}%
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
@@ -431,7 +506,7 @@ const UserDashboard = ({
               <DominantModeSection />
               <HappinessIndexChart />
               <MoodFrequencyCounter />
-              <AIInsights />
+              <ThroughDayView />
             </div>
 
           </>

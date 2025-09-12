@@ -250,6 +250,102 @@ router.get('/frequency', arl_user_stats, authenticateToken, async (req, res) => 
   }
 });
 
+// Add this to BE/routes/userStats.js
+
+// GET /api/user-stats/through-day-view?period=week|month
+router.get('/through-day-view', arl_user_stats, authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { period } = req.query;
+    
+    // Validate period - NO SERVER LOGGING (validation error)
+    if (!period || !['week', 'month'].includes(period)) {
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.VAL_INVALID_PERIOD.code,
+        'Period must be either "week" or "month"'
+      );
+      return res.status(400).json(errorResponse);
+    }
+
+    const timeFilter = getTimePeriodFilter(period);
+    
+    // Query to get mood counts by day_view period
+    const query = `
+      WITH mood_day_counts AS (
+        SELECT 
+          day_view,
+          mood,
+          COUNT(*) as mood_count
+        FROM moods 
+        WHERE user_id = $1 AND created_at >= $2 AND day_view IS NOT NULL
+        GROUP BY day_view, mood
+      ),
+      day_view_totals AS (
+        SELECT 
+          day_view,
+          SUM(mood_count) as total_count
+        FROM mood_day_counts
+        GROUP BY day_view
+      ),
+      mood_percentages AS (
+        SELECT 
+          mdc.day_view,
+          mdc.mood,
+          mdc.mood_count,
+          dvt.total_count,
+          CASE 
+            WHEN dvt.total_count > 0 THEN ROUND((mdc.mood_count::numeric / dvt.total_count::numeric) * 100, 1)
+            ELSE 0
+          END as percentage
+        FROM mood_day_counts mdc
+        INNER JOIN day_view_totals dvt ON mdc.day_view = dvt.day_view
+      )
+      SELECT 
+        day_view,
+        mood,
+        percentage
+      FROM mood_percentages
+      ORDER BY day_view, mood
+    `;
+
+    const result = await pool.query(query, [userId, timeFilter]);
+    
+    // Initialize response structure with all time periods and moods set to 0
+    const dayPeriods = ['morning', 'afternoon', 'evening', 'night'];
+    const allMoods = VALID_MOODS; // ['Excited', 'Happy', 'Calm', 'Tired', 'Anxious', 'Angry', 'Sad']
+    
+    const response = {};
+    dayPeriods.forEach(dayPeriod => {
+      response[dayPeriod] = {};
+      allMoods.forEach(mood => {
+        response[dayPeriod][mood] = 0;
+      });
+    });
+    
+    // Fill in actual data from query results
+    result.rows.forEach(row => {
+      const { day_view, mood, percentage } = row;
+      if (response[day_view] && allMoods.includes(mood)) {
+        response[day_view][mood] = parseFloat(percentage);
+      }
+    });
+
+    res.json(response);
+
+  } catch (error) {
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/user-stats/through-day-view',
+      'read from database',
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
+  }
+});
+
 // Test route to verify routing
 router.get('/test', arl_user_stats, authenticateToken, (req, res) => {
   try {

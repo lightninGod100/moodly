@@ -27,6 +27,12 @@ interface MoodFrequencyData {
   Anxious: number;
 }
 
+interface ThroughDayViewData {
+  morning: MoodFrequencyData;
+  afternoon: MoodFrequencyData;
+  evening: MoodFrequencyData;
+  night: MoodFrequencyData;
+}
 // API configuration
 const API_BASE = 'http://localhost:5000/api';
 
@@ -119,18 +125,41 @@ export const userStatsApiService = {
    * Get all user statistics for the dashboard
    * Fetches dominant mood (all periods), happiness index (month), and initial frequency (today)
    */
+  async getThroughDayView(period: 'week' | 'month'): Promise<ThroughDayViewData> {
+    try {
+      const response = await fetch(`${API_BASE}/user-stats/through-day-view?period=${period}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+  
+      if (!response.ok) {
+        throw new Error(`Failed to fetch through day view: ${response.status} ${response.statusText}`);
+      }
+  
+      const data: ThroughDayViewData = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching through day view:', error);
+      throw error;
+    }
+  },
   async getAllUserStats() {
     try {
       const results = await Promise.allSettled([
         this.getDominantMood(),
         this.getHappinessIndex('month'),
-        this.getMoodFrequency('today')
+        this.getMoodFrequency('today'),
+        this.getThroughDayView('month')
       ]);
 
       // Extract successful results, handle failures gracefully
       const dominantMood = results[0].status === 'fulfilled' ? results[0].value : null;
       const happinessIndex = results[1].status === 'fulfilled' ? results[1].value : [];
       const frequencyToday = results[2].status === 'fulfilled' ? results[2].value : null;
+      const throughDayView = results[3].status === 'fulfilled' ? results[3].value : null;
 
       // Log any failures for debugging
       results.forEach((result, index) => {
@@ -143,7 +172,8 @@ export const userStatsApiService = {
       return {
         dominantMood,
         happinessIndex,
-        frequencyToday
+        frequencyToday,
+        throughDayView
       };
     } catch (error) {
       console.error('Error fetching all user stats:', error);
@@ -157,5 +187,6 @@ export type {
   DominantMoodData,
   DominantMoodResponse,
   HappinessDataPoint,
-  MoodFrequencyData
+  MoodFrequencyData,
+  ThroughDayViewData
 };
