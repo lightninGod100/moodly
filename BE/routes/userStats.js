@@ -346,6 +346,42 @@ router.get('/through-day-view', arl_user_stats, authenticateToken, async (req, r
   }
 });
 
+// GET /api/user-stats/mood-history - Get last 20 moods for user
+router.get('/mood-history', arl_user_stats, authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get last 20 moods for the user
+    const moodHistoryResult = await pool.query(
+      'SELECT mood, created_at FROM moods WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20',
+      [userId]
+    );
+
+    // Format response
+    const moods = moodHistoryResult.rows.map(row => ({
+      mood: row.mood,
+      createdAt: parseInt(row.created_at, 10) 
+    }));
+
+    res.status(200).json({
+      message: 'Mood history retrieved successfully',
+      count: moods.length,
+      moods: moods
+    });
+
+  } catch (error) {
+    // Single operation endpoint - we know it's the SELECT that failed
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'GET /api/user-stats/mood-history',
+      'read from database',
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
+  }
+});
 // Test route to verify routing
 router.get('/test', arl_user_stats, authenticateToken, (req, res) => {
   try {

@@ -505,7 +505,7 @@ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Clean, subtle shadow */
     display: grid;
     grid-template-columns: 1fr 2fr 7fr; /* 20% 20% 60% equivalent */
     grid-template-rows: 1fr 1fr 1fr; /* Two equal height rows */
-    gap: 1.5rem;
+    gap: 4rem;
     margin-bottom: var(--space-8);
     width: 100%;
   }
@@ -523,17 +523,17 @@ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Clean, subtle shadow */
 
   .dashboard-happiness-chart {
     grid-column: 3;
-    grid-row: 1 / 3; /* Spans both rows (50% height each) */
+    grid-row: 1 / 2; /* Spans both rows (50% height each) */
   }
 
   .dashboard-frequency-counter {
     grid-column: 1 / 3; /* Spans first two columns */
-    grid-row: 2/4;
+    grid-row: 2/3;
   }
   
   .dashboard-ai-insights {
     grid-column: 3;
-    grid-row:  3;
+    grid-row:  2;
   }
 
   /* Dashboard Box Styling */
@@ -555,7 +555,10 @@ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Clean, subtle shadow */
     color: white;
     text-align: center;
   }
-
+  .dashboard-mood-history {
+    grid-column: 1 / 3;
+    grid-row: 3;
+  }
 
   /* Loading and Error States
   .dashboard-loading,

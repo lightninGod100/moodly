@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { userStatsApiService } from '../services/UserStatsService';
-import type { DominantMoodResponse, HappinessDataPoint, MoodFrequencyData, ThroughDayViewData } from '../services/UserStatsService';
+import type { DominantMoodResponse, HappinessDataPoint, MoodFrequencyData, ThroughDayViewData, MoodHistoryResponse } from '../services/UserStatsService';
 import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
 import { useUser } from '../contexts/UserContext';
@@ -45,6 +45,7 @@ const UserDashboard = ({
   const [happinessData, setHappinessData] = useState<HappinessDataPoint[]>([]);
   const [frequencyData, setFrequencyData] = useState<MoodFrequencyData | null>(null);
   const [throughDayViewData, setThroughDayViewData] = useState<ThroughDayViewData | null>(null);
+  const [moodHistoryData, setMoodHistoryData] = useState<MoodHistoryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,6 +134,9 @@ const UserDashboard = ({
 
       if (stats.throughDayView) {
         setThroughDayViewData(stats.throughDayView);
+      }
+      if (stats.moodHistory) {
+        setMoodHistoryData(stats.moodHistory);
       }
       // Optional: Show a warning if some APIs failed but don't block the UI
       // You could add a toast notification here if needed
@@ -467,7 +471,82 @@ const UserDashboard = ({
       </div>
     );
   };
-
+  interface MoodHistoryProps {
+    // No props needed since data comes from parent state
+  }
+  
+  const MoodHistory: React.FC<MoodHistoryProps> = () => {
+    if (!moodHistoryData || !moodHistoryData.moods || moodHistoryData.moods.length === 0) {
+      return (
+        <div className="dashboard-box dashboard-mood-history">
+          <h3 className="dashboard-box-title">
+            Mood History 
+            <span className="tooltip-container">
+              <span className="tooltip-trigger">(?)</span>
+              <span className="tooltip-content">Your recent mood entries ordered from latest to oldest</span>
+            </span>
+          </h3>
+          <p className="text-gray-300 text-sm">No mood history available</p>
+        </div>
+      );
+    }
+  
+    // Format timestamp from UNIX to readable format
+    const formatTimestamp = (unixTimestamp: number): string => {
+      const date = new Date(unixTimestamp);
+      const day = date.getDate();
+      const month = date.toLocaleDateString('en-US', { month: 'short' });
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${day} ${month} ${hours}:${minutes}`;
+    };
+  
+    // Get mood with emoji
+    const getMoodWithEmoji = (mood: string): string => {
+      return `${mood} ${MOOD_EMOJIS[mood as keyof typeof MOOD_EMOJIS] || ''}`;
+    };
+  
+    return (
+      <div className="dashboard-box dashboard-mood-history">
+        <h3 className="dashboard-box-title">
+          Mood History 
+          
+        </h3>
+        
+        <div className="overflow-y-auto max-h-80">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-600 sticky top-0 bg-[#04040a]">
+                <th className="text-left py-2 px-2 text-gray-300 font-medium w-12">S.no</th>
+                <th className="text-left py-2 px-2 text-gray-300 font-medium">Mood</th>
+                <th className="text-right py-2 px-2 text-gray-300 font-medium">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {moodHistoryData.moods.map((entry, index) => (
+                <tr key={index} className="border-b border-gray-700">
+                  <td className="py-2 px-2 text-white font-medium">
+                    {index + 1}
+                  </td>
+                  <td className="py-2 px-2 text-white">
+                    {getMoodWithEmoji(entry.mood)}
+                  </td>
+                  <td className="py-2 px-2 text-gray-300 text-right">
+                    {formatTimestamp(entry.createdAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        <p className="text-gray-400 text-xs mt-2 text-center">
+          Showing {moodHistoryData.count} recent mood{moodHistoryData.count !== 1 ? 's' : ''}
+        </p>
+      </div>
+    );
+  };
+  
   return (
     <div ref={vantaRef} className="vanta-waves-container min-h-screen">
       <div className="dashboard-container">
@@ -507,6 +586,7 @@ const UserDashboard = ({
               <HappinessIndexChart />
               <MoodFrequencyCounter />
               <ThroughDayView />
+              <MoodHistory />
             </div>
 
           </>

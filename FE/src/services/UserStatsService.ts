@@ -33,6 +33,17 @@ interface ThroughDayViewData {
   evening: MoodFrequencyData;
   night: MoodFrequencyData;
 }
+
+
+// Types for API response
+interface MoodHistoryResponse {
+  message: string;
+  count: number;
+  moods: Array<{
+    mood: string;
+    createdAt: number;
+  }>;
+}
 // API configuration
 const API_BASE = 'http://localhost:5000/api';
 
@@ -134,11 +145,11 @@ export const userStatsApiService = {
         },
         credentials: 'include'
       });
-  
+
       if (!response.ok) {
         throw new Error(`Failed to fetch through day view: ${response.status} ${response.statusText}`);
       }
-  
+
       const data: ThroughDayViewData = await response.json();
       return data;
     } catch (error) {
@@ -146,13 +157,40 @@ export const userStatsApiService = {
       throw error;
     }
   },
+
+  /**
+ * Get user's last 20 moods (latest to oldest)
+ * Calls GET /api/user-stats/mood-history
+ */
+async getMoodHistory(): Promise<MoodHistoryResponse> {
+  try {
+    const response = await fetch(`${API_BASE}/user-stats/mood-history`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch mood history: ${response.status} ${response.statusText}`);
+    }
+
+    const data: MoodHistoryResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching mood history:', error);
+    throw error;
+  }
+},
   async getAllUserStats() {
     try {
       const results = await Promise.allSettled([
         this.getDominantMood(),
         this.getHappinessIndex('month'),
         this.getMoodFrequency('today'),
-        this.getThroughDayView('month')
+        this.getThroughDayView('month'),
+        this.getMoodHistory()
       ]);
 
       // Extract successful results, handle failures gracefully
@@ -160,11 +198,11 @@ export const userStatsApiService = {
       const happinessIndex = results[1].status === 'fulfilled' ? results[1].value : [];
       const frequencyToday = results[2].status === 'fulfilled' ? results[2].value : null;
       const throughDayView = results[3].status === 'fulfilled' ? results[3].value : null;
-
+      const moodHistory = results[4].status === 'fulfilled' ? results[4].value : null;
       // Log any failures for debugging
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          const apiNames = ['dominantMood', 'happinessIndex', 'frequencyToday'];
+          const apiNames = ['dominantMood', 'happinessIndex', 'frequencyToday', 'throughDayView', 'moodHistory'];
           console.warn(`${apiNames[index]} API failed:`, result.reason);
         }
       });
@@ -173,7 +211,8 @@ export const userStatsApiService = {
         dominantMood,
         happinessIndex,
         frequencyToday,
-        throughDayView
+        throughDayView,
+        moodHistory
       };
     } catch (error) {
       console.error('Error fetching all user stats:', error);
@@ -188,5 +227,6 @@ export type {
   DominantMoodResponse,
   HappinessDataPoint,
   MoodFrequencyData,
-  ThroughDayViewData
+  ThroughDayViewData,
+  MoodHistoryResponse
 };
