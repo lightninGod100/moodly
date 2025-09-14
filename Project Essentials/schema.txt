@@ -66,3 +66,14 @@ CREATE TABLE refresh_tokens (
   expires_at TIMESTAMP NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+CREATE TABLE IF NOT EXISTS ai_insights_cache (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    insights_data JSONB NOT NULL,
+    created_at BIGINT NOT NULL, -- Epoch time in milliseconds
+    created_at_local TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX idx_ai_insights_user_created 
+ON ai_insights_cache(user_id, created_at_local DESC);

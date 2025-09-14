@@ -20,31 +20,31 @@ function cleanAIResponse(rawResponse) {
   } catch (firstAttempt) {
     // If direct parsing fails, try cleaning the response
     let cleaned = rawResponse;
-    
+
     // Remove markdown code blocks (```json or ```)
     cleaned = cleaned.replace(/```json\s*/gi, '');
     cleaned = cleaned.replace(/```\s*/g, '');
-    
+
     // Remove any "json" prefix that might appear
     cleaned = cleaned.replace(/^json\s*/i, '');
-    
+
     // Remove HTML tags if any
     cleaned = cleaned.replace(/<[^>]*>/g, '');
-    
+
     // Remove any text before the first { and after the last }
     const firstBrace = cleaned.indexOf('{');
     const lastBrace = cleaned.lastIndexOf('}');
-    
+
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
       cleaned = cleaned.substring(firstBrace, lastBrace + 1);
     }
-    
+
     // Remove any escape characters that might interfere
     cleaned = cleaned.replace(/\\"/g, '"');
-    
+
     // Trim whitespace
     cleaned = cleaned.trim();
-    
+
     try {
       // Attempt to parse the cleaned response
       const parsed = JSON.parse(cleaned);
@@ -95,35 +95,35 @@ function validateInsightsStructure(parsedData) {
       recommendation: null
     }
   };
-  
+
   // If parsedData is null or not an object, return expected structure
   if (!parsedData || typeof parsedData !== 'object') {
     return { valid: false, data: expectedStructure, error: 'Invalid or null data' };
   }
-  
+
   // Check if it has the main required keys
   if (!parsedData.weekly || !parsedData.monthly) {
     // Try to find weekly and monthly data in different locations
     let weekly = parsedData.weekly || parsedData.week || parsedData.last_7_days || {};
     let monthly = parsedData.monthly || parsedData.month || parsedData.last_30_days || {};
-    
+
     parsedData = { weekly, monthly };
   }
-  
+
   // Validate and clean weekly data
   const validatedWeekly = {
     period: parsedData.weekly.period || 'last_7_days',
-    totalMoods: typeof parsedData.weekly.totalMoods === 'number' 
-      ? parsedData.weekly.totalMoods 
+    totalMoods: typeof parsedData.weekly.totalMoods === 'number'
+      ? parsedData.weekly.totalMoods
       : 0,
     dataQuality: ['sufficient', 'limited', 'insufficient'].includes(parsedData.weekly.dataQuality)
       ? parsedData.weekly.dataQuality
       : 'insufficient',
-    findings: Array.isArray(parsedData.weekly.findings) 
+    findings: Array.isArray(parsedData.weekly.findings)
       ? parsedData.weekly.findings.filter(f => typeof f === 'string')
       : [],
-    dominantMood: typeof parsedData.weekly.dominantMood === 'string' 
-      ? parsedData.weekly.dominantMood 
+    dominantMood: typeof parsedData.weekly.dominantMood === 'string'
+      ? parsedData.weekly.dominantMood
       : null,
     moodVariety: typeof parsedData.weekly.moodVariety === 'number'
       ? parsedData.weekly.moodVariety
@@ -132,7 +132,7 @@ function validateInsightsStructure(parsedData) {
       ? parsedData.weekly.recommendation
       : null
   };
-  
+
   // Validate and clean monthly data
   const validatedMonthly = {
     period: parsedData.monthly.period || 'last_30_days',
@@ -158,10 +158,10 @@ function validateInsightsStructure(parsedData) {
       ? parsedData.monthly.recommendation
       : null
   };
-  
+
   // Check if the structure is mostly valid
   const isValid = validatedWeekly.findings.length > 0 || validatedMonthly.findings.length > 0;
-  
+
   return {
     valid: isValid,
     data: {
@@ -172,10 +172,62 @@ function validateInsightsStructure(parsedData) {
   };
 }
 
+async function getRecentInsights(userId, pool) {
+  const query = `
+    SELECT insights_data, created_at, created_at_local
+    FROM ai_insights_reports
+    WHERE user_id = $1 
+      AND created_at_local > NOW() - INTERVAL '24 hours'
+    ORDER BY created_at_local DESC
+    LIMIT 1
+  `;
+
+  const result = await pool.query(query, [userId]);
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+// Function to get the most recent insights (any time)
+async function getMostRecentInsights(userId, pool) {
+  const query = `
+    SELECT insights_data, created_at, created_at_local
+    FROM ai_insights_reports
+    WHERE user_id = $1
+    ORDER BY created_at_local DESC
+    LIMIT 1
+  `;
+
+  const result = await pool.query(query, [userId]);
+  return result.rows.length > 0 ? result.rows[0] : null;
+}
+
+// Function to save insights to cache
+async function saveInsightsToCache(userId, insightsData, pool) {
+  const query = `
+    INSERT INTO ai_insights_reports (user_id, insights_data, created_at, created_at_local)
+    VALUES ($1, $2, $3, NOW())
+    RETURNING id, created_at, created_at_local
+  `;
+
+  const epochTime = Date.now(); // Current time in milliseconds
+  const result = await pool.query(query, [userId, JSON.stringify(insightsData), epochTime]);
+  return result.rows[0];
+}
 // POST /api/ai-insights - Generate AI insights for user's mood data
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+
+    const recentInsights = await getRecentInsights(userId, pool);
+
+    if (recentInsights) {
+      // Return cached insights
+      return res.json({
+        message: 'AI insights retrieved from cache',
+        data: recentInsights.insights_data,
+        fromCache: true,
+        generatedAt: recentInsights.generated_at
+      });
+    }
 
     // Fetch user's mood data for last 30 days
     const moodQuery = `
@@ -199,7 +251,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     // Prepare mood data for AI
     const moodData = moodResult.rows;
-    
+
     // Create your prompt here (you can customize this)
     const prompt = `
     You are analyzing mood tracking data from Moodly, an app where users log their emotional states (Excited, Happy, Calm, Tired, Anxious, Angry, Sad).
@@ -308,21 +360,21 @@ router.post('/', authenticateToken, async (req, res) => {
     // Try to parse AI response as JSON, fallback to plain text
     let parsedInsights;
     let validationResult;
-    
+
     try {
       // Step 1: Clean the AI response
       const cleanedResponse = cleanAIResponse(aiResponse);
-      
+
       if (cleanedResponse) {
         // Step 2: Validate and ensure correct structure
         validationResult = validateInsightsStructure(cleanedResponse);
-        
+
         if (validationResult.valid) {
           parsedInsights = validationResult.data;
         } else {
           // Log validation failure for monitoring
           console.warn('AI response validation failed:', validationResult.error);
-          
+
           // Use the structured data even if not fully valid
           parsedInsights = validationResult.data;
         }
@@ -332,7 +384,7 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     } catch (parseError) {
       console.error('AI response parsing failed:', parseError);
-      
+
       // Last resort fallback - try to extract some value from raw text
       parsedInsights = {
         weekly: {
@@ -362,17 +414,43 @@ router.post('/', authenticateToken, async (req, res) => {
       };
     }
 
+    // Prepare complete response data
+    const responseData = {
+      insights: parsedInsights,
+      moodDataCount: moodData.length,
+      analysisDate: new Date().toISOString()
+    };
+
+    // Save to cache
+    try {
+      await saveInsightsToCache(userId, responseData, pool);
+    } catch (cacheError) {
+      // Log but don't fail the request if caching fails
+      console.error('Failed to cache insights:', cacheError);
+    }
+    // Return success response
     // Return success response
     res.json({
       message: 'AI insights generated successfully',
-      data: {
-        insights: parsedInsights,
-        moodDataCount: moodData.length,
-        analysisDate: new Date().toISOString()
-      }
+      data: responseData,
+      fromCache: false
     });
 
   } catch (error) {
+    // Check if any previous report exists
+    let hasPreviousReport = false;
+    let previousReportDate = null;
+
+    try {
+      const previousReport = await getMostRecentInsights(req.user.id, pool);
+      if (previousReport) {
+        hasPreviousReport = true;
+        previousReportDate = previousReport.created_at_local;
+      }
+    } catch (fetchError) {
+      console.error('Failed to check previous report:', fetchError);
+    }
+
     // Handle different types of errors
     if (error.message && error.message.includes('API_KEY')) {
       const errorResponse = ErrorLogger.logAndCreateResponse(
@@ -381,22 +459,64 @@ router.post('/', authenticateToken, async (req, res) => {
         'POST /api/ai-insights',
         'authenticate with AI service',
         error,
-        req.user?.userId || null
+        req.user?.id || null
       );
+
+      // Add just the flag and date
+      errorResponse.hasPreviousReport = hasPreviousReport;
+      errorResponse.previousReportDate = previousReportDate;
+
       return res.status(401).json(errorResponse);
     }
 
-    // General server error
+    // General server error (similar pattern)
     const errorResponse = ErrorLogger.logAndCreateResponse(
       ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
       ERROR_CATALOG.SYS_INTERNAL_ERROR.message,
       'POST /api/ai-insights',
       'generate AI insights',
       error,
-      req.user?.userId || null
+      req.user?.id || null
     );
+
+    errorResponse.hasPreviousReport = hasPreviousReport;
+    errorResponse.previousReportDate = previousReportDate;
+
     res.status(500).json(errorResponse);
   }
 });
 
+// GET /api/ai-insights/previous - Get most recent previous report
+router.get('/previous', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const previousReport = await getMostRecentInsights(userId, pool);
+
+    if (!previousReport) {
+      const errorResponse = ErrorLogger.createErrorResponse(
+        ERROR_CATALOG.MOOD_RETRIEVAL_ERROR,
+        'No previous insights found'
+      );
+      return res.status(404).json(errorResponse);
+    }
+
+    res.json({
+      message: 'Previous insights retrieved successfully',
+      data: previousReport.insights_data,
+      generatedAt: previousReport.created_at_local,
+      fromCache: true  // Always true for previous reports
+    });
+
+  } catch (error) {
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
+      'Failed to retrieve previous insights',
+      'GET /api/ai-insights/previous',
+      'fetch previous insights',
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
+  }
+});
 module.exports = router;
