@@ -4,6 +4,11 @@ Project Essentials/progess.txt
 node_modules/
 */node_modules/
 
+
+# Ignore all .env files anywhere in the repo
+*.env
+**/.env
+
 # Environment variables
 .env
 .env.local
