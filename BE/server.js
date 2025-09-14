@@ -21,6 +21,7 @@ const { enhancedJsonParser } = require('./middleware/jsonParser');
 const { ERROR_CATALOG } = require('./config/errorCodes');
 const ErrorLogger = require('./services/errorLogger');
 const { createTimeoutMiddleware, timeoutDurations } = require('./middleware/timeout');
+const aiInsightsRoutes = require('./routes/aiInsights');
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,7 +36,7 @@ app.use(cors({
 app.use(cookieParser());
 app.use(enhancedJsonParser());
 app.use(express.urlencoded({ extended: true, limit: '150kb' }));
-app.use(createTimeoutMiddleware(timeoutDurations.fast));
+//app.use(createTimeoutMiddleware(timeoutDurations.fast));
 // Test route
 app.get('/', (req, res) => {
   res.json({
@@ -105,6 +106,7 @@ app.use('/api/user-stats', userStatsRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/user-settings', userSettingsRoutes);
 app.use('/api/mood-selected-stats', moodSelectedStatsRoutes);
+app.use('/api/ai-insights', aiInsightsRoutes);
 
 // Protected route example (requires authentication)
 app.get('/api/auth/me', authenticateToken, async (req, res) => {
