@@ -6,6 +6,10 @@ import type { DominantMoodResponse, HappinessDataPoint, MoodFrequencyData, Throu
 import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
 import { useUser } from '../contexts/UserContext';
+// Import at top
+import { aiInsightsApiService } from '../services/AIInsightsService';
+import { hasValidCurrentInsights } from '../services/AIInsightsService';
+
 // Define mood types and scoring system
 type MoodType = 'Happy' | 'Sad' | 'Anxious' | 'Calm' | 'Excited' | 'Tired' | 'Angry';
 
@@ -29,10 +33,10 @@ interface UserDashboardProps {
   onNavigate?: (page: string) => void;
 }
 
-const UserDashboard = ({ 
-  currentMood, 
-  hasRecentMood, 
-  onNavigate 
+const UserDashboard = ({
+  currentMood,
+  hasRecentMood,
+  onNavigate
 }: UserDashboardProps): React.ReactElement => {
   // Vanta refs
   const vantaRef = useRef<HTMLDivElement>(null);
@@ -48,14 +52,54 @@ const UserDashboard = ({
   const [moodHistoryData, setMoodHistoryData] = useState<MoodHistoryResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Add state
+  const [insightsData, setInsightsData] = useState<any>(null);
+  const [isReportGenerating, setIsReportGenerating] = useState(false);
+  // Update state to track report type
+  const [reportType, setReportType] = useState<'current' | 'previous' | null>(null);
 
+  const handleGenerateInsights = async () => {
+    try {
+      setIsReportGenerating(true);
+      const response = await aiInsightsApiService.generateInsights();
+      setInsightsData(response.data);
+      setReportType('current');
+      console.log('Insights generated:', response.data);
+    } catch (error) {
+      console.error('Failed to generate insights:', error);
+      alert('Failed to generate insights');
+    } finally {
+      setIsReportGenerating(false);
+    }
+  };
+  // Update handleViewPreviousInsights
+  const handleViewPreviousInsights = async () => {
+    try {
+      setIsReportGenerating(true);
+      const response = await aiInsightsApiService.getPreviousInsights();
+      setInsightsData(response.data);  // This will be null if no previous report
+      setReportType('previous');
+      console.log('Previous insights response:', response);
+    } catch (error) {
+      console.error('Failed to load previous insights:', error);
+      alert('Failed to load previous insights');  // Only for actual errors
+    } finally {
+      setIsReportGenerating(false);
+    }
+  };
+
+  // Add handler to clear insights and return to landing
+  const handleBackToLanding = () => {
+    setInsightsData(null);
+    setReportType(null);
+  };
   // Initialize Vanta effect
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
         if (!vantaEffect.current && vantaRef.current) {
           console.log('Initializing Vanta Waves for UserDashboard...');
-          
+
           vantaEffect.current = WAVES({
             el: vantaRef.current,
             THREE: THREE,
@@ -72,9 +116,9 @@ const UserDashboard = ({
             waveSpeed: 1.2,
             zoom: 0.75
           });
-          
+
           console.log('Vanta effect created for UserDashboard');
-          
+
           // Force a resize after creation
           setTimeout(() => {
             if (vantaEffect.current && vantaEffect.current.resize) {
@@ -116,18 +160,18 @@ const UserDashboard = ({
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const stats = await userStatsApiService.getAllUserStats();
-      
+
       // Set data for successful calls, keep existing data for failed calls
       if (stats.dominantMood) {
         setDominantMoodData(stats.dominantMood);
       }
-      
+
       if (stats.happinessIndex && stats.happinessIndex.length > 0) {
         setHappinessData(stats.happinessIndex);
       }
-      
+
       if (stats.frequencyToday) {
         setFrequencyData(stats.frequencyToday);
       }
@@ -140,7 +184,7 @@ const UserDashboard = ({
       }
       // Optional: Show a warning if some APIs failed but don't block the UI
       // You could add a toast notification here if needed
-      
+
     } catch (err) {
       // This should rarely happen now since individual failures are handled
       console.error('Complete failure fetching user stats:', err);
@@ -170,7 +214,7 @@ const UserDashboard = ({
   const CurrentMoodBox: React.FC = () => (
     <div className="dashboard-box dashboard-current-mood">
       <h3 className="dashboard-box-title">Current Mood</h3>
-      <div 
+      <div
         className={`text-center ${!hasRecentMood ? 'cursor-pointer hover:bg-white hover:bg-opacity-10' : ''}`}
         onClick={handleCurrentMoodClick}
       >
@@ -196,7 +240,7 @@ const UserDashboard = ({
   // Dominant Mode Section Component
   const DominantModeSection: React.FC = () => {
     if (!dominantMoodData) return null;
-    
+
     return (
       <div className="dashboard-box dashboard-dominant-mood">
         <h3 className="dashboard-box-title">Dominant Mode</h3>
@@ -214,7 +258,7 @@ const UserDashboard = ({
                 </div>
               );
             }
-            
+
             return (
               <div key={period} className="border border-gray-300 p-3 text-center bg-white bg-opacity-10 rounded">
                 <div className="text-xs font-medium uppercase mb-1 text-gray-300">
@@ -245,14 +289,14 @@ const UserDashboard = ({
       <div className="dashboard-box dashboard-happiness-chart">
         <h3 className="dashboard-box-title">Personal Happiness Index</h3>
         <div className="text-xs text-gray-300 mb-4">Last 30 Days</div>
-        
+
         <div style={{ width: '100%', height: '300px', position: 'relative' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-                <XAxis 
-                  dataKey="date" 
+                <XAxis
+                  dataKey="date"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 10, fill: '#d1d5db' }}
@@ -262,14 +306,14 @@ const UserDashboard = ({
                     return `${date.getMonth() + 1}/${date.getDate()}`;
                   }}
                 />
-                <YAxis 
+                <YAxis
                   domain={[-1, 1]}
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#d1d5db' }}
                   tickFormatter={(value) => value.toFixed(1)}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     border: '1px solid #374151',
@@ -280,17 +324,17 @@ const UserDashboard = ({
                   formatter={(value: number) => [value.toFixed(2), 'Happiness Score']}
                   labelFormatter={(label) => {
                     const date = new Date(label);
-                    return date.toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'short', 
-                      day: 'numeric' 
+                    return date.toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
                     });
                   }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="#60a5fa" 
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  stroke="#60a5fa"
                   strokeWidth={2}
                   dot={{ fill: '#60a5fa', strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6, fill: '#3b82f6' }}
@@ -305,7 +349,7 @@ const UserDashboard = ({
   interface ThroughDayViewProps {
     // No props needed since data comes from parent state
   }
-  
+
   const ThroughDayView: React.FC<ThroughDayViewProps> = () => {
     if (!throughDayViewData) {
       return (
@@ -315,30 +359,30 @@ const UserDashboard = ({
         </div>
       );
     }
-  
+
     // Define time periods and moods for consistent ordering
     const timePeriods = ['morning', 'afternoon', 'evening', 'night'] as const;
     const moods = ['Excited', 'Happy', 'Calm', 'Tired', 'Anxious', 'Angry', 'Sad'] as const;
-  
+
     // Function to find max value in each time period
     const getMaxMoodForPeriod = (periodData: MoodFrequencyData): string => {
       let maxMood = 'Excited';
       let maxValue = periodData.Excited;
-      
+
       moods.forEach(mood => {
         if (periodData[mood] > maxValue) {
           maxValue = periodData[mood];
           maxMood = mood;
         }
       });
-      
+
       return maxMood;
     };
-  
+
     return (
       <div className="dashboard-box dashboard-ai-insights">
         <h3 className="dashboard-box-title">Through the Day View</h3>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -356,7 +400,7 @@ const UserDashboard = ({
               {timePeriods.map(period => {
                 const periodData = throughDayViewData[period];
                 const maxMood = getMaxMoodForPeriod(periodData);
-                
+
                 return (
                   <tr key={period} className="border-b border-gray-700">
                     <td className="py-3 px-2 text-white font-medium capitalize">
@@ -365,15 +409,14 @@ const UserDashboard = ({
                     {moods.map(mood => {
                       const value = periodData[mood];
                       const isMax = mood === maxMood && value > 0;
-                      
+
                       return (
-                        <td 
-                          key={mood} 
-                          className={`text-center py-3 px-2 text-xs ${
-                            isMax 
-                              ? 'bg-blue-500 bg-opacity-30 text-white font-bold border border-blue-400' 
-                              : 'text-gray-300'
-                          }`}
+                        <td
+                          key={mood}
+                          className={`text-center py-3 px-2 text-xs ${isMax
+                            ? 'bg-blue-500 bg-opacity-30 text-white font-bold border border-blue-400'
+                            : 'text-gray-300'
+                            }`}
                         >
                           {value.toFixed(1)}%
                         </td>
@@ -391,7 +434,7 @@ const UserDashboard = ({
   // Mood Frequency Counter Component
   const MoodFrequencyCounter: React.FC = () => {
     if (!frequencyData) return null;
-    
+
     // Convert data to format suitable for Recharts
     const chartData = Object.entries(frequencyData).map(([mood, count]) => ({
       mood,
@@ -403,32 +446,31 @@ const UserDashboard = ({
       <div className="dashboard-box dashboard-frequency-counter">
         <div className="flex justify-between items-center mb-4">
           <h3 className="dashboard-box-title">Mood Frequency Counter</h3>
-          
+
           {/* Time filter tabs */}
           <div className="flex border border-gray-300 rounded">
             {(['today', 'week', 'month'] as TimePeriod[]).map((period) => (
               <button
                 key={period}
                 onClick={() => setSelectedFrequencyPeriod(period)}
-                className={`px-3 py-1 text-xs font-medium border-r border-gray-300 last:border-r-0 ${
-                  selectedFrequencyPeriod === period
-                    ? 'bg-white text-black'
-                    : 'bg-black bg-opacity-40 text-white hover:bg-white hover:bg-opacity-20'
-                }`}
+                className={`px-3 py-1 text-xs font-medium border-r border-gray-300 last:border-r-0 ${selectedFrequencyPeriod === period
+                  ? 'bg-white text-black'
+                  : 'bg-black bg-opacity-40 text-white hover:bg-white hover:bg-opacity-20'
+                  }`}
               >
                 {period.charAt(0).toUpperCase() + period.slice(1)}
               </button>
             ))}
           </div>
         </div>
-        
+
         {/* Bar chart */}
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 20, right: 10, left: 0, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-                <XAxis 
+                <XAxis
                   dataKey="mood"
                   axisLine={false}
                   tickLine={false}
@@ -438,12 +480,12 @@ const UserDashboard = ({
                   height={60}
                   interval={0}
                 />
-                <YAxis 
+                <YAxis
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#d1d5db' }}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     border: '1px solid #374151',
@@ -457,9 +499,9 @@ const UserDashboard = ({
                   ]}
                   labelFormatter={() => ''}
                 />
-                <Bar 
-                  dataKey="count" 
-                  fill="#60a5fa" 
+                <Bar
+                  dataKey="count"
+                  fill="#60a5fa"
                   radius={[4, 4, 0, 0]}
                   stroke="#3b82f6"
                   strokeWidth={1}
@@ -474,13 +516,13 @@ const UserDashboard = ({
   interface MoodHistoryProps {
     // No props needed since data comes from parent state
   }
-  
+
   const MoodHistory: React.FC<MoodHistoryProps> = () => {
     if (!moodHistoryData || !moodHistoryData.moods || moodHistoryData.moods.length === 0) {
       return (
         <div className="dashboard-box dashboard-mood-history">
           <h3 className="dashboard-box-title">
-            Mood History 
+            Mood History
             <span className="tooltip-container">
               <span className="tooltip-trigger">(?)</span>
               <span className="tooltip-content">Your recent mood entries ordered from latest to oldest</span>
@@ -490,7 +532,7 @@ const UserDashboard = ({
         </div>
       );
     }
-  
+
     // Format timestamp from UNIX to readable format
     const formatTimestamp = (unixTimestamp: number): string => {
       const date = new Date(unixTimestamp);
@@ -500,19 +542,19 @@ const UserDashboard = ({
       const minutes = date.getMinutes().toString().padStart(2, '0');
       return `${day} ${month} ${hours}:${minutes}`;
     };
-  
+
     // Get mood with emoji
     const getMoodWithEmoji = (mood: string): string => {
       return `${mood} ${MOOD_EMOJIS[mood as keyof typeof MOOD_EMOJIS] || ''}`;
     };
-  
+
     return (
       <div className="dashboard-box dashboard-mood-history">
         <h3 className="dashboard-box-title">
-          Mood History 
-          
+          Mood History
+
         </h3>
-        
+
         <div className="overflow-y-auto max-h-80">
           <table className="w-full text-sm">
             <thead>
@@ -539,20 +581,257 @@ const UserDashboard = ({
             </tbody>
           </table>
         </div>
-        
+
         <p className="text-gray-400 text-xs mt-2 text-center">
           Showing {moodHistoryData.count} recent mood{moodHistoryData.count !== 1 ? 's' : ''}
         </p>
       </div>
     );
   };
-  
+
+  // AI Insights Landing Component
+  // AI Insights Landing Component
+  const AIInsightsLanding: React.FC = () => {
+    const getButtonText = () => {
+      if (isReportGenerating) return 'Generating...';
+      if (hasValidCurrentInsights()) return 'View Current Insights';
+      return 'Generate Insights';
+    };
+    const getButtonTitleText = () => {
+      if (isReportGenerating) return 'Your Insights are being generated...';
+      if (hasValidCurrentInsights()) return 'Click the button below to view your current insights';
+      return 'click the button below to generate insights';
+    };
+
+    return (
+      <div className="dashboard-box dashboard-ai-insights-landing">
+        <h3 className="dashboard-box-title text-center mb-6">
+          🤖 AI-Powered Insights
+        </h3>
+
+        {/* 2x2 Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          {/* How it works section */}
+          <div className="border border-gray-300 p-4 bg-white bg-opacity-10 rounded">
+            <h4 className="text-white font-medium mb-2 flex items-center">
+              <span className="text-blue-400 mr-2">⚡</span>
+              How It Works
+            </h4>
+            <p className="text-gray-300 text-sm leading-relaxed">
+              Our advanced AI model analyzes your mood patterns over time to identify trends,
+              correlations, and behavioral insights. The system generates personalized recommendations
+              to help you better understand and improve your emotional well-being.
+            </p>
+          </div>
+
+          {/* Data Privacy section */}
+          <div className="border border-gray-300 p-4 bg-white bg-opacity-10 rounded">
+            <h4 className="text-white font-medium mb-2 flex items-center">
+              <span className="text-green-400 mr-2">🔒</span>
+              Data Privacy
+            </h4>
+            <p className="text-gray-300 text-sm leading-relaxed">
+              Your privacy is our priority. We only share anonymized mood data with timestamps
+              for analysis. No personal information, user identifiers, or sensitive data is ever
+              transmitted to third-party services.
+            </p>
+          </div>
+
+          {/* Data Requirements section */}
+          <div className="border border-gray-300 p-4 bg-white bg-opacity-10 rounded">
+            <h4 className="text-white font-medium mb-2 flex items-center">
+              <span className="text-yellow-400 mr-2">📈</span>
+              Data Requirements
+            </h4>
+            <div className="text-gray-300 text-sm space-y-2">
+              <p className="leading-relaxed mb-2">
+                Insight quality depends on available mood data:
+              </p>
+              <div className="space-y-1">
+                <div className="flex items-start">
+                  <span className="text-gray-400 mr-2">•</span>
+                  <span><strong className="text-white">Weekly Insights:</strong> Minimum 5 mood entries per week</span>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-gray-400 mr-2">•</span>
+                  <span><strong className="text-white">Monthly Insights:</strong> Minimum 20 mood entries per month</span>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-gray-400 mr-2">•</span>
+                  <span>More frequent logging provides deeper, more accurate insights</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* How to Generate section */}
+          <div className="border border-gray-300 p-4 bg-white bg-opacity-10 rounded">
+            <h4 className="text-white font-medium mb-2 flex items-center">
+              <span className="text-purple-400 mr-2">📊</span>
+              How to Generate
+            </h4>
+            <ul className="text-gray-300 text-sm space-y-1">
+              <li className="flex items-start">
+                <span className="text-gray-400 mr-2">•</span>
+                <span>Click "Generate Insights" to start analysis</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-gray-400 mr-2">•</span>
+                <span>Processing takes up to 60 seconds</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-gray-400 mr-2">•</span>
+                <span>Generation continues in background</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-gray-400 mr-2">•</span>
+                <span>One report per 48-hour period</span>
+              </li>
+
+            </ul>
+          </div>
+        </div>
+        {/* Info note */}
+        <div className="text-center mt-4 py-2">
+          <p className="text-gray-400 text-xs">
+            {getButtonTitleText()}
+          </p>
+        </div>
+        {/* Generate Button */}
+        <div className="flex justify-center">
+          <button
+            onClick={handleGenerateInsights}
+            disabled={isReportGenerating}
+            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg 
+             transition-all duration-200 hover:scale-105 flex items-center space-x-2
+             border border-blue-400 shadow-lg shadow-blue-500/20
+             disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="text-lg">✨</span>
+            <span>{getButtonText()}</span>
+            <span className="text-lg">✨</span>
+          </button>
+        </div>
+        {/* Previous Reports Section */}
+        <div className="text-center mt-8 py-2">
+          <p className="text-gray-400 text-xs">
+            Click the button below to view your previous insight report
+          </p>
+        </div>
+
+        {/* Previous Reports Button */}
+        <div className="flex justify-center">
+          <button
+            onClick={handleViewPreviousInsights}
+            disabled={isReportGenerating}
+            className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg 
+     transition-all duration-200 hover:scale-105 flex items-center space-x-2
+     border border-blue-400 shadow-lg shadow-blue-500/20
+     disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="text-lg">📄</span>
+            <span>{isReportGenerating ? 'Loading...' : 'Previous Insights Report'}</span>
+            <span className="text-lg">📄</span>
+          </button>
+        </div>
+
+      </div>
+    );
+  };
+  const AIInsightsDisplay: React.FC = () => {
+    
+     // Check if data is null (no previous report case)
+  if (reportType === 'previous' && insightsData === null) {
+    return (
+      <div className="dashboard-box dashboard-ai-insights-results">
+        <h3 className="dashboard-box-title text-center mb-4">
+          Previous AI Insights Report
+        </h3>
+        
+        <div className="text-center py-8">
+          <div className="text-4xl mb-4">📊</div>
+          <h4 className="text-white font-medium mb-2">No Previous Report Found</h4>
+          <p className="text-gray-400 text-sm mb-4">
+            You haven't generated any previous insights reports yet.
+          </p>
+          <p className="text-gray-400 text-xs">
+            Generate your first insights report to start tracking your mood patterns over time.
+          </p>
+        </div>
+
+        {/* Back to Landing Button */}
+        <div className="flex justify-center mt-6 pt-4 border-t border-gray-700">
+          <button
+            onClick={handleBackToLanding}
+            className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg 
+             transition-all duration-200 hover:scale-105 flex items-center space-x-2
+             border border-gray-500"
+          >
+            <span>←</span>
+            <span>Back to AI Insights</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (!insightsData) return null;
+    return (
+      <div className="dashboard-box dashboard-ai-insights-results">
+        <h3 className="dashboard-box-title text-center mb-4">
+          {reportType === 'previous' ? 'Your Previous AI Insights Report' : 'Your Current AI Insights Report'}
+        </h3>
+
+        {/* Weekly Insights */}
+        <div className="mb-6">
+          <h4 className="text-white font-medium mb-3">📅 Weekly Analysis</h4>
+          <div className="space-y-2">
+            {insightsData.insights.weekly.findings.map((finding: string, index: number) => (
+              <p key={index} className="text-gray-300 text-sm">• {finding}</p>
+            ))}
+            {insightsData.insights.weekly.recommendation && (
+              <p className="text-blue-400 text-sm mt-2">
+                💡 {insightsData.insights.weekly.recommendation}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Monthly Insights */}
+        <div className="mb-6">
+          <h4 className="text-white font-medium mb-3">📊 Monthly Analysis</h4>
+          <div className="space-y-2">
+            {insightsData.insights.monthly.findings.map((finding: string, index: number) => (
+              <p key={index} className="text-gray-300 text-sm">• {finding}</p>
+            ))}
+            {insightsData.insights.monthly.recommendation && (
+              <p className="text-blue-400 text-sm mt-2">
+                💡 {insightsData.insights.monthly.recommendation}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Back to Landing Button */}
+        <div className="flex justify-center mt-6 pt-4 border-t border-gray-700">
+          <button
+            onClick={handleBackToLanding}
+            className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg 
+             transition-all duration-200 hover:scale-105 flex items-center space-x-2
+             border border-gray-500"
+          >
+            <span>←</span>
+            <span>Back to AI Insights</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
   return (
     <div ref={vantaRef} className="vanta-waves-container min-h-screen">
       <div className="dashboard-container">
         {/* Header */}
         <div className="dashboard-header">
-        <h1 className="dashboard-title">Hi {user?.username || 'User'}!</h1>
+          <h1 className="dashboard-title">Hi {user?.username || 'User'}!</h1>
           <p className="dashboard-subtitle">Here are your Personalized Mood Stats</p>
         </div>
 
@@ -567,7 +846,7 @@ const UserDashboard = ({
         {error && !isLoading && (
           <div className="dashboard-error">
             <div className="dashboard-error-text">{error}</div>
-            <button 
+            <button
               onClick={fetchUserStats}
               className="dashboard-retry-button"
             >
@@ -587,6 +866,7 @@ const UserDashboard = ({
               <MoodFrequencyCounter />
               <ThroughDayView />
               <MoodHistory />
+              {(insightsData || reportType) ? <AIInsightsDisplay /> : <AIInsightsLanding />}
             </div>
 
           </>

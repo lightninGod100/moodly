@@ -91,7 +91,7 @@ const arl_lowUsage = rateLimit({
 
 const arl_user_stats = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 24, // 8*No of API call on dashboard page
+  max: 240, // 8*No of API call on dashboard page
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('user_stats', 'GET /api/user-stats/*', 'user'),
   standardHeaders: false,

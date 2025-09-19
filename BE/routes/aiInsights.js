@@ -172,12 +172,13 @@ function validateInsightsStructure(parsedData) {
   };
 }
 
+//check and return insights for last 48 hours (Current insights)
 async function getRecentInsights(userId, pool) {
   const query = `
-    SELECT insights_data, created_at, created_at_local
+    SELECT insights_data, created_at
     FROM ai_insights_reports
     WHERE user_id = $1 
-      AND created_at_local > NOW() - INTERVAL '24 hours'
+      AND created_at_local > NOW() - INTERVAL '48 hours'
     ORDER BY created_at_local DESC
     LIMIT 1
   `;
@@ -186,12 +187,13 @@ async function getRecentInsights(userId, pool) {
   return result.rows.length > 0 ? result.rows[0] : null;
 }
 
-// Function to get the most recent insights (any time)
-async function getMostRecentInsights(userId, pool) {
+// Function to get the previous insights report(not in current 48 hour window)
+async function getPreviousInsights(userId, pool) {
   const query = `
-    SELECT insights_data, created_at, created_at_local
+    SELECT insights_data, created_at
     FROM ai_insights_reports
     WHERE user_id = $1
+      AND created_at_local < (CURRENT_TIMESTAMP - INTERVAL '48 hours')
     ORDER BY created_at_local DESC
     LIMIT 1
   `;
@@ -224,8 +226,7 @@ router.post('/', authenticateToken, async (req, res) => {
       return res.json({
         message: 'AI insights retrieved from cache',
         data: recentInsights.insights_data,
-        fromCache: true,
-        generatedAt: recentInsights.generated_at
+        generatedAt: recentInsights.created_at
       });
     }
 
@@ -421,9 +422,10 @@ router.post('/', authenticateToken, async (req, res) => {
       analysisDate: new Date().toISOString()
     };
 
+    let savedRecord;
     // Save to cache
     try {
-      await saveInsightsToCache(userId, responseData, pool);
+      savedRecord = await saveInsightsToCache(userId, responseData, pool);
     } catch (cacheError) {
       // Log but don't fail the request if caching fails
       console.error('Failed to cache insights:', cacheError);
@@ -433,23 +435,10 @@ router.post('/', authenticateToken, async (req, res) => {
     res.json({
       message: 'AI insights generated successfully',
       data: responseData,
-      fromCache: false
+      generatedAt: savedRecord.created_at,
     });
 
   } catch (error) {
-    // Check if any previous report exists
-    let hasPreviousReport = false;
-    let previousReportDate = null;
-
-    try {
-      const previousReport = await getMostRecentInsights(req.user.id, pool);
-      if (previousReport) {
-        hasPreviousReport = true;
-        previousReportDate = previousReport.created_at_local;
-      }
-    } catch (fetchError) {
-      console.error('Failed to check previous report:', fetchError);
-    }
 
     // Handle different types of errors
     if (error.message && error.message.includes('API_KEY')) {
@@ -461,10 +450,6 @@ router.post('/', authenticateToken, async (req, res) => {
         error,
         req.user?.id || null
       );
-
-      // Add just the flag and date
-      errorResponse.hasPreviousReport = hasPreviousReport;
-      errorResponse.previousReportDate = previousReportDate;
 
       return res.status(401).json(errorResponse);
     }
@@ -479,9 +464,6 @@ router.post('/', authenticateToken, async (req, res) => {
       req.user?.id || null
     );
 
-    errorResponse.hasPreviousReport = hasPreviousReport;
-    errorResponse.previousReportDate = previousReportDate;
-
     res.status(500).json(errorResponse);
   }
 });
@@ -490,21 +472,21 @@ router.post('/', authenticateToken, async (req, res) => {
 router.get('/previous', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const previousReport = await getMostRecentInsights(userId, pool);
+    const previousReport = await getPreviousInsights(userId, pool);
 
     if (!previousReport) {
-      const errorResponse = ErrorLogger.createErrorResponse(
-        ERROR_CATALOG.MOOD_RETRIEVAL_ERROR,
-        'No previous insights found'
-      );
-      return res.status(404).json(errorResponse);
+      // Return success with null data instead of 404 error
+      return res.json({
+        message: 'No previous insights found',
+        data: null,
+        generatedAt: null
+      });
     }
 
     res.json({
       message: 'Previous insights retrieved successfully',
       data: previousReport.insights_data,
-      generatedAt: previousReport.created_at_local,
-      fromCache: true  // Always true for previous reports
+      generatedAt: previousReport.created_at,
     });
 
   } catch (error) {
@@ -519,4 +501,50 @@ router.get('/previous', authenticateToken, async (req, res) => {
     res.status(500).json(errorResponse);
   }
 });
+
+// GET /api/ai-insights/check-recent - Check if user has recent insights report (last 24 hours)
+// GET /api/ai-insights/check-recent - Check report status for user
+router.get('/check-recent', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const recentInsights = await getRecentInsights(userId, pool);
+    
+    if (recentInsights) {
+      return res.json({
+        message: 'Report status check completed',
+        report_status: 'generated'
+      });
+    }
+
+    // Check if user has sufficient mood data
+    const moodQuery = `
+      SELECT COUNT(*) as mood_count
+      FROM moods 
+      WHERE user_id = $1 
+        AND created_at_local >= NOW() - INTERVAL '30 days'
+    `;
+    
+    const moodResult = await pool.query(moodQuery, [userId]);
+    const moodCount = parseInt(moodResult.rows[0].mood_count);
+    
+    const reportStatus = moodCount === 20 ? 'insufficient_data' : 'to_generate';
+    
+    res.json({
+      message: 'Report status check completed',
+      report_status: reportStatus
+    });
+
+  } catch (error) {
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_INTERNAL_ERROR.code,
+      'Failed to check report status',
+      'GET /api/ai-insights/check-recent',
+      'check report status',
+      error,
+      req.user?.id || null
+    );
+    res.status(500).json(errorResponse);
+  }
+});
+
 module.exports = router;
