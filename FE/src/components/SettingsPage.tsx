@@ -12,8 +12,22 @@ const SettingsPage: React.FC = () => {
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
 
-  // User data state - now using API data
-  const { user, dispatch } = useUser();
+   // User data state - now using API data
+   const { user, dispatch } = useUser();
+  // Create default userData when user is null
+  const userData = user || {
+    username: 'user_1',
+    email: '',
+    country: '',
+    gender: '',
+    profilePhoto: '/images/pp.jpg',
+    lastCountryChangeAt: 0,
+    canChangeCountry: false,
+    nextCountryChangeDate: null,
+    markForDeletion: false,
+    deletionTimestamp: null
+  };
+ 
 
   // Form states
   const [passwords, setPasswords] = useState({
@@ -98,16 +112,16 @@ const SettingsPage: React.FC = () => {
     };
   }, []);
 
-// Show toast when user data is not available
-useEffect(() => {
-  if (!user) {
-    setShowSettingsToast(true);
-    const timer = setTimeout(() => {
-      setShowSettingsToast(false);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }
-}, [user]);
+  // Show toast when user data is not available
+  useEffect(() => {
+    if (!user) {
+      setShowSettingsToast(true);
+      const timer = setTimeout(() => {
+        setShowSettingsToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   // Countries list
   const countries = [
@@ -139,31 +153,19 @@ useEffect(() => {
     'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
   ];
 
- 
-// Create default userData when user is null
-const userData = user || {
-  username: 'user_1',
-  email: '',
-  country: '',
-  gender: '',
-  profilePhoto: '/images/pp.jpg',
-  lastCountryChangeAt: 0,
-  canChangeCountry: false,
-  nextCountryChangeDate: null,
-  markForDeletion: false,
-  deletionTimestamp: null
-};
 
-// Helper functions
+
+
+  // Helper functions
   // Helper functions
   const clearMessages = () => {
     setErrors({});
     setSuccessMessages({});
   };
-// Handle toast close
-const handleCloseToast = () => {
-  setShowSettingsToast(false);
-};
+  // Handle toast close
+  const handleCloseToast = () => {
+    setShowSettingsToast(false);
+  };
   // Handle password change with real API
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1232,49 +1234,49 @@ const handleCloseToast = () => {
       </div>
       {/* Settings Load Error Toast */}
       {!user && (
-  <div
-    style={{
-      position: 'fixed',
-      bottom: '24px',
-      left: '24px',
-      zIndex: 9999,
-      maxWidth: '384px',
-      minWidth: '300px',
-      transform: showSettingsToast ? 'translateX(0)' : 'translateX(-120%)',
-      opacity: showSettingsToast ? 1 : 0, 
-      transition: 'all 500ms ease-in-out',
-      backgroundColor: '#ef4444',
-      color: 'white',
-      padding: '16px 24px',
-      borderRadius: '8px',
-      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
-    }}
-  >
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>Error</div>
-        <div style={{ fontSize: '14px' }}>Unable to load User Settings</div>
-      </div>
-      <button
-        onClick={handleCloseToast}
-        style={{
-          marginLeft: '16px',
-          color: 'white',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '0',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-      >
-        ×
-      </button>
-    </div>
-  </div>
-)}
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            left: '24px',
+            zIndex: 9999,
+            maxWidth: '384px',
+            minWidth: '300px',
+            transform: showSettingsToast ? 'translateX(0)' : 'translateX(-120%)',
+            opacity: showSettingsToast ? 1 : 0,
+            transition: 'all 500ms ease-in-out',
+            backgroundColor: '#ef4444',
+            color: 'white',
+            padding: '16px 24px',
+            borderRadius: '8px',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>Error</div>
+              <div style={{ fontSize: '14px' }}>Unable to load User Settings</div>
+            </div>
+            <button
+              onClick={handleCloseToast}
+              style={{
+                marginLeft: '16px',
+                color: 'white',
+                fontSize: '20px',
+                fontWeight: 'bold',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '0',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -219,7 +219,7 @@ const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, c
         <div className="flex gap-6 items-center">
           <button
             className={`navbar-button ${currentPage === 'home' ? 'font-semibold' : ''}`}
-            onClick={() => onNavigate('home')}
+            onClick={() => onNavigate('mood')}
           >
             Home
           </button>

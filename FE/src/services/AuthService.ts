@@ -75,6 +75,9 @@ const userDataManager = {
   setUserData(user: AuthUser): void {
     localStorage.setItem('userData', JSON.stringify(user));
   },
+  redirectToMood(): void {
+    window.location.href = '/mood'; 
+  },
 
   /**
    * Get stored user data
@@ -348,6 +351,7 @@ export const authApiService = {
 
       // Store tokens and user data
       userDataManager.setUserData(data.user);
+      window.location.href = '/mood'; 
 
       return data;
     } catch (error) {

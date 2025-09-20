@@ -21,7 +21,9 @@ CREATE TABLE moods (
   user_id INTEGER REFERENCES users(id),
   mood VARCHAR(50) NOT NULL,
   created_at BIGINT NOT NULL,
-  created_at_utc TIMESTAMPTZ DEFAULT NOW()
+  created_at_local TIMESTAMPTZ DEFAULT NOW(),
+  day_view VARCHAR(20) NOT NULL,
+  timezone VARCHAR(50) NOT NULL
 );
 
 --email-logs

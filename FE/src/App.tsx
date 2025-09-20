@@ -1,5 +1,7 @@
 // src/App.tsx
 import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { ROUTES } from './constants/routes';
 
 import MoodSelector from './components/MoodSelector';
 import AuthenticatedNavbar from './components/AuthenticatedNavbar';
@@ -17,11 +19,13 @@ import { moodApiService } from './services/MoodService';
 // Define a type for mood entries with timestamps
 import PrivacyAndTermsPage from './components/PrivacyAndTermsPage';
 import SettingsPage from './components/SettingsPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 import { UserProvider, useUser } from './contexts/UserContext';
 import { settingsApiService } from './services/SettingsService';
 // Add this import
 import { authApiService } from './services/AuthService';
+
 
 
 interface MoodCacheData {
@@ -53,9 +57,9 @@ const getMoodEmoji = (mood: string): string => {
 
 function App() {
   return (
-    <UserProvider>
-      <AppContent />
-    </UserProvider>
+    <UserProvider><AppContent /></UserProvider>
+
+
   );
 }
 
@@ -64,25 +68,35 @@ function AppContent() {
   // ADDED: API status tracking for error handling and loading states
   const [apiStatus, setApiStatus] = useState<'loading' | 'healthy' | 'error'>('loading');
   // Authentication state
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  // Current page state
-  const [currentPage, setCurrentPage] = useState('home');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [currentMoodData, setCurrentMoodData] = useState<MoodCacheData | null>(null);
   const [moodError, setMoodError] = useState<string | null>(null);
   const [notificationError, setNotificationError] = useState<'userSettings' | 'lastMood' | null>(null);
 
+
+  // ADD routing hooks
+  const navigate = useNavigate();
+  const location = useLocation();
   // Load mood history from localStorage on initial render
   useEffect(() => {
     const initializeApp = async () => {
       setApiStatus('loading');
-      
+
+      // Check if user has a stored auth token first
+      // const storedAuth = localStorage.getItem('userAuth');
+      // if (!storedAuth) {
+      //   // No token = not authenticated, skip verification
+      //   setIsAuthenticated(false);
+      //   setApiStatus('healthy');
+      //   return;
+      // }
       // Verify authentication with backend
       const username = await authApiService.verifyAuth();
-      
+
       if (username) {
         setIsAuthenticated(true);
-        setCurrentPage('home');
+        //setCurrentPage('home');
         setApiStatus('healthy');
 
         // Try to fetch user settings but don't block the app if it fails
@@ -150,7 +164,7 @@ function AppContent() {
           });
       } else {
         setIsAuthenticated(false);
-        setCurrentPage('landing');
+        //setCurrentPage('landing');
         setApiStatus('healthy');
       }
     };
@@ -165,23 +179,51 @@ function AppContent() {
       // Call AuthService logout (which will handle backend logging + local cleanup)
       authApiService.logout().then(() => {
         setIsAuthenticated(false);
-        setCurrentPage('landing');
+        localStorage.removeItem('userAuth');
         localStorage.removeItem('lastMoodData');
         localStorage.removeItem('userSettings');
+        localStorage.removeItem('pendingLogout');
+        navigate(ROUTES.LANDING);
+        return;
+
       }).catch(() => {
         // Even if logout API fails, clear local state
         setIsAuthenticated(false);
-        setCurrentPage('landing');
+        //setCurrentPage('landing');
         localStorage.removeItem('lastMoodData');
         localStorage.removeItem('userSettings');
       });
       return;
     }
 
-    // Normal navigation
-    setCurrentPage(page);
+    // Map page names to routes
+    const routeMap: Record<string, string> = {
+      'landing': ROUTES.LANDING,
+      'login': ROUTES.LOGIN,
+      'signup': ROUTES.SIGNUP,
+      'mood': ROUTES.MOOD,
+      'dashboard': ROUTES.DASHBOARD,
+      'globe': ROUTES.GLOBE,
+      'settings': ROUTES.SETTINGS,
+      'privacy-and-terms': ROUTES.PRIVACY
+    };
+    if (routeMap[page]) {
+      navigate(routeMap[page]);
+    }
   };
 
+  // Helper to get current page for navbars
+  const getCurrentPage = (): string => {
+    const path = location.pathname;
+    if (path === ROUTES.MOOD) return 'mood';
+    if (path === ROUTES.DASHBOARD) return 'dashboard';
+    if (path === ROUTES.GLOBE) return 'globe';
+    if (path === ROUTES.SETTINGS) return 'settings';
+    if (path === ROUTES.LOGIN) return 'login';
+    if (path === ROUTES.SIGNUP) return 'signup';
+    if (path === ROUTES.PRIVACY) return 'privacy-and-terms';
+    return 'landing';
+  };
   // Handle mood selection
   const handleSelectMood = async (mood: string) => {
     localStorage.removeItem('mood_selected_stats_all');
@@ -215,111 +257,191 @@ function AppContent() {
   };
 
   // content display for testing
-  const renderContent = () => {
-    // ADDED: Handle API error state for authenticated users - show error screen if mood API failed
-    if (isAuthenticated && apiStatus === 'error') {
-      return <ErrorScreen />;
-    }
+  // const renderContent = () => {
+  //   // ADDED: Handle API error state for authenticated users - show error screen if mood API failed
+  //   if (isAuthenticated && apiStatus === 'error') {
+  //     return <ErrorScreen />;
+  //   }
 
-    // ADDED: Handle loading state for authenticated users - show loading while fetching initial mood data
-    if (isAuthenticated && apiStatus === 'loading') {
-      return (
-        <div className="text-center py-12">
-          <div className="text-2xl">Loading your mood data...</div>
-        </div>
-      );
-    }
+  //   // ADDED: Handle loading state for authenticated users - show loading while fetching initial mood data
+  //   if (isAuthenticated && apiStatus === 'loading') {
+  //     return (
+  //       <div className="text-center py-12">
+  //         <div className="text-2xl">Loading your mood data...</div>
+  //       </div>
+  //     );
+  //   }
 
-    if (currentPage === 'globe') {
-      return <GlobePage />;
-    }
-    if (currentPage === 'privacy-and-terms') {
-      return <PrivacyAndTermsPage onNavigate={handleNavigate} />;
-    }
-    if (!isAuthenticated) {
-      // NEW: Show LandingPage component for landing page
-      if (currentPage === 'landing') {
-        return <LandingPage onNavigate={handleNavigate} />;
-      }
+  //   if (getCurrentPage() === 'globe') {
+  //     return <GlobePage />;
+  //   }
+  //   if (getCurrentPage() === 'privacy-and-terms') {
+  //     return <PrivacyAndTermsPage onNavigate={handleNavigate} />;
+  //   }
+  //   if (!isAuthenticated) {
+  //     // NEW: Show LandingPage component for landing page
+  //     if (getCurrentPage() === 'landing') {
+  //       return <LandingPage onNavigate={handleNavigate} />;
+  //     }
 
-      // NEW: Show specific pages based on currentPage
-      if (currentPage === 'signup') {
-        return <SignUpPage onNavigate={handleNavigate} />;
-      }
+  //     // NEW: Show specific pages based on currentPage
+  //     if (getCurrentPage() === 'signup') {
+  //       return <SignUpPage onNavigate={handleNavigate} />;
+  //     }
 
-      if (currentPage === 'login') {
-        return <LoginPage onNavigate={handleNavigate} />;
-      }
+  //     if (getCurrentPage() === 'login') {
+  //       return <LoginPage onNavigate={handleNavigate} />;
+  //     }
 
 
-      // For other unimplemented pages, show placeholder
-      return (
-        <div className="text-center py-12">
-          <h1 className="text-3xl font-bold mb-6">Page: {currentPage}</h1>
-          <p>This page will be implemented later</p>
-        </div>
-      );
-    } else {
-      // Authenticated users logic with 10-minute rule
-      if (currentPage === 'dashboard') {
-        const currentMood = getCurrentMood();
-        const hasRecentMood = currentMood && currentMoodData ?
-          isWithin10Minutes(currentMoodData.timestamp) : false;
+  //     // For other unimplemented pages, show placeholder
+  //     return (
+  //       <div className="text-center py-12">
+  //         <h1 className="text-3xl font-bold mb-6">Page: {getCurrentPage()}</h1>
+  //         <p>This page will be implemented later</p>
+  //       </div>
+  //     );
+  //   } else {
+  //     // Authenticated users logic with 10-minute rule
+  //     if (getCurrentPage() === 'dashboard') {
+  //       const currentMood = getCurrentMood();
+  //       const hasRecentMood = currentMood && currentMoodData ?
+  //         isWithin10Minutes(currentMoodData.timestamp) : false;
 
-        return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} onNavigate={handleNavigate} />;
-      }
-      if (currentPage === 'settings') {
-        return <SettingsPage />;
-      }
-      const currentMood = getCurrentMood();
+  //       return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} onNavigate={handleNavigate} />;
+  //     }
+  //     if (getCurrentPage() === 'settings') {
+  //       return <SettingsPage />;
+  //     }
+  //     const currentMood = getCurrentMood();
 
-      // Check if user has recent mood (within 10 minutes)
-      if (currentMood && currentMoodData) {
-        const lastMoodTimestamp = currentMoodData.timestamp;
+  //     // Check if user has recent mood (within 10 minutes)
+  //     if (currentMood && currentMoodData) {
+  //       const lastMoodTimestamp = currentMoodData.timestamp;
 
-        if (isWithin10Minutes(lastMoodTimestamp)) {
-          // Show mood selected screen (within 10 minutes)
-          return (
-            <MoodSelectedScreen
-              currentMood={currentMood}
-              moodEmoji={getMoodEmoji(currentMood)}
-            />
-          );
-        }
-      }
+  //       if (isWithin10Minutes(lastMoodTimestamp)) {
+  //         // Show mood selected screen (within 10 minutes)
+  //         return (
+  //           <MoodSelectedScreen
+  //             currentMood={currentMood}
+  //             moodEmoji={getMoodEmoji(currentMood)}
+  //           />
+  //         );
+  //       }
+  //     }
 
-      // Show mood selector (no recent mood or > 10 minutes ago)
-      return (
-        <MoodSelector
-          selectedMood={null}
-          onSelectMood={handleSelectMood}
-          error={moodError}
-          onClearError={() => setMoodError(null)}
-        />
-      );
-    }
-  };
+  //     // Show mood selector (no recent mood or > 10 minutes ago)
+  //     return (
+  //       <MoodSelector
+  //         selectedMood={null}
+  //         onSelectMood={handleSelectMood}
+  //         error={moodError}
+  //         onClearError={() => setMoodError(null)}
+  //       />
+  //     );
+  //   }
+  // };
 
   return (
-    <div>
-      {/* Render appropriate navbar based on auth state */}
-      {currentPage !== 'signup' && currentPage !== 'login' && (isAuthenticated ? (
-        <AuthenticatedNavbar
-          onNavigate={handleNavigate}
-          currentPage={currentPage}
-          errorToShow={notificationError}
-        />
-      ) : (
-        <PublicNavbar onNavigate={handleNavigate} currentPage={currentPage} />
-      ))}
-
-      {/* Main content area */}
       <div>
-        <div>
-          {renderContent()}
+        {/* Keep your navbar logic EXACTLY as it is, just use getCurrentPage() */}
+        {getCurrentPage() !== 'login' && getCurrentPage() !== 'signup' && (
+          isAuthenticated ? (
+            <AuthenticatedNavbar
+              onNavigate={handleNavigate}
+              currentPage={getCurrentPage()}
+              errorToShow={notificationError}
+            />
+          ) : (
+            <PublicNavbar
+              onNavigate={handleNavigate}
+              currentPage={getCurrentPage()}
+            />
+          )
+        )}
+        
+        {/* Routes instead of renderContent() */}
+        {/* Routes instead of renderContent() */}
+        <div >
+          <div>
+            {/* Show loading/error states globally */}
+            {isAuthenticated && apiStatus === 'error' ? (
+              <ErrorScreen />
+            ) : isAuthenticated && apiStatus === 'loading' ? (
+              <div className="text-center py-12">
+                <div className="text-2xl">Loading your mood data...</div>
+              </div>
+            ) : (
+              <Routes>
+                {/* Public Routes */}
+                <Route path={ROUTES.LANDING} element={
+                  isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <LandingPage onNavigate={handleNavigate} />
+                } />
+
+                <Route path={ROUTES.LOGIN} element={
+                  isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <LoginPage onNavigate={handleNavigate} />
+                } />
+
+                <Route path={ROUTES.SIGNUP} element={
+                  isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <SignUpPage onNavigate={handleNavigate} />
+                } />
+
+                <Route path={ROUTES.PRIVACY} element={
+                  <PrivacyAndTermsPage onNavigate={handleNavigate} />
+                } />
+
+                <Route path={ROUTES.GLOBE} element={<GlobePage />} />
+
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+                  <Route path={ROUTES.MOOD} element={
+                    (() => {
+                      const currentMood = getCurrentMood();
+                      // Check if user has recent mood (within 10 minutes)
+                      if (currentMood && currentMoodData) {
+                        const lastMoodTimestamp = currentMoodData.timestamp;
+                        if (isWithin10Minutes(lastMoodTimestamp)) {
+                          return (
+                            <MoodSelectedScreen
+                              currentMood={currentMood}
+                              moodEmoji={getMoodEmoji(currentMood)}
+                            />
+                          );
+                        }
+                      }
+                      // Show mood selector (no recent mood or > 10 minutes ago)
+                      return (
+                        <MoodSelector
+                          selectedMood={null}
+                          onSelectMood={handleSelectMood}
+                          error={moodError}
+                          onClearError={() => setMoodError(null)}
+                        />
+                      );
+                    })()
+                  } />
+
+                  <Route path={ROUTES.DASHBOARD} element={
+                    (() => {
+                      const currentMood = getCurrentMood();
+                      const hasRecentMood = currentMood && currentMoodData ?
+                        isWithin10Minutes(currentMoodData.timestamp) : false;
+                      return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} onNavigate={handleNavigate} />;
+                    })()
+                  } />
+
+                  <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+                </Route>
+
+                {/* Catch all - redirect to appropriate page */}
+                <Route path="*" element={
+                  <Navigate to={isAuthenticated ? ROUTES.MOOD : ROUTES.LANDING} replace />
+                } />
+              </Routes>
+            )}
+          </div>
         </div>
       </div>
-    </div>
   );
 }
 
