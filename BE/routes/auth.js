@@ -2,6 +2,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { pool } = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 const { validateEmail } = require('../middleware/emailValidation');
@@ -31,15 +32,31 @@ const generateTokens = (userId) => {
 };
 
 // Helper function to save refresh token to database
-const saveRefreshToken = async (userId, refreshToken) => {
-  const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days
+const saveRefreshToken = async (userId, refreshToken, deviceId, deviceInfo = {}) => {
+  const now = Date.now(); // Current time in epoch milliseconds
+  const expiresAt = now + (14 * 24 * 60 * 60 * 1000); // 14 days in milliseconds
 
+  // First, delete any existing token for this device
   await pool.query(
-    'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
-    [userId, refreshToken, expiresAt]
+    'DELETE FROM refresh_tokens WHERE user_id = $1 AND device_id = $2',
+    [userId, deviceId]
+  );
+
+  // Then insert the new token
+  await pool.query(
+    'INSERT INTO refresh_tokens (user_id, token, device_id, device_info, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6)',
+    [userId, refreshToken, deviceId, JSON.stringify(deviceInfo), now, expiresAt]
   );
 };
 
+// Helper function to hash device fingerprint
+const hashDeviceFingerprint = (fingerprint) => {
+  if (!fingerprint || typeof fingerprint !== 'string') {
+    // Generate a random ID if no fingerprint provided
+    return crypto.randomBytes(16).toString('hex');
+  }
+  return crypto.createHash('sha256').update(fingerprint).digest('hex');
+};
 // Cookie configuration
 const getCookieConfig = () => ({
   httpOnly: true,
@@ -51,7 +68,10 @@ const getCookieConfig = () => ({
 // Register new user
 router.post('/register', registerProgressiveLimiter, validateEmail, async (req, res) => {
   try {
-    const { username, email, password, country, gender } = req.body;
+    const { username, email, password, country, gender, deviceId, deviceInfo } = req.body;
+
+    // Hash the device ID if provided
+    const hashedDeviceId = hashDeviceFingerprint(deviceId);
 
     // Field presence validation
     if (!username || !email || !password || !country || !gender) {
@@ -173,7 +193,7 @@ router.post('/register', registerProgressiveLimiter, validateEmail, async (req, 
 
 
     const { accessToken, refreshToken } = generateTokens(newUser.rows[0].id);
-    await saveRefreshToken(newUser.rows[0].id, refreshToken);
+    await saveRefreshToken(newUser.rows[0].id, refreshToken, hashedDeviceId, deviceInfo || {});
 
     // Set cookies
     const cookieConfig = getCookieConfig();
@@ -216,7 +236,10 @@ router.post('/register', registerProgressiveLimiter, validateEmail, async (req, 
 // Login user
 router.post('/login', arl_authHighSecurity, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, deviceId, deviceInfo } = req.body;
+
+    // Hash the device ID if provided
+    const hashedDeviceId = hashDeviceFingerprint(deviceId);
 
     // Field validation - NO SERVER LOGGING (validation errors)
     if (!email || !password) {
@@ -307,7 +330,8 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(user.rows[0].id);
 
     // Save refresh token to database (WITHOUT deleting existing ones)
-    await saveRefreshToken(user.rows[0].id, refreshToken);
+    await saveRefreshToken(user.rows[0].id, refreshToken, hashedDeviceId, deviceInfo || {});
+
 
     // Set cookies
     const cookieConfig = getCookieConfig();
@@ -429,7 +453,10 @@ router.post('/logout', arl_logoutLimiter, authenticateToken, async (req, res) =>
 router.post('/refresh', async (req, res) => {
   try {
     const { refreshToken } = req.cookies;
+    const { deviceId, deviceInfo } = req.body; // Accept device info for rotation
 
+    // Hash the device ID if provided
+    const hashedDeviceId = deviceId ? hashDeviceFingerprint(deviceId) : null;
     // Check if refresh token exists
     if (!refreshToken) {
       const errorResponse = ErrorLogger.createErrorResponse(
@@ -466,7 +493,7 @@ router.post('/refresh', async (req, res) => {
     }
 
     // Check if token is expired in database
-    if (new Date(tokenResult.rows[0].expires_at) < new Date()) {
+    if (new Date(tokenResult.rows[0].expires_at) < Date.now()) {
       // Clean up expired token
       await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
 
@@ -476,15 +503,24 @@ router.post('/refresh', async (req, res) => {
       );
       return res.status(401).json(errorResponse);
     }
-
+    // Update last_used timestamp for the current token
+    const now = Date.now();
+    await pool.query(
+      'UPDATE refresh_tokens SET last_used = $1 WHERE token = $2',
+      [now, refreshToken]
+    );
     // Generate new token pair (rotation)
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
 
     // Delete old refresh token
     await pool.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
 
-    // Save new refresh token
-    await saveRefreshToken(decoded.userId, newRefreshToken);
+    // Save new refresh token with same device ID or use from request
+    const deviceIdToUse = hashedDeviceId || tokenResult.rows[0].device_id;
+    const deviceInfoToUse = deviceInfo || tokenResult.rows[0].device_info || {};
+    
+    await saveRefreshToken(decoded.userId, newRefreshToken, deviceIdToUse, deviceInfoToUse);
+
 
     // Set new cookies
     const cookieConfig = getCookieConfig();
@@ -511,6 +547,45 @@ router.post('/refresh', async (req, res) => {
       '',
       error,
       null
+    );
+    res.status(500).json(errorResponse);
+  }
+});
+
+router.post('/logout-all', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Delete all refresh tokens for this user
+    const result = await pool.query(
+      'DELETE FROM refresh_tokens WHERE user_id = $1',
+      [userId]
+    );
+
+    // Clear cookies for current session
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/'
+    };
+
+    res.clearCookie('accessToken', cookieOptions);
+    res.clearCookie('refreshToken', cookieOptions);
+
+    res.json({
+      message: 'Logged out from all devices successfully',
+      devicesAffected: result.rowCount
+    });
+
+  } catch (error) {
+    const errorResponse = ErrorLogger.logAndCreateResponse(
+      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+      'POST /api/auth/logout-all',
+      'delete from database',
+      error,
+      req.user?.id || null
     );
     res.status(500).json(errorResponse);
   }

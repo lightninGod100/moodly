@@ -62,11 +62,17 @@ CREATE INDEX idx_moods_user_time ON moods(user_id, created_at DESC);
 
 
 CREATE TABLE refresh_tokens (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  token VARCHAR(500) UNIQUE NOT NULL,
-  expires_at TIMESTAMP NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    device_id VARCHAR(255) NOT NULL,
+    device_info JSONB,
+    created_at BIGINT NOT NULL, -- Epoch timestamp in milliseconds
+    expires_at BIGINT NOT NULL, -- Epoch timestamp in milliseconds
+    last_used BIGINT, -- Epoch timestamp in milliseconds
+    
+    -- Ensure one token per device per user
+    CONSTRAINT unique_user_device UNIQUE(user_id, device_id)
 );
 
 

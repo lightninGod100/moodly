@@ -75,9 +75,7 @@ const userDataManager = {
   setUserData(user: AuthUser): void {
     localStorage.setItem('userData', JSON.stringify(user));
   },
-  redirectToMood(): void {
-    window.location.href = '/mood'; 
-  },
+
 
   /**
    * Get stored user data
