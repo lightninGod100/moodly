@@ -162,16 +162,9 @@ const startLogoutRetryMechanism = (): void => {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include', // ADD THIS
-        body: JSON.stringify({
-          timestamp: pending.timestamp,
-          retryAttempt: pending.attempts
-        })
+      const response = await api.post('/auth/logout', {
+        timestamp: pending.timestamp,
+        retryAttempt: pending.attempts
       });
 
       if (!response.ok) {
@@ -379,15 +372,8 @@ export const authApiService = {
 
     try {
       // Attempt immediate server logout
-      const response = await fetch(`${API_BASE}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include', // ADD THIS
-        body: JSON.stringify({
-          timestamp: logoutTimestamp
-        })
+      const response = await api.post('/auth/logout', {
+        timestamp: logoutTimestamp
       });
 
       if (!response.ok) {
@@ -470,34 +456,34 @@ export const authApiService = {
       return null;
     }
   },
-    /**
-   * Logout from all devices
-   */
-    async logoutAllDevices(): Promise<void> {
-      try {
-        const response = await api.post('/auth/logout-all');
-  
-        if (!response.ok) {
-          throw new Error('Logout from all devices failed');
-        }
-  
-        const data = await response.json();
-        
-        // Clear local data
-        userDataManager.clearUserData();
-        deviceService.clearDeviceData();
-        
-        console.log(`✅ Logged out from ${data.devicesAffected} devices`);
-        
-      } catch (error) {
-        const uiMessage = ErrorLogger.logError(
-          error,
-          { service: "AuthService", action: "logoutAllDevices" },
-          { logToConsole: true, logToUI: true }
-        );
-        throw new Error(uiMessage);
+  /**
+ * Logout from all devices
+ */
+  async logoutAllDevices(): Promise<void> {
+    try {
+      const response = await api.post('/auth/logout-all');
+
+      if (!response.ok) {
+        throw new Error('Logout from all devices failed');
       }
+
+      const data = await response.json();
+
+      // Clear local data
+      userDataManager.clearUserData();
+      deviceService.clearDeviceData();
+
+      console.log(`✅ Logged out from ${data.devicesAffected} devices`);
+
+    } catch (error) {
+      const uiMessage = ErrorLogger.logError(
+        error,
+        { service: "AuthService", action: "logoutAllDevices" },
+        { logToConsole: true, logToUI: true }
+      );
+      throw new Error(uiMessage);
     }
+  }
 };
 
 // Export utilities for external use

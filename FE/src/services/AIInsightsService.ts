@@ -1,6 +1,6 @@
 // src/services/AIInsightsService.ts
 import ErrorLogger from '../utils/ErrorLogger';
-
+import { api } from './apiClient';
 const API_BASE_URL = 'http://localhost:5000/api';
 
 
@@ -55,14 +55,7 @@ export const generateAIInsights = async () => {
       return cachedData;
     }
 
-    const response = await fetch(`${API_BASE_URL}/ai-insights`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({})
-    });
+    const response = await api.post('/ai-insights', {});
 
     if (!response.ok) {
       const error = await response.json();
@@ -102,13 +95,7 @@ export const getPreviousInsights = async () => {
       return cachedData.data; // Return just the data part
     }
 
-    const response = await fetch(`${API_BASE_URL}/ai-insights/previous`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include'
-    });
+    const response = await api.get('/ai-insights/previous');
 
     if (!response.ok) {
       const error = await response.json();

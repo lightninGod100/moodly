@@ -1,5 +1,6 @@
 // src/services/UserStatsService.ts
 
+import { api } from './apiClient';
 // Types for API responses
 interface DominantMoodData {
   mood: string | null;
@@ -44,10 +45,6 @@ interface MoodHistoryResponse {
     createdAt: number;
   }>;
 }
-// API configuration
-const API_BASE = 'http://localhost:5000/api';
-
-
 
 // User Stats API service functions
 export const userStatsApiService = {
@@ -57,17 +54,11 @@ export const userStatsApiService = {
    */
   async getDominantMood(period?: 'today' | 'week' | 'month'): Promise<DominantMoodResponse> {
     try {
-      const url = period
-        ? `${API_BASE}/user-stats/dominant-mood?period=${period}`
-        : `${API_BASE}/user-stats/dominant-mood`;
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+        const endpoint = period
+        ? `/user-stats/dominant-mood?period=${period}`
+        : `/user-stats/dominant-mood`;
+      const response = await api.get(endpoint);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch dominant mood: ${response.status} ${response.statusText}`);
@@ -87,12 +78,7 @@ export const userStatsApiService = {
    */
   async getHappinessIndex(period: 'week' | 'month'): Promise<HappinessDataPoint[]> {
     try {
-      const response = await fetch(`${API_BASE}/user-stats/happiness-index?period=${period}`, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+      const response = await api.get(`/user-stats/happiness-index?period=${period}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch happiness index: ${response.status} ${response.statusText}`);
@@ -112,13 +98,7 @@ export const userStatsApiService = {
    */
   async getMoodFrequency(period: 'today' | 'week' | 'month'): Promise<MoodFrequencyData> {
     try {
-      const response = await fetch(`${API_BASE}/user-stats/frequency?period=${period}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+      const response = await api.get(`/user-stats/frequency?period=${period}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch mood frequency: ${response.status} ${response.statusText}`);
@@ -138,13 +118,7 @@ export const userStatsApiService = {
    */
   async getThroughDayView(period: 'week' | 'month'): Promise<ThroughDayViewData> {
     try {
-      const response = await fetch(`${API_BASE}/user-stats/through-day-view?period=${period}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+      const response = await api.get(`/user-stats/through-day-view?period=${period}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch through day view: ${response.status} ${response.statusText}`);
@@ -164,13 +138,7 @@ export const userStatsApiService = {
  */
 async getMoodHistory(): Promise<MoodHistoryResponse> {
   try {
-    const response = await fetch(`${API_BASE}/user-stats/mood-history`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include'
-    });
+    const response = await api.get('/user-stats/mood-history');
 
     if (!response.ok) {
       throw new Error(`Failed to fetch mood history: ${response.status} ${response.statusText}`);

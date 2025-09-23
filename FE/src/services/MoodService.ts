@@ -1,4 +1,5 @@
 // src/services/moodService.ts
+import { api } from './apiClient';
 import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
 // Types for API responses
 interface LastMoodResponse {
@@ -39,13 +40,7 @@ export const moodApiService = {
    */
   async getLastMood(): Promise<LastMoodResponse['mood']> {
     try {
-      const response = await fetch(`${API_BASE}/moods/last`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+      const response = await api.get('/moods/last');
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
@@ -124,18 +119,14 @@ export const moodApiService = {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     try {
 
-      const response = await fetch(`${API_BASE}/moods`, {
-        method: 'POST',
+      const response = await api.post('/moods', {
+        mood,
+        local_timestamp: getLocalTimestampWithOffset(), // "2025-01-15 15:30:45.123+05:30"
+        day_view: getTimePeriod() // Morning Afternoon Evening Night
+      }, {
         headers: {
-          'Content-Type': 'application/json',
           'Timezone': timezone
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          mood,
-          local_timestamp: getLocalTimestampWithOffset(), // "2025-01-15 15:30:45.123+05:30"
-          day_view: getTimePeriod() //Mprning Afternoon Evening Night
-        })
+        }
       });
 
       if (!response.ok) {

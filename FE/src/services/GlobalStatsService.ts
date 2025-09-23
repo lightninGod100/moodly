@@ -2,8 +2,8 @@
 
 import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
 import { FE_VALIDATION_MESSAGES } from '../constants/validationMessages';
+import { api } from './apiClient';
 
-const API_BASE_URL = 'http://localhost:5000/api';
 
 export interface GlobalMoodStats {
   Happy: number;
@@ -136,15 +136,7 @@ export const fetchGlobalStats = async (period: string): Promise<GlobalMoodStats>
       throw new Error(FE_VALIDATION_MESSAGES.INVALID_PERIOD);
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/world-stats/global?period=${backendPeriod}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.get(`/world-stats/global?period=${backendPeriod}`);
 
     if (!response.ok) {
       // Parse backend error response - NO LOGGING HERE
@@ -201,15 +193,7 @@ export const fetchCountryStats = async (period: string): Promise<CountryStats> =
       throw new Error(FE_VALIDATION_MESSAGES.INVALID_PERIOD);
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/world-stats/countries?period=${backendPeriod}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.get(`/world-stats/countries?period=${backendPeriod}`);
 
     if (!response.ok) {
       // Parse backend error response - NO LOGGING HERE
@@ -268,15 +252,7 @@ export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStat
       throw new Error(FE_VALIDATION_MESSAGES.INVALID_PERIOD);
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/world-stats/mood_frequency?period=${backendPeriod}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.get(`/world-stats/mood_frequency?period=${backendPeriod}`);
 
     if (!response.ok) {
       // Parse backend error response - NO LOGGING HERE

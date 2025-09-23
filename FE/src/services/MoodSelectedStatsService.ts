@@ -1,5 +1,6 @@
 // src/services/MoodSelectedStatsService.ts
 import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
+import { api } from './apiClient';
 // Types for API responses
 interface MoodTransitionResponse {
   transition: boolean;
@@ -40,10 +41,6 @@ interface MoodSelectedStatsData {
   weeklySentiment: WeeklySentimentResponse;
   achievements: AchievementsResponse;
 }
-
-
-// API configuration
-const API_BASE = 'http://localhost:5000/api';
 
 /**
  * Cache entry interface for localStorage storage
@@ -119,15 +116,7 @@ class CacheManager {
     }
   }
 }
-// Helper function to get headers with timezone
-const getHeaders = (): HeadersInit => {
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  return {
-    'Content-Type': 'application/json',
-    'Timezone': timezone
-  };
-};
 
 // Individual API service functions
 export const moodSelectedStatsApiService = {
@@ -137,10 +126,11 @@ export const moodSelectedStatsApiService = {
    */
   async getMoodTransition(): Promise<MoodTransitionResponse> {
     try {
-      const response = await fetch(`${API_BASE}/mood-selected-stats/mood-transition`, {
-        method: 'GET',
-        headers: getHeaders(),
-        credentials: 'include'
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const response = await api.get('/mood-selected-stats/mood-transition', {
+        headers: {
+          'Timezone': timezone
+        }
       });
 
       if (!response.ok) {
@@ -181,10 +171,11 @@ export const moodSelectedStatsApiService = {
    */
   async getGlobalPercentage(mood: string): Promise<GlobalPercentageResponse> {
     try {
-      const response = await fetch(`${API_BASE}/mood-selected-stats/global-percentage?mood=${encodeURIComponent(mood)}`, {
-        method: 'GET',
-        headers: getHeaders(),
-        credentials: 'include'
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const response = await api.get(`/mood-selected-stats/global-percentage?mood=${encodeURIComponent(mood)}`, {
+        headers: {
+          'Timezone': timezone
+        }
       });
 
       if (!response.ok) {
@@ -225,10 +216,11 @@ export const moodSelectedStatsApiService = {
    */
   async getWeeklySentiment(): Promise<WeeklySentimentResponse> {
     try {
-      const response = await fetch(`${API_BASE}/mood-selected-stats/weekly-sentiment`, {
-        method: 'GET',
-        headers: getHeaders(),
-        credentials: 'include'
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const response = await api.get('/mood-selected-stats/weekly-sentiment', {
+        headers: {
+          'Timezone': timezone
+        }
       });
 
       if (!response.ok) {
@@ -269,10 +261,11 @@ export const moodSelectedStatsApiService = {
    */
   async getAchievements(): Promise<AchievementsResponse> {
     try {
-      const response = await fetch(`${API_BASE}/mood-selected-stats/achievements`, {
-        method: 'GET',
-        headers: getHeaders(),
-        credentials: 'include'
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const response = await api.get('/mood-selected-stats/achievements', {
+        headers: {
+          'Timezone': timezone
+        }
       });
 
       if (!response.ok) {

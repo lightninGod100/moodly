@@ -2,7 +2,7 @@
 
 import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
 import { FE_VALIDATION_MESSAGES } from '../constants/validationMessages';
-
+import { api } from './apiClient';
 // Types for API responses and requests
 export interface UserSettings {
   username: string;
@@ -60,10 +60,7 @@ export interface PasswordValidationResponse {
   message: string;
   valid: boolean;
 }
-// API configuration
-const API_BASE = 'http://localhost:5000/api';
 
-// Helper function to get auth headers
 
 // Settings API service functions
 export const settingsApiService = {
@@ -73,13 +70,7 @@ export const settingsApiService = {
 
   async getUserSettings(): Promise<UserSettings> {
     try {
-      const response = await fetch(`${API_BASE}/user-settings`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+      const response = await api.get('/user-settings');
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
@@ -137,14 +128,7 @@ export const settingsApiService = {
         throw new Error(FE_VALIDATION_MESSAGES.PASSWORD_SAME_AS_CURRENT);
       }
 
-      const response = await fetch(`${API_BASE}/user-settings/password_change`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(passwordData)
-      });
+      const response = await api.put('/user-settings/password', passwordData);
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
@@ -195,14 +179,7 @@ export const settingsApiService = {
         throw new Error(FE_VALIDATION_MESSAGES.COUNTRY_IS_REQUIRED);
       }
 
-      const response = await fetch(`${API_BASE}/user-settings/country`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(countryData)
-      });
+      const response = await api.put('/user-settings/country', countryData);
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
@@ -267,14 +244,7 @@ export const settingsApiService = {
         throw new Error(`${FE_VALIDATION_MESSAGES.IMAGE_TOO_LARGE}. Current size: ${Math.round(sizeInBytes / 1024)}KB`);
       }
 
-      const response = await fetch(`${API_BASE}/user-settings/photo`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(photoData)
-      });
+      const response = await api.put('/user-settings/photo', photoData);
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
@@ -320,13 +290,7 @@ export const settingsApiService = {
 
   async removeProfilePhoto(): Promise<string> {
     try {
-      const response = await fetch(`${API_BASE}/user-settings/photo`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include'
-      });
+      const response = await api.delete('/user-settings/photo');
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
@@ -377,12 +341,7 @@ export const settingsApiService = {
         throw new Error(FE_VALIDATION_MESSAGES.PASSWORD_REQUIRED_FOR_DELETION);
       }
 
-      const response = await fetch(`${API_BASE}/user-settings/account_deletion`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
+      const response = await api.delete('/user-settings/account', {
         body: JSON.stringify(accountData)
       });
 
@@ -473,14 +432,7 @@ export const settingsApiService = {
         throw new Error(FE_VALIDATION_MESSAGES.PASSWORD_VALIDATION_REQUIRED);
       }
 
-      const response = await fetch(`${API_BASE}/user-settings/validate-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(passwordData)
-      });
+      const response = await api.post('/user-settings/validate-password', passwordData);
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
