@@ -2,7 +2,8 @@
 
 import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
 import { FE_VALIDATION_MESSAGES } from '../constants/validationMessages';
-
+import { deviceService } from './DeviceService';
+import { api } from './apiClient';
 
 // Types for API requests
 export interface RegisterRequest {
@@ -11,11 +12,15 @@ export interface RegisterRequest {
   password: string;
   country: string;
   gender: string;
+  deviceId?: string;     // Added
+  deviceInfo?: any;
 }
 
 export interface LoginRequest {
   email: string;
   password: string;
+  deviceId?: string;     // Added
+  deviceInfo?: any;      // Added
 }
 
 // Types for API responses
@@ -234,20 +239,16 @@ export const authApiService = {
         throw new Error(FE_VALIDATION_MESSAGES.EMAIL_INVALID);
       }
 
-      const response = await fetch(`${API_BASE}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include', // ADD THIS LINE
-        body: JSON.stringify({
-          username: userData.username,
-          email: userData.email,
-          password: userData.password,
-          country: userData.country,
-          gender: userData.gender
-        })
-      });
+      // Get device fingerprint
+      const deviceId = await deviceService.getDeviceId();
+      const deviceInfo = deviceService.getDeviceInfo();
+
+
+      const response = await api.post('/auth/register', {
+        ...userData,
+        deviceId,
+        deviceInfo
+      }, { skipRefresh: true }); // Skip refresh for auth endpoint
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
@@ -315,18 +316,15 @@ export const authApiService = {
       if (!emailRegex.test(credentials.email)) {
         throw new Error(FE_VALIDATION_MESSAGES.EMAIL_INVALID);
       }
+      // Get device fingerprint
+      const deviceId = await deviceService.getDeviceId();
+      const deviceInfo = deviceService.getDeviceInfo();
 
-      const response = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include', // ADD THIS LINE
-        body: JSON.stringify({
-          email: credentials.email,
-          password: credentials.password
-        })
-      });
+      const response = await api.post('/auth/login', {
+        ...credentials,
+        deviceId,
+        deviceInfo
+      }, { skipRefresh: true }); // Skip refresh for auth end
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE
@@ -349,7 +347,7 @@ export const authApiService = {
 
       // Store tokens and user data
       userDataManager.setUserData(data.user);
-      window.location.href = '/mood'; 
+      window.location.href = '/mood';
 
       return data;
     } catch (error) {
@@ -458,13 +456,7 @@ export const authApiService = {
   */
   async verifyAuth(): Promise<string | null> {
     try {
-      const response = await fetch(`${API_BASE}/auth/verify`, {
-        method: 'GET',
-        credentials: 'include', // Sends cookie automatically
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await api.get('/auth/verify');
 
       if (response.ok) {
         const data = await response.json();
@@ -477,8 +469,35 @@ export const authApiService = {
       console.warn('Auth verification failed:', error);
       return null;
     }
-  }
-
+  },
+    /**
+   * Logout from all devices
+   */
+    async logoutAllDevices(): Promise<void> {
+      try {
+        const response = await api.post('/auth/logout-all');
+  
+        if (!response.ok) {
+          throw new Error('Logout from all devices failed');
+        }
+  
+        const data = await response.json();
+        
+        // Clear local data
+        userDataManager.clearUserData();
+        deviceService.clearDeviceData();
+        
+        console.log(`✅ Logged out from ${data.devicesAffected} devices`);
+        
+      } catch (error) {
+        const uiMessage = ErrorLogger.logError(
+          error,
+          { service: "AuthService", action: "logoutAllDevices" },
+          { logToConsole: true, logToUI: true }
+        );
+        throw new Error(uiMessage);
+      }
+    }
 };
 
 // Export utilities for external use

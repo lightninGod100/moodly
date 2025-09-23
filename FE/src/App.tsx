@@ -26,6 +26,7 @@ import { settingsApiService } from './services/SettingsService';
 // Add this import
 import { authApiService } from './services/AuthService';
 
+import { deviceService } from './services/DeviceService';
 
 
 interface MoodCacheData {
@@ -57,7 +58,9 @@ const getMoodEmoji = (mood: string): string => {
 
 function App() {
   return (
-    <UserProvider><AppContent /></UserProvider>
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
 
 
   );
@@ -83,20 +86,20 @@ function AppContent() {
     const initializeApp = async () => {
       setApiStatus('loading');
 
-      // Check if user has a stored auth token first
-      // const storedAuth = localStorage.getItem('userAuth');
-      // if (!storedAuth) {
-      //   // No token = not authenticated, skip verification
-      //   setIsAuthenticated(false);
-      //   setApiStatus('healthy');
-      //   return;
-      // }
+      // Initialize device service first (for multi-device support)
+      try {
+        await deviceService.initialize();
+        console.log('✅ Device tracking initialized');
+      } catch (error) {
+        console.warn('Device service initialization failed:', error);
+        // Don't block app initialization if device service fails
+      }
+      authApiService.initializeLogoutRetry();
       // Verify authentication with backend
       const username = await authApiService.verifyAuth();
 
       if (username) {
         setIsAuthenticated(true);
-        //setCurrentPage('home');
         setApiStatus('healthy');
 
         // Try to fetch user settings but don't block the app if it fails
@@ -116,8 +119,6 @@ function AppContent() {
         // Set API status to healthy regardless of getUserSettings result
         setApiStatus('healthy');
 
-        // Try to fetch last mood (already handles errors gracefully)
-        // Try to fetch last mood
         // Check cache first
         const stored = localStorage.getItem('lastMoodData');
         if (stored) {
@@ -169,8 +170,21 @@ function AppContent() {
       }
     };
 
+    const handleAuthExpired = () => {
+      setIsAuthenticated(false);
+      setCurrentMoodData(null);
+      localStorage.clear();
+      navigate(ROUTES.LANDING);
+    };
+
+    window.addEventListener('auth:expired', handleAuthExpired);
     initializeApp();
-  }, [dispatch]);
+
+    return () => {
+      window.removeEventListener('auth:expired', handleAuthExpired);
+    };
+  }, [dispatch, navigate]);
+
 
   // Handle navigation
   const handleNavigate = (page: string) => {
@@ -179,19 +193,15 @@ function AppContent() {
       // Call AuthService logout (which will handle backend logging + local cleanup)
       authApiService.logout().then(() => {
         setIsAuthenticated(false);
-        localStorage.removeItem('userAuth');
-        localStorage.removeItem('lastMoodData');
-        localStorage.removeItem('userSettings');
-        localStorage.removeItem('pendingLogout');
+        localStorage.clear();
         navigate(ROUTES.LANDING);
         return;
 
       }).catch(() => {
         // Even if logout API fails, clear local state
         setIsAuthenticated(false);
-        //setCurrentPage('landing');
-        localStorage.removeItem('lastMoodData');
-        localStorage.removeItem('userSettings');
+        navigate(ROUTES.LANDING);
+        localStorage.clear();
       });
       return;
     }
@@ -343,105 +353,105 @@ function AppContent() {
   // };
 
   return (
-      <div>
-        {/* Keep your navbar logic EXACTLY as it is, just use getCurrentPage() */}
-        {getCurrentPage() !== 'login' && getCurrentPage() !== 'signup' && (
-          isAuthenticated ? (
-            <AuthenticatedNavbar
-              onNavigate={handleNavigate}
-              currentPage={getCurrentPage()}
-              errorToShow={notificationError}
-            />
+    <div>
+      {/* Keep your navbar logic EXACTLY as it is, just use getCurrentPage() */}
+      {getCurrentPage() !== 'login' && getCurrentPage() !== 'signup' && (
+        isAuthenticated ? (
+          <AuthenticatedNavbar
+            onNavigate={handleNavigate}
+            currentPage={getCurrentPage()}
+            errorToShow={notificationError}
+          />
+        ) : (
+          <PublicNavbar
+            onNavigate={handleNavigate}
+            currentPage={getCurrentPage()}
+          />
+        )
+      )}
+
+      {/* Routes instead of renderContent() */}
+      {/* Routes instead of renderContent() */}
+      <div >
+        <div>
+          {/* Show loading/error states globally */}
+          {isAuthenticated && apiStatus === 'error' ? (
+            <ErrorScreen />
+          ) : isAuthenticated && apiStatus === 'loading' ? (
+            <div className="text-center py-12">
+              <div className="text-2xl">Loading your mood data...</div>
+            </div>
           ) : (
-            <PublicNavbar
-              onNavigate={handleNavigate}
-              currentPage={getCurrentPage()}
-            />
-          )
-        )}
-        
-        {/* Routes instead of renderContent() */}
-        {/* Routes instead of renderContent() */}
-        <div >
-          <div>
-            {/* Show loading/error states globally */}
-            {isAuthenticated && apiStatus === 'error' ? (
-              <ErrorScreen />
-            ) : isAuthenticated && apiStatus === 'loading' ? (
-              <div className="text-center py-12">
-                <div className="text-2xl">Loading your mood data...</div>
-              </div>
-            ) : (
-              <Routes>
-                {/* Public Routes */}
-                <Route path={ROUTES.LANDING} element={
-                  isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <LandingPage onNavigate={handleNavigate} />
-                } />
+            <Routes>
+              {/* Public Routes */}
+              <Route path={ROUTES.LANDING} element={
+                isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <LandingPage onNavigate={handleNavigate} />
+              } />
 
-                <Route path={ROUTES.LOGIN} element={
-                  isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <LoginPage onNavigate={handleNavigate} />
-                } />
+              <Route path={ROUTES.LOGIN} element={
+                isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <LoginPage onNavigate={handleNavigate} />
+              } />
 
-                <Route path={ROUTES.SIGNUP} element={
-                  isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <SignUpPage onNavigate={handleNavigate} />
-                } />
+              <Route path={ROUTES.SIGNUP} element={
+                isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <SignUpPage onNavigate={handleNavigate} />
+              } />
 
-                <Route path={ROUTES.PRIVACY} element={
-                  <PrivacyAndTermsPage onNavigate={handleNavigate} />
-                } />
+              <Route path={ROUTES.PRIVACY} element={
+                <PrivacyAndTermsPage onNavigate={handleNavigate} />
+              } />
 
-                <Route path={ROUTES.GLOBE} element={<GlobePage />} />
+              <Route path={ROUTES.GLOBE} element={<GlobePage />} />
 
-                {/* Protected Routes */}
-                <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
-                  <Route path={ROUTES.MOOD} element={
-                    (() => {
-                      const currentMood = getCurrentMood();
-                      // Check if user has recent mood (within 10 minutes)
-                      if (currentMood && currentMoodData) {
-                        const lastMoodTimestamp = currentMoodData.timestamp;
-                        if (isWithin10Minutes(lastMoodTimestamp)) {
-                          return (
-                            <MoodSelectedScreen
-                              currentMood={currentMood}
-                              moodEmoji={getMoodEmoji(currentMood)}
-                            />
-                          );
-                        }
+              {/* Protected Routes */}
+              <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+                <Route path={ROUTES.MOOD} element={
+                  (() => {
+                    const currentMood = getCurrentMood();
+                    // Check if user has recent mood (within 10 minutes)
+                    if (currentMood && currentMoodData) {
+                      const lastMoodTimestamp = currentMoodData.timestamp;
+                      if (isWithin10Minutes(lastMoodTimestamp)) {
+                        return (
+                          <MoodSelectedScreen
+                            currentMood={currentMood}
+                            moodEmoji={getMoodEmoji(currentMood)}
+                          />
+                        );
                       }
-                      // Show mood selector (no recent mood or > 10 minutes ago)
-                      return (
-                        <MoodSelector
-                          selectedMood={null}
-                          onSelectMood={handleSelectMood}
-                          error={moodError}
-                          onClearError={() => setMoodError(null)}
-                        />
-                      );
-                    })()
-                  } />
-
-                  <Route path={ROUTES.DASHBOARD} element={
-                    (() => {
-                      const currentMood = getCurrentMood();
-                      const hasRecentMood = currentMood && currentMoodData ?
-                        isWithin10Minutes(currentMoodData.timestamp) : false;
-                      return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} onNavigate={handleNavigate} />;
-                    })()
-                  } />
-
-                  <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
-                </Route>
-
-                {/* Catch all - redirect to appropriate page */}
-                <Route path="*" element={
-                  <Navigate to={isAuthenticated ? ROUTES.MOOD : ROUTES.LANDING} replace />
+                    }
+                    // Show mood selector (no recent mood or > 10 minutes ago)
+                    return (
+                      <MoodSelector
+                        selectedMood={null}
+                        onSelectMood={handleSelectMood}
+                        error={moodError}
+                        onClearError={() => setMoodError(null)}
+                      />
+                    );
+                  })()
                 } />
-              </Routes>
-            )}
-          </div>
+
+                <Route path={ROUTES.DASHBOARD} element={
+                  (() => {
+                    const currentMood = getCurrentMood();
+                    const hasRecentMood = currentMood && currentMoodData ?
+                      isWithin10Minutes(currentMoodData.timestamp) : false;
+                    return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} onNavigate={handleNavigate} />;
+                  })()
+                } />
+
+                <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+              </Route>
+
+              {/* Catch all - redirect to appropriate page */}
+              <Route path="*" element={
+                <Navigate to={isAuthenticated ? ROUTES.MOOD : ROUTES.LANDING} replace />
+              } />
+            </Routes>
+          )}
         </div>
       </div>
+    </div>
   );
 }
 
