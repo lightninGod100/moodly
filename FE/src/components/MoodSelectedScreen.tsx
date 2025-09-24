@@ -244,7 +244,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
     width = '100%',
     height = '1rem'
   }) => (
-    <div
+    <span
       style={{
         width,
         height,
