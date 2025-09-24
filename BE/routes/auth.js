@@ -451,6 +451,7 @@ router.post('/logout', arl_logoutLimiter, authenticateToken, async (req, res) =>
 
 // POST /api/auth/refresh - Refresh access token using refresh token
 router.post('/refresh', async (req, res) => {
+  console.log('Refresh token request received');
   try {
     const { refreshToken } = req.cookies;
     const { deviceId, deviceInfo } = req.body; // Accept device info for rotation
@@ -505,10 +506,10 @@ router.post('/refresh', async (req, res) => {
     }
     // Update last_used timestamp for the current token
     const now = Date.now();
-    await pool.query(
-      'UPDATE refresh_tokens SET last_used = $1 WHERE token = $2',
-      [now, refreshToken]
-    );
+    // await pool.query(
+    //   'UPDATE refresh_tokens SET last_used = $1 WHERE token = $2',
+    //   [now, refreshToken]
+    // );
     // Generate new token pair (rotation)
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } = generateTokens(decoded.userId);
 

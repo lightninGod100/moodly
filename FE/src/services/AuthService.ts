@@ -442,7 +442,7 @@ export const authApiService = {
   */
   async verifyAuth(): Promise<string | null> {
     try {
-      const response = await api.get('/auth/verify', { skipRefresh: true });
+      const response = await api.get('/auth/verify');
 
       if (response.ok) {
         const data = await response.json();
