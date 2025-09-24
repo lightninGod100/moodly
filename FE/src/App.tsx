@@ -82,8 +82,9 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
   // Load mood history from localStorage on initial render
+  // Add this useEffect for one-time auth verification (runs only on mount)
   useEffect(() => {
-    const initializeApp = async () => {
+    const verifyInitialAuth = async () => {
       setApiStatus('loading');
 
       // Initialize device service first (for multi-device support)
@@ -92,17 +93,18 @@ function AppContent() {
         console.log('✅ Device tracking initialized');
       } catch (error) {
         console.warn('Device service initialization failed:', error);
-        // Don't block app initialization if device service fails
       }
+
+      // Initialize logout retry mechanism
       authApiService.initializeLogoutRetry();
-      // Verify authentication with backend
+
+      // Verify authentication with backend - ONLY ONCE
       const username = await authApiService.verifyAuth();
 
       if (username) {
         setIsAuthenticated(true);
-        setApiStatus('healthy');
 
-        // Try to fetch user settings but don't block the app if it fails
+        // Try to fetch user settings
         try {
           const userSettings = await settingsApiService.getUserSettings();
           dispatch({ type: 'SET_USER', payload: userSettings });
@@ -110,42 +112,32 @@ function AppContent() {
           setNotificationError(null);
         } catch (error) {
           console.warn('Failed to fetch user settings from server, Using defaults');
-          // Don't set any default user - let it remain null
-          // Components will handle null state gracefully
           setNotificationError('userSettings');
-          // Don't set apiStatus to 'error' - let the app continue
         }
 
-        // Set API status to healthy regardless of getUserSettings result
-        setApiStatus('healthy');
-
-        // Check cache first
+        // Load last mood from cache/API
         const stored = localStorage.getItem('lastMoodData');
         if (stored) {
           try {
             const cachedData: MoodCacheData = JSON.parse(stored);
-
-            // Always set cached data first
             setCurrentMoodData(cachedData);
 
-            // Check if API data is fresh (within 10 minutes)
             const apiAge = Date.now() - (cachedData.lastApiFetch || 0);
             const isApiDataFresh = apiAge <= (10 * 60 * 1000);
 
             if (isApiDataFresh) {
               console.log('Using cached data, API called recently');
               setNotificationError(null);
-              return; // Exit early, no API call needed
+              setApiStatus('healthy');
+              return;
             }
-
-            console.log('Cache exists but API data is stale, refreshing...');
           } catch (e) {
             console.error('Invalid cached mood data');
             localStorage.removeItem('lastMoodData');
           }
         }
 
-        // Call API (no cache OR stale API data)
+        // Fetch fresh mood data if needed
         moodApiService.getLastMood()
           .then(lastMood => {
             if (lastMood) {
@@ -161,15 +153,20 @@ function AppContent() {
           })
           .catch(error => {
             console.warn('Could not load last mood from server');
-            setNotificationError('lastMood'); // Always show sync error
+            setNotificationError('lastMood');
           });
       } else {
         setIsAuthenticated(false);
-        //setCurrentPage('landing');
-        setApiStatus('healthy');
       }
+
+      setApiStatus('healthy');
     };
 
+    verifyInitialAuth();
+  }, []); // Empty dependencies - runs only once on mount
+
+  // Separate useEffect for auth expiry handling
+  useEffect(() => {
     const handleAuthExpired = () => {
       setIsAuthenticated(false);
       setCurrentMoodData(null);
@@ -178,12 +175,11 @@ function AppContent() {
     };
 
     window.addEventListener('auth:expired', handleAuthExpired);
-    initializeApp();
 
     return () => {
       window.removeEventListener('auth:expired', handleAuthExpired);
     };
-  }, [dispatch, navigate]);
+  }, [navigate]); // Only depend on navigate
 
 
   // Handle navigation

@@ -135,7 +135,7 @@ class ApiClient {
     deviceService.clearDeviceData();
     
     // Redirect to login page
-    window.location.href = '/';
+    //window.location.href = '/';
     
     // Trigger navigation in the app (if needed)
     window.dispatchEvent(new CustomEvent('auth:expired', { 
