@@ -76,7 +76,7 @@ function AppContent() {
   const [currentMoodData, setCurrentMoodData] = useState<MoodCacheData | null>(null);
   const [moodError, setMoodError] = useState<string | null>(null);
   const [notificationError, setNotificationError] = useState<'userSettings' | 'lastMood' | null>(null);
-
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // ADD routing hooks
   const navigate = useNavigate();
@@ -84,86 +84,94 @@ function AppContent() {
   // Load mood history from localStorage on initial render
   // Add this useEffect for one-time auth verification (runs only on mount)
   useEffect(() => {
-    const verifyInitialAuth = async () => {
+    const initializeApp = async () => {
       setApiStatus('loading');
+      setIsAuthLoading(true); // Explicitly set, though already true
 
-      // Initialize device service first (for multi-device support)
       try {
+        // Device service initialization
         await deviceService.initialize();
         console.log('✅ Device tracking initialized');
       } catch (error) {
         console.warn('Device service initialization failed:', error);
       }
 
-      // Initialize logout retry mechanism
       authApiService.initializeLogoutRetry();
 
-      // Verify authentication with backend - ONLY ONCE
-      const username = await authApiService.verifyAuth();
+      try {
+        // Verify authentication
+        const username = await authApiService.verifyAuth();
 
-      if (username) {
-        setIsAuthenticated(true);
+        if (username) {
+          setIsAuthenticated(true);
 
-        // Try to fetch user settings
-        try {
-          const userSettings = await settingsApiService.getUserSettings();
-          dispatch({ type: 'SET_USER', payload: userSettings });
-          console.log('User settings loaded from server');
-          setNotificationError(null);
-        } catch (error) {
-          console.warn('Failed to fetch user settings from server, Using defaults');
-          setNotificationError('userSettings');
-        }
-
-        // Load last mood from cache/API
-        const stored = localStorage.getItem('lastMoodData');
-        if (stored) {
+          // Try to fetch user settings
           try {
-            const cachedData: MoodCacheData = JSON.parse(stored);
-            setCurrentMoodData(cachedData);
-
-            const apiAge = Date.now() - (cachedData.lastApiFetch || 0);
-            const isApiDataFresh = apiAge <= (10 * 60 * 1000);
-
-            if (isApiDataFresh) {
-              console.log('Using cached data, API called recently');
-              setNotificationError(null);
-              setApiStatus('healthy');
-              return;
-            }
-          } catch (e) {
-            console.error('Invalid cached mood data');
-            localStorage.removeItem('lastMoodData');
-          }
-        }
-
-        // Fetch fresh mood data if needed
-        moodApiService.getLastMood()
-          .then(lastMood => {
-            if (lastMood) {
-              const moodData: MoodCacheData = {
-                mood: lastMood.mood,
-                timestamp: parseInt(lastMood.createdAt),
-                lastApiFetch: Date.now()
-              };
-              setCurrentMoodData(moodData);
-              localStorage.setItem('lastMoodData', JSON.stringify(moodData));
-            }
+            const userSettings = await settingsApiService.getUserSettings();
+            dispatch({ type: 'SET_USER', payload: userSettings });
             setNotificationError(null);
-          })
-          .catch(error => {
-            console.warn('Could not load last mood from server');
-            setNotificationError('lastMood');
-          });
-      } else {
-        setIsAuthenticated(false);
-      }
+          } catch (error) {
+            console.warn('Failed to fetch user settings from server');
+            setNotificationError('userSettings');
+          }
 
-      setApiStatus('healthy');
+          // Load last mood from cache/API
+          const stored = localStorage.getItem('lastMoodData');
+          if (stored) {
+            try {
+              const cachedData: MoodCacheData = JSON.parse(stored);
+              setCurrentMoodData(cachedData);
+
+              const apiAge = Date.now() - (cachedData.lastApiFetch || 0);
+              const isApiDataFresh = apiAge <= (10 * 60 * 1000);
+
+              if (isApiDataFresh) {
+                console.log('Using cached data, API called recently');
+                setNotificationError(null);
+                setApiStatus('healthy');
+                return;
+              }
+            } catch (e) {
+              console.error('Invalid cached mood data');
+              localStorage.removeItem('lastMoodData');
+            }
+          }
+
+          // Fetch fresh mood data if needed
+          moodApiService.getLastMood()
+            .then(lastMood => {
+              if (lastMood) {
+                const moodData: MoodCacheData = {
+                  mood: lastMood.mood,
+                  timestamp: parseInt(lastMood.createdAt),
+                  lastApiFetch: Date.now()
+                };
+                setCurrentMoodData(moodData);
+                localStorage.setItem('lastMoodData', JSON.stringify(moodData));
+              }
+              setNotificationError(null);
+            })
+            .catch(error => {
+              console.warn('Could not load last mood from server');
+              setNotificationError('lastMood');
+            });
+          setApiStatus('healthy');
+        } else {
+          setIsAuthenticated(false);
+          setApiStatus('healthy');
+        }
+      } catch (error) {
+        console.error('Auth verification failed:', error);
+        setIsAuthenticated(false);
+        setApiStatus('healthy');
+      } finally {
+        // CRITICAL: Always set auth loading to false
+        setIsAuthLoading(false);
+      }
     };
 
-    verifyInitialAuth();
-  }, []); // Empty dependencies - runs only once on mount
+    initializeApp();
+  }, []);
 
   // Separate useEffect for auth expiry handling
   useEffect(() => {
@@ -370,15 +378,22 @@ function AppContent() {
       {/* Routes instead of renderContent() */}
       <div >
         <div>
-          {/* Show loading/error states globally */}
-          {isAuthenticated && apiStatus === 'error' ? (
-            <ErrorScreen />
-          ) : isAuthenticated && apiStatus === 'loading' ? (
-            <div className="text-center py-12">
-              <div className="text-2xl">Loading your mood data...</div>
-            </div>
-          ) : (
-            <Routes>
+
+        {isAuthLoading ? (
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-2xl">Loading...</div>
+          </div>
+        ) : (
+          <>
+            {/* Show loading/error states globally */}
+            {isAuthenticated && apiStatus === 'error' ? (
+              <ErrorScreen />
+            ) : isAuthenticated && apiStatus === 'loading' ? (
+              <div className="text-center py-12">
+                <div className="text-2xl">Loading your mood data...</div>
+              </div>
+            ) : (
+              <Routes>
               {/* Public Routes */}
               <Route path={ROUTES.LANDING} element={
                 isAuthenticated ? <Navigate to={ROUTES.MOOD} replace /> : <LandingPage onNavigate={handleNavigate} />
@@ -443,8 +458,10 @@ function AppContent() {
               <Route path="*" element={
                 <Navigate to={isAuthenticated ? ROUTES.MOOD : ROUTES.LANDING} replace />
               } />
-            </Routes>
-          )}
+              </Routes>
+            )}
+          </>
+        )}
         </div>
       </div>
     </div>
