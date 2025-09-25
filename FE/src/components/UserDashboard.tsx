@@ -284,11 +284,81 @@ const UserDashboard = ({
       date: point.date,
       score: point.score || 0
     }));
-
+    // Custom dot renderer for color coding based on score
+    const renderColoredDot = (props: any) => {
+      const { cx, cy, payload } = props;
+      
+      // Three-way color coding
+      let fillColor = '#ffffff'; // white for zero (default)
+      if (payload.score > 0) {
+        fillColor = '#10b981'; // green for positive
+      } else if (payload.score < 0) {
+        fillColor = '#ef4444'; // red for negative
+      }
+      
+      return (
+        <circle 
+          cx={cx} 
+          cy={cy} 
+          r={4} 
+          fill={fillColor}
+          stroke={fillColor}
+          strokeWidth={2}
+        />
+      );
+    };
     return (
       <div className="dashboard-box dashboard-happiness-chart">
-        <h3 className="dashboard-box-title">Personal Happiness Index</h3>
-        <div className="text-xs text-gray-300 mb-4">Last 30 Days</div>
+        <h3 className="dashboard-box-title margin-top-2">Personal Happiness Index
+          <div style={{ position: 'relative', display: 'inline-block', marginLeft: '0.5rem' }}>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ cursor: 'help', opacity: 0.7 }}
+              onMouseEnter={(e) => {
+                const tooltip = e.currentTarget.nextElementSibling as HTMLElement;
+                if (tooltip) tooltip.style.display = 'block';
+              }}
+              onMouseLeave={(e) => {
+                const tooltip = e.currentTarget.nextElementSibling as HTMLElement;
+                if (tooltip) tooltip.style.display = 'none';
+              }}
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <path d="M12 17h.01" />
+            </svg>
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '100%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                color: 'rgb(230, 230, 230)',
+                padding: '0.75rem 0.75rem',
+                borderRadius: '4px',
+                fontSize: '0.75rem',
+                whiteSpace: 'nowrap',
+                zIndex: 1000,
+                display: 'none',
+                marginBottom: '0.25rem',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                textAlign: 'center'
+              }}
+            >
+              Personal Happiness Index combines your moods throughout the day into a single, <br />weighted average, giving a normalized value from -1 (negative) to 1 (positive).
+            </div>
+          </div>
+        </h3>
+
+        <div className="text-xs text-gray-300 mb-4">Index Score</div>
 
         <div style={{ width: '100%', height: '300px', position: 'relative' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -297,7 +367,7 @@ const UserDashboard = ({
                 <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
                 <XAxis
                   dataKey="date"
-                  axisLine={false}
+                  axisLine={{ stroke: '#9ca3af', strokeWidth: 2 }} 
                   tickLine={false}
                   tick={{ fontSize: 10, fill: '#d1d5db' }}
                   interval={6}
@@ -308,7 +378,7 @@ const UserDashboard = ({
                 />
                 <YAxis
                   domain={[-1, 1]}
-                  axisLine={false}
+                  axisLine={{ stroke: '#9ca3af', strokeWidth: 2 }} 
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#d1d5db' }}
                   tickFormatter={(value) => value.toFixed(1)}
@@ -336,13 +406,14 @@ const UserDashboard = ({
                   dataKey="score"
                   stroke="#60a5fa"
                   strokeWidth={2}
-                  dot={{ fill: '#60a5fa', strokeWidth: 2, r: 4 }}
+                  dot={renderColoredDot}
                   activeDot={{ r: 6, fill: '#3b82f6' }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
+        <div className="text-xs text-gray-300 mb-4 text-center">Last 30 Days</div>
       </div>
     );
   };
@@ -353,7 +424,7 @@ const UserDashboard = ({
   const ThroughDayView: React.FC<ThroughDayViewProps> = () => {
     if (!throughDayViewData) {
       return (
-        <div className="dashboard-box dashboard-ai-insights">
+        <div className="dashboard-box dashboard-through-day-view">
           <h3 className="dashboard-box-title">Through the Day View</h3>
           <p className="text-gray-300 text-sm">No data available</p>
         </div>
@@ -380,7 +451,7 @@ const UserDashboard = ({
     };
 
     return (
-      <div className="dashboard-box dashboard-ai-insights">
+      <div className="dashboard-box dashboard-through-day-view">
         <h3 className="dashboard-box-title">Through the Day View</h3>
 
         <div className="overflow-x-auto">
@@ -604,7 +675,7 @@ const UserDashboard = ({
     };
 
     return (
-      <div className="dashboard-box dashboard-ai-insights-landing">
+      <div className="dashboard-box dashboard-ai-insights">
         <h3 className="dashboard-box-title text-center mb-6">
           🤖 AI-Powered Insights
         </h3>
@@ -739,44 +810,44 @@ const UserDashboard = ({
     );
   };
   const AIInsightsDisplay: React.FC = () => {
-    
-     // Check if data is null (no previous report case)
-  if (reportType === 'previous' && insightsData === null) {
-    return (
-      <div className="dashboard-box dashboard-ai-insights-results">
-        <h3 className="dashboard-box-title text-center mb-4">
-          Previous AI Insights Report
-        </h3>
-        
-        <div className="text-center py-8">
-          <div className="text-4xl mb-4">📊</div>
-          <h4 className="text-white font-medium mb-2">No Previous Report Found</h4>
-          <p className="text-gray-400 text-sm mb-4">
-            You haven't generated any previous insights reports yet.
-          </p>
-          <p className="text-gray-400 text-xs">
-            Generate your first insights report to start tracking your mood patterns over time.
-          </p>
-        </div>
 
-        {/* Back to Landing Button */}
-        <div className="flex justify-center mt-6 pt-4 border-t border-gray-700">
-          <button
-            onClick={handleBackToLanding}
-            className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg 
+    // Check if data is null (no previous report case)
+    if (reportType === 'previous' && insightsData === null) {
+      return (
+        <div className="dashboard-box dashboard-ai-insights-results">
+          <h3 className="dashboard-box-title text-center mb-4">
+            Previous AI Insights Report
+          </h3>
+
+          <div className="text-center py-8">
+            <div className="text-4xl mb-4">📊</div>
+            <h4 className="text-white font-medium mb-2">No Previous Report Found</h4>
+            <p className="text-gray-400 text-sm mb-4">
+              You haven't generated any previous insights reports yet.
+            </p>
+            <p className="text-gray-400 text-xs">
+              Generate your first insights report to start tracking your mood patterns over time.
+            </p>
+          </div>
+
+          {/* Back to Landing Button */}
+          <div className="flex justify-center mt-6 pt-4 border-t border-gray-700">
+            <button
+              onClick={handleBackToLanding}
+              className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg 
              transition-all duration-200 hover:scale-105 flex items-center space-x-2
              border border-gray-500"
-          >
-            <span>←</span>
-            <span>Back to AI Insights</span>
-          </button>
+            >
+              <span>←</span>
+              <span>Back to AI Insights</span>
+            </button>
+          </div>
         </div>
-      </div>
-    );
-  }
-  if (!insightsData) return null;
+      );
+    }
+    if (!insightsData) return null;
     return (
-      <div className="dashboard-box dashboard-ai-insights-results">
+      <div className="dashboard-box dashboard-ai-insights">
         <h3 className="dashboard-box-title text-center mb-4">
           {reportType === 'previous' ? 'Your Previous AI Insights Report' : 'Your Current AI Insights Report'}
         </h3>

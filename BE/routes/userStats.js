@@ -139,29 +139,39 @@ router.get('/happiness-index', arl_user_stats, authenticateToken, async (req, re
     
     // Query to get moods and calculate happiness scores by date
     const query = `
-      WITH daily_moods AS (
-        SELECT 
-          DATE(to_timestamp(created_at::bigint / 1000.0)) as mood_date,
-          mood,
-          created_at,
-          ROW_NUMBER() OVER (PARTITION BY DATE(to_timestamp(created_at::bigint / 1000.0)) ORDER BY created_at DESC) as rn
-        FROM moods 
-        WHERE user_id = $1 AND created_at >= $2
-      )
+    WITH daily_mood_scores AS (
       SELECT 
-        mood_date,
-        mood
-      FROM daily_moods
-      WHERE rn = 1
-      ORDER BY mood_date DESC
-    `;
+        DATE(to_timestamp(created_at::bigint / 1000.0)) as mood_date,
+        mood,
+        CASE 
+          WHEN mood = 'Happy' THEN 1
+          WHEN mood = 'Excited' THEN 0.67
+          WHEN mood = 'Calm' THEN 0.33
+          WHEN mood = 'Tired' THEN -0.1
+          WHEN mood = 'Anxious' THEN -0.4
+          WHEN mood = 'Angry' THEN -0.7
+          WHEN mood = 'Sad' THEN -1
+          ELSE 0
+        END as mood_score
+      FROM moods 
+      WHERE user_id = $1 AND created_at >= $2
+    )
+    SELECT 
+      mood_date,
+      ROUND(AVG(mood_score)::numeric, 2) as avg_score,
+      COUNT(*) as mood_count
+    FROM daily_mood_scores
+    GROUP BY mood_date
+    ORDER BY mood_date DESC
+  `;
 
     const moodsResult = await pool.query(query, [userId, timeFilter]);
     
     // Convert to happiness scores
     const happinessData = moodsResult.rows.map(row => ({
-      date: row.mood_date.toISOString().split('T')[0], // Format as YYYY-MM-DD
-      score: MOOD_SCORES[row.mood] || 0
+      date: row.mood_date.toISOString().split('T')[0],
+      score: parseFloat(row.avg_score) || 0,
+      moodCount: parseInt(row.mood_count) // Optional: include count for reference
     }));
 
     // Fill in missing dates with null scores if needed
