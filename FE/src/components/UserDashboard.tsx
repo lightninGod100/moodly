@@ -57,11 +57,14 @@ const UserDashboard = ({
   // Update state to track report type
   const [reportType, setReportType] = useState<'current' | 'previous' | null>(null);
   const navigate = useNavigate();
+
+
   const handleGenerateInsights = async () => {
     try {
       setIsReportGenerating(true);
       const response = await aiInsightsApiService.generateInsights();
       setInsightsData(response.data);
+      console.log('Current insights data structure:', response.data);
       setReportType('current');
       console.log('Insights generated:', response.data);
     } catch (error) {
@@ -463,26 +466,25 @@ const UserDashboard = ({
 
     return (
       <div className="dashboard-box dashboard-through-day-view">
- <div className="relative mb-4">
-    <h3 className="dashboard-box-title text-center">Through the Day View</h3>
-    
-    {/* Time filter tabs - positioned absolutely on the right */}
-    <div className="absolute right-0 top-0 flex border border-gray-300 rounded">
-      {(['week', 'month'] as const).map((period) => (
-        <button
-          key={period}
-          onClick={() => setThroughDayViewPeriod(period)}
-          className={`px-3 py-1 text-xs font-medium border-r border-gray-300 last:border-r-0 ${
-            throughDayViewPeriod === period
-              ? 'bg-white text-black'
-              : 'bg-black bg-opacity-40 text-white hover:bg-white hover:bg-opacity-20'
-          }`}
-        >
-          {period.charAt(0).toUpperCase() + period.slice(1)}
-        </button>
-      ))}
-    </div>
-  </div>
+        <div className="relative mb-4">
+          <h3 className="dashboard-box-title text-center">Through the Day View</h3>
+
+          {/* Time filter tabs - positioned absolutely on the right */}
+          <div className="absolute right-0 top-0 flex border border-gray-300 rounded">
+            {(['week', 'month'] as const).map((period) => (
+              <button
+                key={period}
+                onClick={() => setThroughDayViewPeriod(period)}
+                className={`px-3 py-1 text-xs font-medium border-r border-gray-300 last:border-r-0 ${throughDayViewPeriod === period
+                  ? 'bg-white text-black'
+                  : 'bg-black bg-opacity-40 text-white hover:bg-white hover:bg-opacity-20'
+                  }`}
+              >
+                {period.charAt(0).toUpperCase() + period.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -656,7 +658,7 @@ const UserDashboard = ({
 
         </h3>
 
-        <div className="overflow-y-auto max-h-80">
+        <div className="overflow-y-auto max-h-100">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-600 sticky top-0 bg-[#04040a]">
@@ -839,6 +841,15 @@ const UserDashboard = ({
       </div>
     );
   };
+  const formatGeneratedDate = (timestamp: number | string): string => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
   const AIInsightsDisplay: React.FC = () => {
 
     // Check if data is null (no previous report case)
@@ -878,9 +889,16 @@ const UserDashboard = ({
     if (!insightsData) return null;
     return (
       <div className="dashboard-box dashboard-ai-insights">
-        <h3 className="dashboard-box-title text-center mt-4 !mb-6">
-          {reportType === 'previous' ? 'Previous AI Insights Report' : 'Current AI Insights Report'}
-        </h3>
+        <div className="text-center">
+          <h3 className="dashboard-box-title mt-4 !mb-2">
+            {reportType === 'previous' ? 'Previous AI Insights Report' : 'Current AI Insights Report'}
+          </h3>
+          {insightsData.analysisDate && (
+            <p className="text-gray-400 text-sm mb-6">
+              Generated on: {formatGeneratedDate(insightsData.analysisDate)}
+            </p>
+          )}
+        </div>
 
         {/* Weekly Insights */}
         <div className="mb-6">
