@@ -42,7 +42,7 @@ const UserDashboard = ({
   const vantaEffect = useRef<any>(null);
   const { user } = useUser();
   const [selectedFrequencyPeriod, setSelectedFrequencyPeriod] = useState<TimePeriod>('today');
-
+  const [throughDayViewPeriod, setThroughDayViewPeriod] = useState<'week' | 'month'>('month');
   // API data states
   const [dominantMoodData, setDominantMoodData] = useState<DominantMoodResponse | null>(null);
   const [happinessData, setHappinessData] = useState<HappinessDataPoint[]>([]);
@@ -154,7 +154,11 @@ const UserDashboard = ({
       fetchFrequencyData(selectedFrequencyPeriod);
     }
   }, [selectedFrequencyPeriod]);
-
+  useEffect(() => {
+    if (throughDayViewPeriod) {
+      fetchThroughDayViewData(throughDayViewPeriod);
+    }
+  }, [throughDayViewPeriod]);
   const fetchUserStats = async () => {
     try {
       setIsLoading(true);
@@ -201,7 +205,14 @@ const UserDashboard = ({
       console.error('Failed to fetch frequency data:', err);
     }
   };
-
+  const fetchThroughDayViewData = async (period: 'week' | 'month') => {
+    try {
+      const data = await userStatsApiService.getThroughDayView(period);
+      setThroughDayViewData(data);
+    } catch (err) {
+      console.error('Failed to fetch through day view data:', err);
+    }
+  };
   // Handle current mood navigation
   const handleCurrentMoodClick = () => {
     if (!hasRecentMood) {
@@ -286,7 +297,7 @@ const UserDashboard = ({
     // Custom dot renderer for color coding based on score
     const renderColoredDot = (props: any) => {
       const { cx, cy, payload } = props;
-      
+
       // Three-way color coding
       let fillColor = '#ffffff'; // white for zero (default)
       if (payload.score > 0) {
@@ -294,12 +305,12 @@ const UserDashboard = ({
       } else if (payload.score < 0) {
         fillColor = '#ef4444'; // red for negative
       }
-      
+
       return (
-        <circle 
-          cx={cx} 
-          cy={cy} 
-          r={4} 
+        <circle
+          cx={cx}
+          cy={cy}
+          r={4}
           fill={fillColor}
           stroke={fillColor}
           strokeWidth={2}
@@ -366,7 +377,7 @@ const UserDashboard = ({
                 <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
                 <XAxis
                   dataKey="date"
-                  axisLine={{ stroke: '#9ca3af', strokeWidth: 2 }} 
+                  axisLine={{ stroke: '#9ca3af', strokeWidth: 2 }}
                   tickLine={false}
                   tick={{ fontSize: 10, fill: '#d1d5db' }}
                   interval={6}
@@ -377,7 +388,7 @@ const UserDashboard = ({
                 />
                 <YAxis
                   domain={[-1, 1]}
-                  axisLine={{ stroke: '#9ca3af', strokeWidth: 2 }} 
+                  axisLine={{ stroke: '#9ca3af', strokeWidth: 2 }}
                   tickLine={false}
                   tick={{ fontSize: 12, fill: '#d1d5db' }}
                   tickFormatter={(value) => value.toFixed(1)}
@@ -452,7 +463,26 @@ const UserDashboard = ({
 
     return (
       <div className="dashboard-box dashboard-through-day-view">
-        <h3 className="dashboard-box-title">Through the Day View</h3>
+ <div className="relative mb-4">
+    <h3 className="dashboard-box-title text-center">Through the Day View</h3>
+    
+    {/* Time filter tabs - positioned absolutely on the right */}
+    <div className="absolute right-0 top-0 flex border border-gray-300 rounded">
+      {(['week', 'month'] as const).map((period) => (
+        <button
+          key={period}
+          onClick={() => setThroughDayViewPeriod(period)}
+          className={`px-3 py-1 text-xs font-medium border-r border-gray-300 last:border-r-0 ${
+            throughDayViewPeriod === period
+              ? 'bg-white text-black'
+              : 'bg-black bg-opacity-40 text-white hover:bg-white hover:bg-opacity-20'
+          }`}
+        >
+          {period.charAt(0).toUpperCase() + period.slice(1)}
+        </button>
+      ))}
+    </div>
+  </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -676,7 +706,7 @@ const UserDashboard = ({
 
     return (
       <div className="dashboard-box dashboard-ai-insights">
-        <h3 className="dashboard-box-title text-center mb-6">
+        <h3 className="dashboard-box-title text-center mt-3 !mb-6">
           🤖 AI-Powered Insights
         </h3>
 
@@ -848,8 +878,8 @@ const UserDashboard = ({
     if (!insightsData) return null;
     return (
       <div className="dashboard-box dashboard-ai-insights">
-        <h3 className="dashboard-box-title text-center mb-4">
-          {reportType === 'previous' ? 'Your Previous AI Insights Report' : 'Your Current AI Insights Report'}
+        <h3 className="dashboard-box-title text-center mt-4 !mb-6">
+          {reportType === 'previous' ? 'Previous AI Insights Report' : 'Current AI Insights Report'}
         </h3>
 
         {/* Weekly Insights */}
