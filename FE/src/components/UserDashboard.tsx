@@ -9,7 +9,8 @@ import { useUser } from '../contexts/UserContext';
 // Import at top
 import { aiInsightsApiService } from '../services/AIInsightsService';
 import { hasValidCurrentInsights } from '../services/AIInsightsService';
-
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../constants/routes';
 // Define mood types and scoring system
 type MoodType = 'Happy' | 'Sad' | 'Anxious' | 'Calm' | 'Excited' | 'Tired' | 'Angry';
 
@@ -30,13 +31,11 @@ type TimePeriod = 'today' | 'week' | 'month';
 interface UserDashboardProps {
   currentMood: string | null;
   hasRecentMood: boolean;
-  onNavigate?: (page: string) => void;
 }
 
 const UserDashboard = ({
   currentMood,
-  hasRecentMood,
-  onNavigate
+  hasRecentMood
 }: UserDashboardProps): React.ReactElement => {
   // Vanta refs
   const vantaRef = useRef<HTMLDivElement>(null);
@@ -57,7 +56,7 @@ const UserDashboard = ({
   const [isReportGenerating, setIsReportGenerating] = useState(false);
   // Update state to track report type
   const [reportType, setReportType] = useState<'current' | 'previous' | null>(null);
-
+  const navigate = useNavigate();
   const handleGenerateInsights = async () => {
     try {
       setIsReportGenerating(true);
@@ -205,8 +204,8 @@ const UserDashboard = ({
 
   // Handle current mood navigation
   const handleCurrentMoodClick = () => {
-    if (onNavigate && !hasRecentMood) {
-      onNavigate('home');
+    if (!hasRecentMood) {
+      navigate(ROUTES.MOOD);
     }
   };
 
@@ -291,7 +290,7 @@ const UserDashboard = ({
       // Three-way color coding
       let fillColor = '#ffffff'; // white for zero (default)
       if (payload.score > 0) {
-        fillColor = '#10b981'; // green for positive
+        fillColor = '#6ee7b7'; // green for positive
       } else if (payload.score < 0) {
         fillColor = '#ef4444'; // red for negative
       }
@@ -408,6 +407,7 @@ const UserDashboard = ({
                   strokeWidth={2}
                   dot={renderColoredDot}
                   activeDot={{ r: 6, fill: '#3b82f6' }}
+                  isAnimationActive={false}
                 />
               </LineChart>
             </ResponsiveContainer>
