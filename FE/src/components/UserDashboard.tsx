@@ -41,7 +41,7 @@ const UserDashboard = ({
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
   const { user } = useUser();
-  const [selectedFrequencyPeriod, setSelectedFrequencyPeriod] = useState<TimePeriod>('today');
+  const [selectedFrequencyPeriod, setSelectedFrequencyPeriod] = useState<TimePeriod>('month');
   const [throughDayViewPeriod, setThroughDayViewPeriod] = useState<'week' | 'month'>('month');
   // API data states
   const [dominantMoodData, setDominantMoodData] = useState<DominantMoodResponse | null>(null);
@@ -566,7 +566,7 @@ const UserDashboard = ({
             ))}
           </div>
         </div>
-
+        <div className="text-xs text-gray-300 mb-2">Mood Count</div>
         {/* Bar chart */}
         <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -721,7 +721,7 @@ const UserDashboard = ({
               How It Works
             </h4>
             <p className="text-gray-300 text-sm leading-relaxed">
-              Our advanced AI model analyzes your mood patterns over time to identify trends,
+              An advanced AI model analyzes your mood patterns over time to identify trends,
               correlations, and behavioral insights. The system generates personalized recommendations
               to help you better understand and improve your emotional well-being.
             </p>

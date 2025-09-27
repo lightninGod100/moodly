@@ -88,7 +88,7 @@ const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, c
     };
 
     // Only add scroll listener on settings page
-    if (currentPage === 'settings' || currentPage === 'privacy-and-terms') {
+    if (currentPage === 'settings' || currentPage === 'privacy-and-terms' || currentPage === 'dashboard') {
       window.addEventListener('scroll', handleScroll);
       handleScroll(); // Check initial scroll position
     }
@@ -102,7 +102,10 @@ const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, c
     // You'll need to determine how to detect mood selection screen
     // Option 1: If you pass currentPage prop
     if (currentPage === 'dashboard') {
-      return 'navbar-auth-dashboard';
+      if(isScrolled && !isScrollingUp) {
+        return 'navbar-auth-dashboard navbar-auth-settings-hidden';
+      }
+      return 'navbar-auth-dashboard ';
     }
     if (currentPage === 'globe') {
       return 'navbar-auth-globe';

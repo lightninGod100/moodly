@@ -348,7 +348,7 @@ async getMoodHistory(): Promise<MoodHistoryResponse> {
       const results = await Promise.allSettled([
         this.getDominantMood(),
         this.getHappinessIndex('month'),
-        this.getMoodFrequency('today'),
+        this.getMoodFrequency('month'),
         this.getThroughDayView('month'),
         this.getMoodHistory()
       ]);
