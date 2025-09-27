@@ -399,6 +399,8 @@ export const authApiService = {
 
       // Clear any pending logout (in case of duplicate calls)
       localStorage.removeItem('pendingLogout');
+      sessionStorage.clear();
+      localStorage.clear();
 
     } catch (error) {
       // 🎯 SINGLE POINT OF LOGGING - Server logout failed
@@ -424,6 +426,8 @@ export const authApiService = {
     } finally {
       // Only clear user data, cookies cleared by backend
       userDataManager.clearUserData();
+      sessionStorage.clear();
+      localStorage.clear();
       console.info('🔓 Local logout completed');
     }
   },

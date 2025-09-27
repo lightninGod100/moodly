@@ -386,8 +386,10 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                 paddingBottom: '1rem',
                 borderRadius: '1.5rem',
                 boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-                width: '55vw',
-                minWidth: '800px'
+                width: '62vw',
+                minWidth: '400px',
+                maxWidth: '1050px',
+                overflow: 'hidden'
 
               }}>
                 <div style={{

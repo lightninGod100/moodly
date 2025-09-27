@@ -608,6 +608,7 @@ const UserDashboard = ({
                   radius={[4, 4, 0, 0]}
                   stroke="#3b82f6"
                   strokeWidth={1}
+                  isAnimationActive={false}
                 />
               </BarChart>
             </ResponsiveContainer>
