@@ -116,7 +116,7 @@ function AppContent() {
           }
 
           // Load last mood from cache/API
-          const stored = localStorage.getItem('lastMoodData');
+          const stored = localStorage.getItem('latestMoodData');
           if (stored) {
             try {
               const cachedData: MoodCacheData = JSON.parse(stored);
@@ -133,7 +133,7 @@ function AppContent() {
               }
             } catch (e) {
               console.error('Invalid cached mood data');
-              localStorage.removeItem('lastMoodData');
+              localStorage.removeItem('latestMoodData');
             }
           }
 
@@ -147,7 +147,7 @@ function AppContent() {
                   lastApiFetch: Date.now()
                 };
                 setCurrentMoodData(moodData);
-                localStorage.setItem('lastMoodData', JSON.stringify(moodData));
+                localStorage.setItem('latestMoodData', JSON.stringify(moodData));
               }
               setNotificationError(null);
             })
@@ -254,7 +254,7 @@ function AppContent() {
       };
       setCurrentMoodData(newMoodData);
       // ADDED: Save to localStorage as backup
-      localStorage.setItem('lastMoodData', JSON.stringify(newMoodData));
+      localStorage.setItem('latestMoodData', JSON.stringify(newMoodData));
       console.log('Mood saved successfully:', mood);
 
     } catch (error) {
