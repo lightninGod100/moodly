@@ -179,6 +179,22 @@ router.put('/password_change', arl_user_settings_password_change, authenticateTo
       [newPasswordHash, userId]
     );
 
+    // Invalidate all refresh tokens EXCEPT current device's
+    const currentRefreshToken = req.cookies.refreshToken;
+    if (currentRefreshToken) {
+      // Delete all tokens for this user except the current one
+      await pool.query(
+        'DELETE FROM refresh_tokens WHERE user_id = $1 AND token != $2',
+        [userId, currentRefreshToken]
+      );
+    } else {
+      // If no current token, delete all (shouldn't happen with auth middleware)
+      await pool.query(
+        'DELETE FROM refresh_tokens WHERE user_id = $1',
+        [userId]
+      );
+    }
+
     return res.json({
       message: 'Password changed successfully'
     });
@@ -296,7 +312,7 @@ router.put('/photo', arl_photo_upload_delete, authenticateToken, async (req, res
     if (!validation.valid) {
       const errorResponse = ErrorLogger.createErrorResponse(
         ERROR_CATALOG.VAL_PHOTO_INVALID_FORMAT.code,
-        ERROR_CATALOG.VAL_PHOTO_INVALID_FORMAT.message 
+        ERROR_CATALOG.VAL_PHOTO_INVALID_FORMAT.message
       );
       return res.status(400).json(errorResponse);
     }
