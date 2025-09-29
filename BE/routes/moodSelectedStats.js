@@ -353,7 +353,7 @@ router.get('/weekly-sentiment', arl_mood_selected_stats, authenticateToken, asyn
     
     // Get mood data for last 7 days
     const moodResult = await pool.query(
-      'SELECT mood, created_at FROM moods WHERE user_id = $1 AND created_at >= $2 ORDER BY created_at DESC',
+      'SELECT mood, created_at,created_at_local FROM moods WHERE user_id = $1 AND created_at >= $2 ORDER BY created_at DESC',
       [userId, sevenDaysAgo]
     );
     
@@ -378,7 +378,7 @@ router.get('/weekly-sentiment', arl_mood_selected_stats, authenticateToken, asyn
     // Check unique days with mood entries
     const uniqueDays = new Set();
     moodEntries.forEach(entry => {
-      const date = new Date(entry.created_at).toDateString();
+      const date = new Date(entry.created_at_local).toDateString();
       uniqueDays.add(date);
     });
     
@@ -386,14 +386,14 @@ router.get('/weekly-sentiment', arl_mood_selected_stats, authenticateToken, asyn
     if (uniqueDays.size < 3) {
       return res.json({
         hasData: false,
-        message: "Moodly needs a bit more time to understand your weekly patterns"
+        message: "1234Moodly needs a bit more time to understand your weekly patterns"
       });
     }
     
     // Calculate daily dominant moods
     const dailyMoods = {};
     moodEntries.forEach(entry => {
-      const date = new Date(entry.created_at).toDateString();
+      const date = new Date(entry.created_at_local).toDateString();
       if (!dailyMoods[date]) {
         dailyMoods[date] = {};
       }
@@ -453,7 +453,7 @@ router.get('/weekly-sentiment', arl_mood_selected_stats, authenticateToken, asyn
       'GET /api/mood-selected-stats/weekly-sentiment',
       '', // Empty string - multiple operations (user SELECT + moods SELECT + current mood SELECT)
       error,
-      userId
+      req.user?.id || null
     );
     res.status(500).json(errorResponse);
   }

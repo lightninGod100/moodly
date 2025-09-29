@@ -119,7 +119,7 @@ export const moodApiService = {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     try {
 
-      const response = await api.post('/moods2', {
+      const response = await api.post('/moods', {
         mood,
         local_timestamp: getLocalTimestampWithOffset(), // "2025-01-15 15:30:45.123+05:30"
         day_view: getTimePeriod() // Morning Afternoon Evening Night
