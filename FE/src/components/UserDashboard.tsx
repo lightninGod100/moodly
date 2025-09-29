@@ -7,8 +7,7 @@ import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
 import { useUser } from '../contexts/UserContext';
 // Import at top
-import { aiInsightsApiService } from '../services/AIInsightsService';
-import { hasValidCurrentInsights } from '../services/AIInsightsService';
+import { aiInsightsApiService, hasValidCurrentInsights, isInsightGenerationInProgress } from '../services/AIInsightsService';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 // Define mood types and scoring system
@@ -58,9 +57,50 @@ const UserDashboard = ({
   const [reportType, setReportType] = useState<'current' | 'previous' | null>(null);
   const navigate = useNavigate();
 
+  // In the component, after state declarations, add effect to check generation status
+  useEffect(() => {
+    // Check if generation is in progress on mount
+    if (isInsightGenerationInProgress()) {
+      setIsReportGenerating(true);
 
+      // Poll for completion
+      const pollInterval = setInterval(() => {
+        if (!isInsightGenerationInProgress()) {
+          setIsReportGenerating(false);
+          clearInterval(pollInterval);
+          // Check if insights are now available
+
+          if (hasValidCurrentInsights()) {
+            setIsReportGenerating(false);
+            clearInterval(pollInterval);
+          }
+        }
+      }, 2000); // Poll every 2 seconds
+
+      return () => clearInterval(pollInterval);
+    }
+  }, []);
+
+  // Update handleGenerateInsights to handle in-progress state
   const handleGenerateInsights = async () => {
     try {
+      // If we already have valid cached insights, just load them
+      if (hasValidCurrentInsights()) {
+        setIsReportGenerating(true);
+        const response = await aiInsightsApiService.generateInsights(); // This will return cached data
+        setInsightsData(response.data);
+        setReportType('current');
+        console.log('Loaded cached insights:', response.data);
+        setIsReportGenerating(false);
+        return;
+      }
+  
+      // Only check generation status for new generation
+      if (isInsightGenerationInProgress()) {
+        console.log('Generation already in progress');
+        return;
+      }
+  
       setIsReportGenerating(true);
       const response = await aiInsightsApiService.generateInsights();
       setInsightsData(response.data);
@@ -69,7 +109,10 @@ const UserDashboard = ({
       console.log('Insights generated:', response.data);
     } catch (error) {
       console.error('Failed to generate insights:', error);
-      alert('Failed to generate insights');
+      // Only show alert if it's not the "already in progress" error
+      if (!(error as Error).message?.includes('already in progress')) {
+        alert('Failed to generate insights');
+      }
     } finally {
       setIsReportGenerating(false);
     }
@@ -696,13 +739,40 @@ const UserDashboard = ({
   // AI Insights Landing Component
   // AI Insights Landing Component
   const AIInsightsLanding: React.FC = () => {
+
+    // Update button disabled state in AIInsightsLanding
+    const getButtonDisabledState = () => {
+      if (hasValidCurrentInsights()) {
+        return false;
+      }
+      return isReportGenerating || isInsightGenerationInProgress();
+    };
+    // In AIInsightsLanding component, update getStatusMessage
+    const getStatusMessage = () => {
+      // Don't show progress message if we have valid insights
+      if (hasValidCurrentInsights()) {
+        return null;
+      }
+
+      // Only show if actually generating
+      if (isInsightGenerationInProgress()) {
+        return (
+          <div className="text-center mt-2">
+            <p className="text-yellow-400 text-sm animate-pulse">
+              ⏳ Insights generation in progress... This may take up to a minute.
+            </p>
+          </div>
+        );
+      }
+      return null;
+    };
     const getButtonText = () => {
       if (isReportGenerating) return 'Generating...';
       if (hasValidCurrentInsights()) return 'View Current Insights';
       return 'Generate Insights';
     };
     const getButtonTitleText = () => {
-      if (isReportGenerating) return 'Your Insights are being generated...';
+      if (isReportGenerating) return getStatusMessage();
       if (hasValidCurrentInsights()) return 'Click the button below to view your current insights';
       return 'click the button below to generate insights';
     };
@@ -805,7 +875,7 @@ const UserDashboard = ({
         <div className="flex justify-center">
           <button
             onClick={handleGenerateInsights}
-            disabled={isReportGenerating}
+            disabled={getButtonDisabledState()}
             className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg 
              transition-all duration-200 hover:scale-105 flex items-center space-x-2
              border border-blue-400 shadow-lg shadow-blue-500/20
@@ -815,6 +885,7 @@ const UserDashboard = ({
             <span>{getButtonText()}</span>
             <span className="text-lg">✨</span>
           </button>
+
         </div>
         {/* Previous Reports Section */}
         <div className="text-center mt-8 py-2">

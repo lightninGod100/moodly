@@ -214,9 +214,15 @@ async function saveInsightsToCache(userId, insightsData, pool) {
   const result = await pool.query(query, [userId, JSON.stringify(insightsData), epochTime]);
   return result.rows[0];
 }
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 // POST /api/ai-insights - Generate AI insights for user's mood data
 router.post('/', authenticateToken, async (req, res) => {
+
+ await delay(6000);
   try {
+
     const userId = req.user.id;
 
     const recentInsights = await getRecentInsights(userId, pool);
