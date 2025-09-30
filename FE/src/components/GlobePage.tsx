@@ -233,7 +233,7 @@ const GlobePage: React.FC = () => {
           />
           <span style={{ fontSize: '0.875rem' }}>{mood}</span>
         </div>
-        <span style={{ fontSize: '0.875rem' }}>{percentage || 0}% Times</span>
+        <span style={{ fontSize: '0.875rem' }}>{percentage || 0}% Users</span>
       </div>
       {index < sortedArray.length - 1 && (
         <div 

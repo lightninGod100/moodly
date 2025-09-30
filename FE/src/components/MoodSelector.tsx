@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 // import NET from 'vanta/dist/vanta.net.min';
 import WAVES from 'vanta/dist/vanta.waves.min';
+import { useNotification } from '../contexts/NotificationContext';
 
 type Mood = {
   name: string;
@@ -22,7 +23,7 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood,
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [showToast, setShowToast] = useState(false);
+  const { showNotification } = useNotification(); // ADD THIS LINE
   // Function to calculate scale based on distance from hovered button
   const getScale = (currentIndex: number): number => {
     if (hoveredIndex === null) return 1; // No hover, normal size
@@ -47,15 +48,24 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood,
   ];
 
   useEffect(() => {
+    if (error) {
+      showNotification({
+        type: 'error',
+        message: error
+      });
+
+      // Clear the error after showing notification
+      if (onClearError) {
+        const timer = setTimeout(() => {
+          onClearError();
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [error]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      // console.log('=== VANTA DEBUGGING ===');
-      // console.log('vantaRef.current:', vantaRef.current);
-      // console.log('Element dimensions:', {
-      //   width: vantaRef.current?.offsetWidth,
-      //   height: vantaRef.current?.offsetHeight,
-      //   clientWidth: vantaRef.current?.clientWidth,
-      //   clientHeight: vantaRef.current?.clientHeight
-      // });
 
       try {
         if (!vantaEffect.current && vantaRef.current) {
@@ -117,32 +127,7 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood,
       }
     };
   }, []);
-  // Handle error toast display and auto-hide
-  useEffect(() => {
-    if (error) {
-      setShowToast(true);
 
-      // Auto-hide after 3 seconds
-      const timer = setTimeout(() => {
-        setShowToast(false);
-        setTimeout(() => {
-          onClearError?.();
-        }, 300);
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    } else {
-      setShowToast(false);
-    }
-  }, [error, onClearError]);
-
-  // Manual close handler
-  const handleCloseToast = () => {
-    setShowToast(false);
-    setTimeout(() => {
-      onClearError?.();
-    }, 300);
-  };
   return (
     <div ref={vantaRef} className="vanta-waves-container">
       <h1 className="text-white text-4xl md:text-6xl font-bold text-center mb-6">How Are You Feeling Right Now?</h1>
@@ -170,53 +155,6 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood,
           </button>
         ))}
       </div>
-      {/* Error Toast Notification */}
-      {/* Error Toast Notification */}
-      {/* Error Toast Notification */}
-{error && (
-  <div
-    style={{
-      position: 'fixed',
-      bottom: '24px',
-      left: '24px',
-      zIndex: 9999,
-      maxWidth: '384px',
-      minWidth: '300px',
-      transform: showToast ? 'translateX(0)' : 'translateX(-120%)',
-      opacity: showToast ? 1 : 0, 
-      transition: 'all 300ms ease-in-out',
-      backgroundColor: '#ef4444',
-      color: 'white',
-      padding: '16px 24px',
-      borderRadius: '8px',
-      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
-    }}
-  >
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>Error</div>
-        <div style={{ fontSize: '14px' }}>{error}</div>
-      </div>
-      <button
-        onClick={handleCloseToast}
-        style={{
-          marginLeft: '16px',
-          color: 'white',
-          fontSize: '20px',
-          fontWeight: 'bold',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: '0',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-      >
-        ×
-      </button>
-    </div>
-  </div>
-)}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 // src/services/moodService.ts
 import { api } from './apiClient';
 import ErrorLogger, { type BackendErrorResponse } from '../utils/ErrorLogger';
+
 // Types for API responses
 interface LastMoodResponse {
   message: string;
@@ -22,22 +23,11 @@ interface CreateMoodResponse {
   };
 }
 
-// interface CurrentMoodResponse {
-//   mood: string;
-//   createdAt: string;
-// }
-
-// API configuration
-const API_BASE = 'http://localhost:5000/api';
-
-
-
 // Mood API service functions
 export const moodApiService = {
-  /**
-   * Get user's last mood entry
-   * Calls GET /api/moods/last
-   */
+   // Get user's last mood entry
+   // Calls GET /api/moods/last
+
   async getLastMood(): Promise<LastMoodResponse['mood']> {
     try {
       const response = await api.get('/moods/last');
@@ -74,10 +64,8 @@ export const moodApiService = {
     }
   },
 
-  /**
-   * Create a new mood entry
-   * Calls POST /api/moods
-   */
+   // Create a new mood entry
+   // Calls POST /api/moods
 
   async createMood(mood: string): Promise<CreateMoodResponse['mood']> {
     // Frontend - Get timestamp in PostgreSQL format with timezone offset
@@ -161,27 +149,5 @@ export const moodApiService = {
     }
   }
 
-  /**
-   * Get user's current mood (most recent)
-   * Calls GET /api/moods/current
-   */
-  // async getCurrentMood(): Promise<{mood: string, createdAt: string}> {
-  //   try {
-  //     const response = await fetch(`${API_BASE}/moods/current`, {
-  //       method: 'GET',
-  //       headers: getAuthHeaders()
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error(`Failed to fetch current mood: ${response.status} ${response.statusText}`);
-  //     }
-
-  //     const data: CurrentMoodResponse = await response.json();
-  //     return data;
-  //   } catch (error) {
-  //     console.error('Error fetching current mood:', error);
-  //     throw error;
-  //   }
-  // }
 };
 
