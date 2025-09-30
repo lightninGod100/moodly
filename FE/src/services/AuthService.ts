@@ -398,9 +398,10 @@ export const authApiService = {
       console.info('✅ Server logout successful:', data.message);
 
       // Clear any pending logout (in case of duplicate calls)
-      localStorage.removeItem('pendingLogout');
       sessionStorage.clear();
       localStorage.clear();
+      document.cookie.split(";").forEach(c => document.cookie = c.split("=")[0].trim() + "=;expires=" + new Date(0).toUTCString());
+
 
     } catch (error) {
       // 🎯 SINGLE POINT OF LOGGING - Server logout failed
@@ -428,6 +429,7 @@ export const authApiService = {
       userDataManager.clearUserData();
       sessionStorage.clear();
       localStorage.clear();
+      document.cookie.split(";").forEach(c => document.cookie = c.split("=")[0].trim() + "=;expires=" + new Date(0).toUTCString());
       console.info('🔓 Local logout completed');
     }
   },
