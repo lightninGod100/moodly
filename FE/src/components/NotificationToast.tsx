@@ -1,98 +1,37 @@
-// src/components/NotificationToast.tsx
-import React, { useState, useCallback } from 'react';
+// FE/src/components/NotificationToast.tsx
+import React from 'react';
+import { useNotification } from '../contexts/NotificationContext';
+import type { NotificationType } from '../contexts/NotificationContext';
 
-// Notification types and their corresponding messages
-type NotificationType = 'userSettings' | 'lastMood' | 'moodCreation';
-
-interface NotificationConfig {
-  message: string;
-  type: 'error' | 'success' | 'warning';
-  icon: string;
-}
-
-// Centralized notification message mapping
-const NOTIFICATION_MESSAGES: Record<NotificationType, NotificationConfig> = {
-  userSettings: {
-    message: "Unable to load user settings",
-    type: 'error',
-    icon: '❌'
-  },
-  lastMood: {
-    message: "Unable to load recent mood data",
-    type: 'error',
-    icon: '❌'
-  },
-  moodCreation: {
-    message: "Unable to save your mood",
-    type: 'error',
-    icon: '❌'
-  }
+// Color mapping for notification types
+const NOTIFICATION_COLORS: Record<NotificationType, string> = {
+  error: 'rgba(239, 68, 68, 0.9)',
+  success: 'rgba(34, 197, 94, 0.9)',
+  warning: 'rgba(245, 158, 11, 0.9)',
+  info: 'rgba(59, 130, 246, 0.9)'
 };
 
-interface Notification {
-  id: number;
-  config: NotificationConfig;
-  timestamp: number;
-}
+// Title mapping for notification types
+const NOTIFICATION_TITLES: Record<NotificationType, string> = {
+  error: 'Error',
+  success: 'Success',
+  warning: 'Warning',
+  info: 'Info'
+};
 
-interface NotificationToastProps {
-  // This component exposes methods via ref
-}
-
-export interface NotificationToastRef {
-  showNotification: (notificationType: NotificationType) => void;
-  clearNotifications: () => void;
-}
-
-const NotificationToast = React.forwardRef<NotificationToastRef, NotificationToastProps>((props, ref) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-
-  const showNotification = useCallback((notificationType: NotificationType) => {
-    const config = NOTIFICATION_MESSAGES[notificationType];
-    const id = Date.now() + Math.random(); // Ensure uniqueness
-
-    const notification: Notification = {
-      id,
-      config,
-      timestamp: Date.now()
-    };
-
-    setNotifications(prev => [...prev, notification]);
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }, 5000);
-  }, []);
-
-  const clearNotifications = useCallback(() => {
-    setNotifications([]);
-  }, []);
-
-  const removeNotification = useCallback((id: number) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  }, []);
-
-  // Expose methods via ref
-  React.useImperativeHandle(ref, () => ({
-    showNotification,
-    clearNotifications
-  }), [showNotification, clearNotifications]);
+const NotificationToast: React.FC = () => {
+  const { notifications, removeNotification } = useNotification();
 
   return (
     <>
-      {notifications.map(notification => (
+      {notifications.map((notification) => (
         <div
           key={notification.id}
           style={{
             position: 'fixed',
             bottom: '24px',
             left: '24px',
-            background: notification.config.type === 'error'
-              ? 'rgba(239, 68, 68, 0.9)'
-              : notification.config.type === 'success'
-                ? 'rgba(34, 197, 94, 0.9)'
-                : 'rgba(245, 158, 11, 0.9)', // warning
+            background: NOTIFICATION_COLORS[notification.type],
             color: 'white',
             padding: '12px 20px',
             borderRadius: '8px',
@@ -118,8 +57,10 @@ const NotificationToast = React.forwardRef<NotificationToastRef, NotificationToa
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>Error</div>
-              <div style={{ fontSize: '14px' }}>{notification.config.message}</div>
+              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>
+                {NOTIFICATION_TITLES[notification.type]}
+              </div>
+              <div style={{ fontSize: '14px' }}>{notification.message}</div>
             </div>
           </div>
         </div>
@@ -139,8 +80,6 @@ const NotificationToast = React.forwardRef<NotificationToastRef, NotificationToa
       `}</style>
     </>
   );
-});
-
-NotificationToast.displayName = 'NotificationToast';
+};
 
 export default NotificationToast;

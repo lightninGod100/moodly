@@ -2,14 +2,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 import ContactPopup from './ContactPopup';
-import NotificationToast, { type NotificationToastRef } from './NotificationToast';
+
 
 
 interface AuthenticatedNavbarProps {
   onNavigate: (page: string) => void;
   currentPage: string;
-  // Add notification prop
-  errorToShow: 'userSettings' | 'lastMood' | null;
 }
 // Profile Photo Component
 const ProfilePhoto: React.FC = () => {
@@ -52,7 +50,7 @@ const ProfilePhoto: React.FC = () => {
 };
 
 
-const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, currentPage, errorToShow }) => {
+const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, currentPage}) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSupportPopup, setShowSupportPopup] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -61,15 +59,7 @@ const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, c
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Add notification ref
-  const notificationRef = useRef<NotificationToastRef>(null);
 
-    // Expose notification function to parent
-    useEffect(() => {
-      if (errorToShow && notificationRef.current) {
-        notificationRef.current.showNotification(errorToShow);
-      }
-    }, [errorToShow]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -381,8 +371,6 @@ const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, c
         onClose={handleSupportClose}
         onSubmit={handleSupportSubmit}
       />
-      {/* Notification Toast */}
-      <NotificationToast ref={notificationRef} />
     </>
   );
 };

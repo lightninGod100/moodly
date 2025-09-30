@@ -27,7 +27,8 @@ import { settingsApiService } from './services/SettingsService';
 import { authApiService } from './services/AuthService';
 
 import { deviceService } from './services/DeviceService';
-
+import { NotificationProvider, useNotification } from './contexts/NotificationContext';
+import NotificationToast from './components/NotificationToast';
 
 interface MoodCacheData {
   mood: string;
@@ -59,23 +60,23 @@ const getMoodEmoji = (mood: string): string => {
 function App() {
   return (
     <UserProvider>
-      <AppContent />
+      <NotificationProvider>
+        <AppContent />
+        <NotificationToast />
+      </NotificationProvider>
     </UserProvider>
-
-
   );
 }
 
 function AppContent() {
   const { user, dispatch } = useUser();
+  const { showNotification } = useNotification();
   // ADDED: API status tracking for error handling and loading states
   const [apiStatus, setApiStatus] = useState<'loading' | 'healthy' | 'error'>('loading');
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
   const [currentMoodData, setCurrentMoodData] = useState<MoodCacheData | null>(null);
   const [moodError, setMoodError] = useState<string | null>(null);
-  const [notificationError, setNotificationError] = useState<'userSettings' | 'lastMood' | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   // ADD routing hooks
@@ -109,10 +110,12 @@ function AppContent() {
           try {
             const userSettings = await settingsApiService.getUserSettings();
             dispatch({ type: 'SET_USER', payload: userSettings });
-            setNotificationError(null);
           } catch (error) {
             console.warn('Failed to fetch user settings from server');
-            setNotificationError('userSettings');
+            showNotification({
+              type: 'error',
+              message: 'Unable to load user settings'
+            });
           }
 
           // Load last mood from cache/API
@@ -127,7 +130,6 @@ function AppContent() {
 
               if (isApiDataFresh) {
                 console.log('Using cached data, API called recently');
-                setNotificationError(null);
                 setApiStatus('healthy');
                 return;
               }
@@ -149,11 +151,13 @@ function AppContent() {
                 setCurrentMoodData(moodData);
                 localStorage.setItem('latestMoodData', JSON.stringify(moodData));
               }
-              setNotificationError(null);
             })
-            .catch(error => {
+            .catch(() => {
               console.warn('Could not load last mood from server');
-              setNotificationError('lastMood');
+              showNotification({
+                type: 'error',
+                message: 'Unable to load recent mood data'
+              });
             });
           setApiStatus('healthy');
         } else {
@@ -364,7 +368,6 @@ function AppContent() {
           <AuthenticatedNavbar
             onNavigate={handleNavigate}
             currentPage={getCurrentPage()}
-            errorToShow={notificationError}
           />
         ) : (
           <PublicNavbar
@@ -447,7 +450,7 @@ function AppContent() {
                     const currentMood = getCurrentMood();
                     const hasRecentMood = currentMood && currentMoodData ?
                       isWithin10Minutes(currentMoodData.timestamp) : false;
-                    return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} onNavigate={handleNavigate} />;
+                    return <UserDashboard currentMood={currentMood} hasRecentMood={hasRecentMood} />;
                   })()
                 } />
 
