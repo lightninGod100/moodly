@@ -4,19 +4,19 @@ import { fetchWorldStats } from '../services/GlobalStatsService';
 import type { GlobalMoodStats, CountryStats } from '../services/GlobalStatsService';
 import WorldMap from './WorldMap';
 import { moodColors } from './WorldMap';
-
+import { useNotification } from '../contexts/NotificationContext';
 // Mood emoji mapping
-const moodEmojis: { [key: string]: string } = {
-  Happy: '😊',
-  Excited: '😃', 
-  Calm: '😌',
-  Tired: '😴',
-  Sad: '😢',
-  Angry: '😠',
-  Anxious: '😰'
-};
+// const moodEmojis: { [key: string]: string } = {
+//   Happy: '😊',
+//   Excited: '😃', 
+//   Calm: '😌',
+//   Tired: '😴',
+//   Sad: '😢',
+//   Angry: '😠',
+//   Anxious: '😰'
+// };
 
-const moodOrder = ['Happy', 'Excited', 'Calm', 'Tired', 'Sad', 'Angry', 'Anxious'];
+//const moodOrder = ['Happy', 'Excited', 'Calm', 'Tired', 'Sad', 'Angry', 'Anxious'];
 
 // Interface for all world stats data
 interface GlobalStatsData {
@@ -29,7 +29,7 @@ const GlobePage: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('live');
   const [worldStats, setWorldStats] = useState<GlobalStatsData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { showNotification } = useNotification(); // ADD THIS LINE
   
  
  
@@ -51,13 +51,35 @@ const GlobePage: React.FC = () => {
   const loadWorldStats = async (period: string) => {
     try {
       setIsLoading(true);
-      setError(null);
-      
+ 
       const stats = await fetchWorldStats(period);
       setWorldStats(stats);
     } catch (err) {
-      
-      setError(err instanceof Error ? err.message : 'Something seems wrong, please refresh or come back later');
+      showNotification({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Something seems wrong, please refresh or come back later'
+      });
+      setWorldStats({
+        global: {
+          Happy: 0,
+          Excited: 0,
+          Calm: 0,
+          Tired: 0,
+          Sad: 0,
+          Angry: 0,
+          Anxious: 0
+        },
+        frequency: {
+          Happy: 0,
+          Excited: 0,
+          Calm: 0,
+          Tired: 0,
+          Sad: 0,
+          Angry: 0,
+          Anxious: 0
+        },
+        countries: {}
+      });
     } finally {
       setIsLoading(false);
     }
@@ -107,24 +129,10 @@ const GlobePage: React.FC = () => {
           </div>
         )}
 
-        {/* Error State */}
-        {error && !isLoading && (
-          <div className="flex items-center justify-center" style={{ height: '100%' }}>
-            <div className="bg-red-900 border border-red-700 rounded" style={{ padding: '1.5rem', maxWidth: '28rem' }}>
-              <p className="text-red-200" style={{ marginBottom: '1rem' }}>{error}</p>
-              <button
-                onClick={() => loadWorldStats(selectedPeriod)}
-                className="bg-red-700 text-white rounded hover:bg-red-600 transition-colors"
-                style={{ padding: '0.5rem 1rem' }}
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        )}
+
 
         {/* Map */}
-        {worldStats && !isLoading && !error && (
+        {worldStats && !isLoading && (
           <WorldMap countryData={worldStats.countries} />
         )}
       </div>
@@ -140,7 +148,7 @@ const GlobePage: React.FC = () => {
   }}
 >
         {/* Time Filter Tabs - Make clickable */}
-        {!error && !isLoading && (
+        {!isLoading && (
         <div style={{ marginBottom: '1rem' }} className="pointer-events-auto">
           <div className="flex border border-gray-600 rounded overflow-hidden" style={{ backgroundColor: 'rgba(31, 41, 55, 0.9)' }}>
             {['live', 'today', 'week', 'month'].map((period) => (
@@ -162,7 +170,7 @@ const GlobePage: React.FC = () => {
         </div>
         )}
                 
-        {!isLoading && !error && worldStats && (
+        {!isLoading && worldStats && (
           <div className="flex flex-col pointer-events-auto" style={{ gap: '1rem' }}>
             {/* Dominant Mood Stats - Semi-transparent dark gray */}
             {/* Dominant Mood Stats - Semi-transparent dark gray */}
@@ -217,7 +225,7 @@ const GlobePage: React.FC = () => {
     </div>
   </div>
   <div className="space-y-1">
-  {Object.entries(worldStats.frequency)
+  {Object.entries(worldStats?.frequency || {})
     .sort(([, percentageA], [, percentageB]) => (percentageB || 0) - (percentageA || 0))
     .map(([mood, percentage], index, sortedArray) => (
     <div key={mood}>
@@ -243,6 +251,13 @@ const GlobePage: React.FC = () => {
       )}
     </div>
   ))}
+  
+  {/* Add this "No data" message */}
+  {(!worldStats?.frequency || Object.keys(worldStats.frequency).length === 0) && (
+    <div className="text-gray-400 text-center" style={{ fontSize: '0.875rem', padding: '0.5rem' }}>
+      No data available
+    </div>
+  )}
 </div>
             </div>
 
@@ -299,7 +314,7 @@ const GlobePage: React.FC = () => {
     </div>
   </div>
   <div className="space-y-1">
-  {Object.entries(worldStats.frequency)
+  {Object.entries(worldStats?.frequency || {})
     .sort(([, percentageA], [, percentageB]) => (percentageB || 0) - (percentageA || 0))
     .map(([mood, percentage], index, sortedArray) => (
     <div key={mood}>
@@ -325,6 +340,13 @@ const GlobePage: React.FC = () => {
       )}
     </div>
   ))}
+  
+  {/* Add this "No data" message */}
+  {(!worldStats?.frequency || Object.keys(worldStats.frequency).length === 0) && (
+    <div className="text-gray-400 text-center" style={{ fontSize: '0.875rem', padding: '0.5rem' }}>
+      No data available
+    </div>
+  )}
 </div>
             </div>
           </div>
@@ -332,7 +354,7 @@ const GlobePage: React.FC = () => {
       </div>
 
       {/* Data Info Footer - Positioned at bottom */}
-      {worldStats && !isLoading && !error && (
+      {worldStats && !isLoading && (
         <div className="absolute bottom-0 left-0 right-0 text-center text-gray-400 text-sm pointer-events-none" style={{ padding: '1rem' }}>
           <p>Showing data for: <strong>{getPeriodDisplayText(selectedPeriod)}</strong></p>
           <p style={{ marginTop: '0.25rem' }}>

@@ -46,7 +46,7 @@ interface CacheEntry<T> {
  * Cache Manager for localStorage-based caching with TTL
  */
 class CacheManager {
-  private static readonly TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+  private static readonly TTL = 0.5 * 60 * 1000; // 1 minutes in milliseconds
 
   /**
    * Check if cache entry is expired (5 minutes TTL)
@@ -114,14 +114,6 @@ class CacheManager {
     return `mood_stats_${action}_${period}`;
   }
 
-  /**
-   * Invalidate all individual caches for a specific period
-   */
-  static invalidatePeriodCaches(period: string): void {
-    this.invalidate(this.generateKey('global', period));
-    this.invalidate(this.generateKey('countries', period));
-    this.invalidate(this.generateKey('frequency', period));
-  }
 }
 
 /**
@@ -156,10 +148,6 @@ export const fetchGlobalStats = async (period: string): Promise<GlobalMoodStats>
     }
 
     const data: GlobalMoodStats = await response.json();
-    
-    // Cache the successful response (always cache on successful API call)
-    const cacheKey = CacheManager.generateKey('global', period);
-    CacheManager.set(cacheKey, data);
     
     return data;
 
@@ -213,10 +201,6 @@ export const fetchCountryStats = async (period: string): Promise<CountryStats> =
     }
 
     const data: CountryStats = await response.json();
-    
-    // Cache the successful response (always cache on successful API call)
-    const cacheKey = CacheManager.generateKey('countries', period);
-    CacheManager.set(cacheKey, data);
     
     return data;
 
@@ -284,10 +268,6 @@ export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStat
         : 0;
     });
 
-    // Cache the processed percentage data (always cache on successful API call)
-    const cacheKey = CacheManager.generateKey('frequency', period);
-    CacheManager.set(cacheKey, percentageData);
-
     return percentageData;
 
   } catch (error) {
@@ -297,7 +277,6 @@ export const fetchMoodFrequency = async (period: string): Promise<GlobalMoodStat
     if (error instanceof Error && Object.values(FE_VALIDATION_MESSAGES).includes(error.message as any)) {
       throw error;
     }
-
     // All other errors: backend errors, network errors, unexpected errors
     const uiMessage = ErrorLogger.logError(
       error,
