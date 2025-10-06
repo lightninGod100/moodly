@@ -188,6 +188,11 @@ export const ERROR_MAPPING: ErrorMapping = {
     consoleMessage: "Invalid password",
     type: "error"
   },
+  "AUTH_INCORRECT_PASSWORD": {
+    userMessage: "Incorrect password. Please check your password and try again",
+    consoleMessage: "Incorrect password",
+    type: "error"
+  },
 
   "AUTH_TOKEN_EXPIRED": {
     userMessage: "Your session has expired. Please log in again",

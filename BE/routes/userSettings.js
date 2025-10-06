@@ -165,8 +165,8 @@ router.put('/password_change', arl_user_settings_password_change, authenticateTo
 
     if (!validCurrentPassword) {
       const errorResponse = ErrorLogger.createErrorResponse(
-        ERROR_CATALOG.AUTH_INVALID_PASSWORD.code,
-        ERROR_CATALOG.AUTH_INVALID_PASSWORD.message
+        ERROR_CATALOG.AUTH_INCORRECT_PASSWORD.code,
+        ERROR_CATALOG.AUTH_INCORRECT_PASSWORD.message
       );
       return res.status(401).json(errorResponse);
     }

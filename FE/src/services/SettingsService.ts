@@ -128,7 +128,7 @@ export const settingsApiService = {
         throw new Error(FE_VALIDATION_MESSAGES.PASSWORD_SAME_AS_CURRENT);
       }
 
-      const response = await api.put('/user-settings/password', passwordData);
+      const response = await api.put('/user-settings/password_change', passwordData);
 
       if (!response.ok) {
         // Parse backend error response - NO LOGGING HERE

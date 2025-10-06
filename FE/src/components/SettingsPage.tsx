@@ -6,6 +6,7 @@ import { useUser } from '../contexts/UserContext';
 import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
 import '../styles/design-system.css';
+import { useNotification } from '../contexts/NotificationContext';
 
 const SettingsPage: React.FC = () => {
   // Vanta refs
@@ -46,7 +47,7 @@ const SettingsPage: React.FC = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [deletionReason, setDeletionReason] = useState('');
   const [showFinalConfirmation, setShowFinalConfirmation] = useState(false);
-  const [showSettingsToast, setShowSettingsToast] = useState(false);
+  const { showNotification } = useNotification(); // ADD THIS LINE
   // Load user settings from API
   // Initialize form with context data
   const initializeForm = () => {
@@ -112,16 +113,15 @@ const SettingsPage: React.FC = () => {
     };
   }, []);
 
-  // Show toast when user data is not available
-  useEffect(() => {
-    if (!user) {
-      setShowSettingsToast(true);
-      const timer = setTimeout(() => {
-        setShowSettingsToast(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [user]);
+// Show notification when user data is not available
+useEffect(() => {
+  if (!user) {
+    showNotification({
+      type: 'error',
+      message: 'Unable to load User Settings'
+    });
+  }
+}, [user, showNotification]);
 
   // Countries list
   const countries = [
@@ -153,19 +153,12 @@ const SettingsPage: React.FC = () => {
     'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
   ];
 
-
-
-
-  // Helper functions
   // Helper functions
   const clearMessages = () => {
     setErrors({});
     setSuccessMessages({});
   };
-  // Handle toast close
-  const handleCloseToast = () => {
-    setShowSettingsToast(false);
-  };
+
   // Handle password change with real API
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -330,6 +323,7 @@ const SettingsPage: React.FC = () => {
     } catch (error) {
       // Password validation failed - show error immediately
       setErrors({ deletion: error instanceof Error ? error.message : 'Password validation failed' });
+
     } finally {
       setIsLoading(false);
     }
@@ -887,7 +881,7 @@ const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              {errors.password && <p style={{ color: '#fca5a5', fontSize: '0.875rem', marginTop: '1rem' }}>{errors.password}</p>}
+              {errors.password && <p style={{ fontWeight: 'bold', color: 'red', fontSize: '0.875rem', marginTop: '1rem' }}>{errors.password}</p>}
               {successMessages.password && <p style={{ color: '#86efac', fontSize: '0.875rem', marginTop: '1rem' }}>{successMessages.password}</p>}
 
               <button
@@ -1233,50 +1227,6 @@ const SettingsPage: React.FC = () => {
         </div>
       </div>
       {/* Settings Load Error Toast */}
-      {!user && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            left: '24px',
-            zIndex: 9999,
-            maxWidth: '384px',
-            minWidth: '300px',
-            transform: showSettingsToast ? 'translateX(0)' : 'translateX(-120%)',
-            opacity: showSettingsToast ? 1 : 0,
-            transition: 'all 500ms ease-in-out',
-            backgroundColor: '#ef4444',
-            color: 'white',
-            padding: '16px 24px',
-            borderRadius: '8px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '4px' }}>Error</div>
-              <div style={{ fontSize: '14px' }}>Unable to load User Settings</div>
-            </div>
-            <button
-              onClick={handleCloseToast}
-              style={{
-                marginLeft: '16px',
-                color: 'white',
-                fontSize: '20px',
-                fontWeight: 'bold',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '0',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
