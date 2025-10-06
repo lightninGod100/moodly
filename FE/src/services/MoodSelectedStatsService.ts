@@ -323,6 +323,8 @@ async getAllMoodSelectedStats(currentMood: string): Promise<MoodSelectedStatsDat
       this.getAchievements()
     ]);
 
+
+    
     // Extract successful results, provide fallbacks for failures
     const moodTransition = results[0].status === 'fulfilled'
       ? results[0].value

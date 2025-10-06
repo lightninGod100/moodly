@@ -224,15 +224,9 @@ interface MoodSelectedScreenProps {
 const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, moodEmoji }) => {
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
-
-  // API Data States
-  // ✅ ADD - Single combined state
-
-
   const [allStats, setAllStats] = useState<MoodSelectedStatsData | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [hasStatsError, setHasStatsError] = useState(false);
-
   // Get color for current mood
   const getMoodColor = (mood: string): number => {
     const colorHex = moodColors[mood] || moodColors.default;
@@ -265,8 +259,7 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
         const statsData = await moodSelectedStatsApiService.getAllMoodSelectedStats(currentMood);
         setAllStats(statsData);
 
-      } catch (error) {
-        // Only set error flag - no console.error needed
+      } catch (error: any) {
         setHasStatsError(true);
       } finally {
         setIsLoadingStats(false);
