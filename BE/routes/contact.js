@@ -174,41 +174,42 @@ This message was sent via Moodly Contact Form
       });
 
     } catch (emailError) {
-      // Email failed - log but don't fail the response (we have their message saved)
+      // Email failed - log and return error to user
       ErrorLogger.serverLogError(
         ERROR_CATALOG.EMAIL_SENDING_FAILED.code,
         ERROR_CATALOG.EMAIL_SENDING_FAILED.message,
         'POST /api/contact',
-        'call external service', // Specific context - email service call
+        'call external service',
         emailError,
         userId,
         'pending-react-routing'
       );
       
-      // NON-CRITICAL: Update status to 'failed' (nested try-catch)
+      // Update status to 'failed' try-catch block stays the same...
       try {
         await pool.query(
           'UPDATE email_logs SET status = $1 WHERE id = $2',
           ['failed', submissionId]
         );
       } catch (updateError) {
-        // Log only - don't fail the response
         ErrorLogger.serverLogError(
           ERROR_CATALOG.DB_UPDATE_FAILED.code,
           ERROR_CATALOG.DB_UPDATE_FAILED.message,
           'POST /api/contact',
-          'write to database', // Specific context - UPDATE operation
+          'write to database',
           updateError,
           userId,
           'pending-react-routing'
         );
       }
-
-      // Still return success to user (we have their message saved)
-      res.status(200).json({
-        message: 'Your message has been received and will be processed shortly',
+    
+      // Return error status to user with clear message
+      res.status(503).json({
+        error: 'EMAIL_SERVICE_UNAVAILABLE',
+        message: 'Email service temporarily unavailable',
         submissionId: submissionId,
-        note: 'Email delivery is being processed'
+        savedToDatabase: true,
+        emailSent: false
       });
     }
 

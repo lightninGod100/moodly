@@ -2,7 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 import ContactPopup from './ContactPopup';
-
+// Add these imports at the top
+import ErrorLogger from '../utils/ErrorLogger';
 
 
 interface AuthenticatedNavbarProps {
@@ -58,7 +59,6 @@ const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, c
   const [isScrollingUp, setIsScrollingUp] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-
 
 
   useEffect(() => {
@@ -169,13 +169,13 @@ const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, c
       const headers: HeadersInit = {
         'Content-Type': 'application/json'
       };
-
+  
       // Add authorization header if user is authenticated
       const authToken = localStorage.getItem('authToken');
       if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
       }
-
+  
       // Make API call to backend
       const response = await fetch('http://localhost:5000/api/contact/', {
         method: 'POST',
@@ -186,20 +186,24 @@ const AuthenticatedNavbar: React.FC<AuthenticatedNavbarProps> = ({ onNavigate, c
           email
         })
       });
-
+  
       const data = await response.json();
-
+  
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send message');
+        throw data;
       }
-
+  
       console.log('✅ Support message sent successfully:', data.message);
       console.log('📧 Submission ID:', data.submissionId);
-
+  
     } catch (error) {
-      console.error('❌ Error sending support message:', error);
-      alert(`Failed to send message: ${error instanceof Error ? error.message : 'Please try again later'}`);
-      throw error;
+      // Log error and get UI message
+      const uiMessage = ErrorLogger.logError(
+        error,
+        { service: "ContactService", action: "submitContactForm" },
+        { logToConsole: true, logToUI: true }
+      );
+      throw new Error(uiMessage);
     }
   };
 

@@ -193,7 +193,11 @@ export const ERROR_MAPPING: ErrorMapping = {
     consoleMessage: "Incorrect password",
     type: "error"
   },
-
+  "Email service temporarily unavailable": {
+    userMessage: "Email service temporarily unavailable",
+    consoleMessage: "Email service temporarily unavailable",
+    type: "error"
+  },
   "AUTH_TOKEN_EXPIRED": {
     userMessage: "Your session has expired. Please log in again",
     consoleMessage: "Authentication token expired",

@@ -1,6 +1,7 @@
 // src/components/ContactPopup.tsx
 import React, { useState, useEffect } from 'react';
 
+
 interface ContactPopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,6 +15,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   // Check authentication status when component mounts or isOpen changes
   useEffect(() => {
@@ -31,7 +33,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!selectedReason || !message.trim()) {
       alert('Please select a reason and enter a message');
@@ -51,25 +53,25 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
     }
 
     try {
-      setIsLoading(true); // Start loading
-      
-      // Call the onSubmit function with the form data
-      // For authenticated users, email will be undefined (pulled from backend)
-      // For non-authenticated users, pass the email from form
+      setIsLoading(true);
+      setErrorMessage(''); // Clear any previous errors
+
       await onSubmit(selectedReason, message, isAuthenticated ? undefined : email.trim());
-      
+
       // Show success screen only if API call succeeds
       setIsSubmitted(true);
       // Clear form data after successful submission
       setSelectedReason('');
       setMessage('');
       setEmail('');
-    } catch (error) {
-      // Error is already handled in LandingPage (alert shown)
-      // Don't show success screen, keep form open for retry
-      console.log('Contact form submission failed, keeping form open for retry');
+    } catch (error: any) {
+      // Set error message to display in the form
+      const errorMsg = error.message || 'Failed to send message. Please try again.';
+      setErrorMessage(errorMsg);
+
+      console.log('Contact form submission failed:', error);
     } finally {
-      setIsLoading(false); // Stop loading
+      setIsLoading(false);
     }
   };
 
@@ -95,7 +97,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
   return (
     <>
       {/* Modal Overlay */}
-      <div 
+      <div
         style={{
           position: 'fixed',
           top: 0,
@@ -111,7 +113,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
         onClick={handleClose} // Close when clicking overlay
       >
         {/* Popup Container */}
-        <div 
+        <div
           style={{
             backgroundColor: 'rgb(245, 245, 245)',
             color: 'black',
@@ -125,9 +127,27 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
         >
           {/* Header - Only show for form, not success */}
           {!isSubmitted && (
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', textAlign: 'center' }}>
-              Contact Us
-            </h2>
+            <>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', textAlign: 'center' }}>
+                Contact Us
+              </h2>
+
+              {/* Error Message Display */}
+              {errorMessage && (
+                <div style={{
+                  backgroundColor: '#FEE2E2',
+                  border: '1px solid #F87171',
+                  borderRadius: '8px',
+                  padding: '12px 16px',
+                  marginBottom: '1rem',
+                  color: '#991B1B',
+                  fontSize: '14px',
+                  lineHeight: '1.5'
+                }}>
+                  <strong>Error: </strong>{errorMessage}
+                </div>
+              )}
+            </>
           )}
 
           {/* Conditional Content: Success Screen OR Form */}
@@ -146,39 +166,39 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
                 margin: '0 auto 1.5rem',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
               }}>
-                <img 
-                  src="/public/images/mail.png" 
-                  alt="message" 
+                <img
+                  src="/public/images/mail.png"
+                  alt="message"
                   style={{
                     height: '100%',
                     width: '100%',
-                    
-                    
-                  }} 
+
+
+                  }}
                 />
               </div>
-              
+
               {/* Thank You Title */}
-              <h3 style={{ 
-                fontSize: '1.5rem', 
-                fontWeight: 'bold', 
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
                 marginBottom: '1rem',
                 color: '#1f2937'
               }}>
                 Delivered!
               </h3>
-              
+
               {/* Success Message */}
-              <p style={{ 
-                fontSize: '1rem', 
-                marginBottom: '2rem', 
+              <p style={{
+                fontSize: '1rem',
+                marginBottom: '2rem',
                 lineHeight: '1.6',
                 color: 'rgb(20, 20, 20)'
               }}>
                 Thanks for the message. <br />
                 We will get back in touch with you as soon as possible.
               </p>
-              
+
               {/* Green OK Button */}
               <button
                 onClick={handleClose}
@@ -203,10 +223,10 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
             <form onSubmit={handleSubmit}>
               {/* Authentication Status Info (Optional Display) */}
               {isAuthenticated && (
-                <div style={{ 
-                  marginBottom: '1rem', 
-                  padding: '0.5rem', 
-                  backgroundColor: '#e1f5fe', 
+                <div style={{
+                  marginBottom: '1rem',
+                  padding: '0.5rem',
+                  backgroundColor: '#e1f5fe',
                   borderRadius: '4px',
                   fontSize: '0.875rem',
                   color: '#0277bd',
@@ -347,7 +367,7 @@ const ContactPopup: React.FC<ContactPopupProps> = ({ isOpen, onClose, onSubmit }
           )}
         </div>
       </div>
-      
+
       {/* CSS Animation for Spinner */}
       <style>{`
         @keyframes spin {
