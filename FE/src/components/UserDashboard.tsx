@@ -10,6 +10,7 @@ import { useUser } from '../contexts/UserContext';
 import { aiInsightsApiService, hasValidCurrentInsights, isInsightGenerationInProgress } from '../services/AIInsightsService';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
+import { useNotification } from '../contexts/NotificationContext';
 // Define mood types and scoring system
 type MoodType = 'Happy' | 'Sad' | 'Anxious' | 'Calm' | 'Excited' | 'Tired' | 'Angry';
 
@@ -44,7 +45,7 @@ const UserDashboard = ({
   const [throughDayViewPeriod, setThroughDayViewPeriod] = useState<'week' | 'month'>('month');
   // API data states
   const [dominantMoodData, setDominantMoodData] = useState<DominantMoodResponse | null>(null);
-  const [happinessData, setHappinessData] = useState<HappinessDataPoint[]>([]);
+  const [happinessData, setHappinessData] = useState<HappinessDataPoint[] | null>(null);
   const [frequencyData, setFrequencyData] = useState<MoodFrequencyData | null>(null);
   const [throughDayViewData, setThroughDayViewData] = useState<ThroughDayViewData | null>(null);
   const [moodHistoryData, setMoodHistoryData] = useState<MoodHistoryResponse | null>(null);
@@ -53,10 +54,13 @@ const UserDashboard = ({
   // Add state
   const [insightsData, setInsightsData] = useState<any>(null);
   const [isReportGenerating, setIsReportGenerating] = useState(false);
+
+  const prevFrequencyPeriod = useRef<TimePeriod | null>(null);
+  const prevThroughDayPeriod = useRef<'week' | 'month' | null>(null);
   // Update state to track report type
   const [reportType, setReportType] = useState<'current' | 'previous' | null>(null);
   const navigate = useNavigate();
-
+  const { showNotification } = useNotification();
   // In the component, after state declarations, add effect to check generation status
   useEffect(() => {
     // Check if generation is in progress on mount
@@ -94,13 +98,13 @@ const UserDashboard = ({
         setIsReportGenerating(false);
         return;
       }
-  
+
       // Only check generation status for new generation
       if (isInsightGenerationInProgress()) {
         console.log('Generation already in progress');
         return;
       }
-  
+
       setIsReportGenerating(true);
       const response = await aiInsightsApiService.generateInsights();
       setInsightsData(response.data);
@@ -111,7 +115,10 @@ const UserDashboard = ({
       console.error('Failed to generate insights:', error);
       // Only show alert if it's not the "already in progress" error
       if (!(error as Error).message?.includes('already in progress')) {
-        alert('Failed to generate insights');
+        showNotification({
+          type: 'error',
+          message: 'Failed to generate insights'
+        });
       }
     } finally {
       setIsReportGenerating(false);
@@ -127,7 +134,10 @@ const UserDashboard = ({
       console.log('Previous insights response:', response);
     } catch (error) {
       console.error('Failed to load previous insights:', error);
-      alert('Failed to load previous insights');  // Only for actual errors
+      showNotification({
+        type: 'error',
+        message: 'Failed to load previous insights'
+      }); // Only for actual errors
     } finally {
       setIsReportGenerating(false);
     }
@@ -196,15 +206,22 @@ const UserDashboard = ({
 
   // Fetch frequency data when period changes
   useEffect(() => {
-    if (selectedFrequencyPeriod) {
+    if (prevFrequencyPeriod.current !== null && 
+        prevFrequencyPeriod.current !== selectedFrequencyPeriod) {
       fetchFrequencyData(selectedFrequencyPeriod);
     }
+    prevFrequencyPeriod.current = selectedFrequencyPeriod;
   }, [selectedFrequencyPeriod]);
-  useEffect(() => {
-    if (throughDayViewPeriod) {
-      fetchThroughDayViewData(throughDayViewPeriod);
-    }
-  }, [throughDayViewPeriod]);
+
+useEffect(() => {
+  if (prevThroughDayPeriod.current !== null && 
+      prevThroughDayPeriod.current !== throughDayViewPeriod) {
+    fetchThroughDayViewData(throughDayViewPeriod);
+  }
+  prevThroughDayPeriod.current = throughDayViewPeriod;
+}, [throughDayViewPeriod]);
+
+
   const fetchUserStats = async () => {
     try {
       setIsLoading(true);
@@ -249,14 +266,23 @@ const UserDashboard = ({
       setFrequencyData(data);
     } catch (err) {
       console.error('Failed to fetch frequency data:', err);
+      showNotification({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Something seems wrong, please refresh or come back later'
+      });
     }
   };
+
   const fetchThroughDayViewData = async (period: 'week' | 'month') => {
     try {
       const data = await userStatsApiService.getThroughDayView(period);
       setThroughDayViewData(data);
     } catch (err) {
-      console.error('Failed to fetch through day view data:', err);
+      console.error('Failed to fetch through day view data');
+      showNotification({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Something seems wrong, please refresh or come back later'
+      });
     }
   };
   // Handle current mood navigation
@@ -295,11 +321,20 @@ const UserDashboard = ({
 
   // Dominant Mode Section Component
   const DominantModeSection: React.FC = () => {
-    if (!dominantMoodData) return null;
+    if (!dominantMoodData) return (
+      <div className="dashboard-box dashboard-dominant-mood">
+        <h3 className="dashboard-box-title">Dominant Mode</h3>
+        <div className="flex-1 grid place-items-center">
+          <p className="text-center text-gray-300 text-sm">
+            Something went wrong. Reload the page or come back later.
+          </p>
+        </div>
+      </div>
+    )
 
     return (
       <div className="dashboard-box dashboard-dominant-mood">
-        <h3 className="dashboard-box-title">Dominant Mode</h3>
+        <h3 className="dashboard-box-title">🦾 Dominant Mode</h3>
         <div className="grid grid-cols-3 gap-3">
           {(['today', 'week', 'month'] as const).map((period) => {
             const data = dominantMoodData[period];
@@ -335,6 +370,32 @@ const UserDashboard = ({
 
   // Personal Happiness Index Chart Component
   const HappinessIndexChart: React.FC = () => {
+    if (!happinessData) {
+      return (
+        <div className="dashboard-box dashboard-happiness-chart flex flex-col">
+          <h3 className="dashboard-box-title">📈 Personal Happiness Index</h3>
+          <div className="flex-1 grid place-items-center">
+            <p className="text-center text-gray-300 text-sm">
+              Something went wrong. Reload the page or come back later.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // New user / no data case
+    if (happinessData.length === 0) {
+      return (
+        <div className="dashboard-box dashboard-happiness-chart flex flex-col">
+          <h3 className="dashboard-box-title">📈 Personal Happiness Index</h3>
+          <div className="flex-1 grid place-items-center">
+            <p className="text-center text-gray-300 text-sm">
+              No happiness data yet. Start tracking your moods to see trends!
+            </p>
+          </div>
+        </div>
+      );
+    }
     // Use data as-is (already in chronological order from API)
     const chartData = happinessData.map((point) => ({
       date: point.date,
@@ -365,7 +426,7 @@ const UserDashboard = ({
     };
     return (
       <div className="dashboard-box dashboard-happiness-chart">
-        <h3 className="dashboard-box-title margin-top-2">Personal Happiness Index
+        <h3 className="dashboard-box-title margin-top-2">😄 Personal Happiness Index
           <div style={{ position: 'relative', display: 'inline-block', marginLeft: '0.5rem' }}>
             <svg
               width="16"
@@ -481,10 +542,16 @@ const UserDashboard = ({
   const ThroughDayView: React.FC<ThroughDayViewProps> = () => {
     if (!throughDayViewData) {
       return (
-        <div className="dashboard-box dashboard-through-day-view">
-          <h3 className="dashboard-box-title">Through the Day View</h3>
-          <p className="text-gray-300 text-sm">No data available</p>
+        <div className="dashboard-box dashboard-through-day-view flex flex-col">
+          <h3 className="dashboard-box-title">☀️ Through the Day View 🌙</h3>
+
+          <div className="flex-1 grid place-items-center">
+            <p className="text-center text-gray-300 text-sm">
+              Something went wrong. Reload the page or come back later.
+            </p>
+          </div>
         </div>
+
       );
     }
 
@@ -579,7 +646,19 @@ const UserDashboard = ({
   };
   // Mood Frequency Counter Component
   const MoodFrequencyCounter: React.FC = () => {
-    if (!frequencyData) return null;
+    if (!frequencyData) {
+      return (
+        <div className="dashboard-box dashboard-frequency-counter flex flex-col">
+          <h3 className="dashboard-box-title">⏱ Mood Frequency Counter</h3>
+
+          <div className="flex-1 grid place-items-center">
+            <p className="text-center text-gray-300 text-sm">
+              Something went wrong. <br />Reload the page or come back later.
+            </p>
+          </div>
+        </div>
+      );
+    }
 
     // Convert data to format suitable for Recharts
     const chartData = Object.entries(frequencyData).map(([mood, count]) => ({
@@ -665,20 +744,32 @@ const UserDashboard = ({
   }
 
   const MoodHistory: React.FC<MoodHistoryProps> = () => {
-    if (!moodHistoryData || !moodHistoryData.moods || moodHistoryData.moods.length === 0) {
+    if (!moodHistoryData) {
+      return (
+        <div className="dashboard-box dashboard-mood-history flex flex-col">
+          <h3 className="dashboard-box-title">📚 Mood History</h3>
+
+          <div className="flex-1 grid place-items-center">
+            <p className="text-center text-gray-300 text-sm">
+              Something went wrong. <br />Reload the page or come back later.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    // API success but no data case
+    if (!moodHistoryData.moods || moodHistoryData.moods.length === 0) {
       return (
         <div className="dashboard-box dashboard-mood-history">
           <h3 className="dashboard-box-title">
             Mood History
-            <span className="tooltip-container">
-              <span className="tooltip-trigger">(?)</span>
-              <span className="tooltip-content">Your recent mood entries ordered from latest to oldest</span>
-            </span>
           </h3>
           <p className="text-gray-300 text-sm">No mood history available</p>
         </div>
       );
     }
+
 
     // Format timestamp from UNIX to readable format
     const formatTimestamp = (unixTimestamp: number): string => {

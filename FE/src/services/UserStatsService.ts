@@ -1,6 +1,9 @@
 // src/services/UserStatsService.ts
 
 import { api } from './apiClient';
+import { notificationBridge } from './NotificationBridge';
+import ErrorLogger from '../utils/ErrorLogger';
+import type { BackendErrorResponse } from '../utils/ErrorLogger';
 // Types for API responses
 interface DominantMoodData {
   mood: string | null;
@@ -87,7 +90,20 @@ async getDominantMood(period?: 'today' | 'week' | 'month'): Promise<DominantMood
     const response = await api.get(endpoint);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch dominant mood: ${response.status} ${response.statusText}`);
+      // Parse backend error response - NO LOGGING HERE
+      let backendError: BackendErrorResponse | null = null;
+    
+      try {
+        backendError = await response.json();
+      } catch (parseError) {
+        // Create synthetic network error object - NO LOGGING HERE
+        throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+      }
+    
+      // Throw parsed backend error - NO LOGGING HERE
+      if (backendError) {
+        throw backendError;
+      }
     }
 
     const data: DominantMoodResponse = await response.json();
@@ -134,8 +150,13 @@ async getDominantMood(period?: 'today' | 'week' | 'month'): Promise<DominantMood
     
     return data;
   } catch (error) {
-    console.error('Error fetching dominant mood:', error);
-    throw error;
+    // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+    const uiMessage = ErrorLogger.logError(
+      error,
+      { service: "UserStatsService", action: "getDominantMood" },
+      { logToConsole: true, logToUI: true }
+    );
+    throw new Error(uiMessage);
   }
 },
 
@@ -169,7 +190,20 @@ async getHappinessIndex(period: 'week' | 'month'): Promise<HappinessDataPoint[]>
     const response = await api.get(`/user-stats/happiness-index?period=${period}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch happiness index: ${response.status} ${response.statusText}`);
+      // Parse backend error response - NO LOGGING HERE
+      let backendError: BackendErrorResponse | null = null;
+    
+      try {
+        backendError = await response.json();
+      } catch (parseError) {
+        // Create synthetic network error object - NO LOGGING HERE
+        throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+      }
+    
+      // Throw parsed backend error - NO LOGGING HERE
+      if (backendError) {
+        throw backendError;
+      }
     }
 
     const data: HappinessDataPoint[] = await response.json();
@@ -186,8 +220,13 @@ async getHappinessIndex(period: 'week' | 'month'): Promise<HappinessDataPoint[]>
     
     return data;
   } catch (error) {
-    console.error('Error fetching happiness index:', error);
-    throw error;
+    // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+    const uiMessage = ErrorLogger.logError(
+      error,
+      { service: "UserStatsService", action: "getHappinessIndex" },
+      { logToConsole: true, logToUI: true }
+    );
+    throw new Error(uiMessage);
   }
 },
 
@@ -221,7 +260,20 @@ async getMoodFrequency(period: 'today' | 'week' | 'month'): Promise<MoodFrequenc
     const response = await api.get(`/user-stats/frequency?period=${period}`);
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch mood frequency: ${response.status} ${response.statusText}`);
+      // Parse backend error response - NO LOGGING HERE
+      let backendError: BackendErrorResponse | null = null;
+    
+      try {
+        backendError = await response.json();
+      } catch (parseError) {
+        // Create synthetic network error object - NO LOGGING HERE
+        throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+      }
+    
+      // Throw parsed backend error - NO LOGGING HERE
+      if (backendError) {
+        throw backendError;
+      }
     }
 
     const data: MoodFrequencyData = await response.json();
@@ -238,8 +290,13 @@ async getMoodFrequency(period: 'today' | 'week' | 'month'): Promise<MoodFrequenc
     
     return data;
   } catch (error) {
-    console.error('Error fetching mood frequency:', error);
-    throw error;
+    // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+    const uiMessage = ErrorLogger.logError(
+      error,
+      { service: "UserStatsService", action: "getMoodFrequency" },
+      { logToConsole: true, logToUI: true }
+    );
+    throw new Error(uiMessage);
   }
 },
 
@@ -271,9 +328,21 @@ async getThroughDayView(period: 'week' | 'month'): Promise<ThroughDayViewData> {
 
     // Cache miss or stale - fetch from API
     const response = await api.get(`/user-stats/through-day-view?period=${period}`);
-
     if (!response.ok) {
-      throw new Error(`Failed to fetch through day view: ${response.status} ${response.statusText}`);
+      // Parse backend error response - NO LOGGING HERE
+      let backendError: BackendErrorResponse | null = null;
+    
+      try {
+        backendError = await response.json();
+      } catch (parseError) {
+        // Create synthetic network error object - NO LOGGING HERE
+        throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+      }
+    
+      // Throw parsed backend error - NO LOGGING HERE
+      if (backendError) {
+        throw backendError;
+      }
     }
 
     const data: ThroughDayViewData = await response.json();
@@ -290,8 +359,13 @@ async getThroughDayView(period: 'week' | 'month'): Promise<ThroughDayViewData> {
     
     return data;
   } catch (error) {
-    console.error('Error fetching through day view:', error);
-    throw error;
+    // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+    const uiMessage = ErrorLogger.logError(
+      error,
+      { service: "UserStatsService", action: "getThroughDayView" },
+      { logToConsole: true, logToUI: true }
+    );
+    throw new Error(uiMessage);
   }
 },
 
@@ -318,11 +392,24 @@ async getMoodHistory(): Promise<MoodHistoryResponse> {
       return cached.data;
     }
 
-    // Cache miss or stale - fetch from API
+
     const response = await api.get('/user-stats/mood-history');
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch mood history: ${response.status} ${response.statusText}`);
+      // Parse backend error response - NO LOGGING HERE
+      let backendError: BackendErrorResponse | null = null;
+    
+      try {
+        backendError = await response.json();
+      } catch (parseError) {
+        // Create synthetic network error object - NO LOGGING HERE
+        throw new Error(`NETWORK_ERROR: HTTP ${response.status}: ${response.statusText}`);
+      }
+    
+      // Throw parsed backend error - NO LOGGING HERE
+      if (backendError) {
+        throw backendError;
+      }
     }
 
     const data: MoodHistoryResponse = await response.json();
@@ -339,46 +426,88 @@ async getMoodHistory(): Promise<MoodHistoryResponse> {
     
     return data;
   } catch (error) {
-    console.error('Error fetching mood history:', error);
-    throw error;
+    // 🎯 SINGLE POINT OF LOGGING - Handle ALL error types here
+    const uiMessage = ErrorLogger.logError(
+      error,
+      { service: "UserStatsService", action: "getMoodHistory" },
+      { logToConsole: true, logToUI: true }
+    );
+    throw new Error(uiMessage);
   }
 },
   async getAllUserStats() {
-    try {
-      const results = await Promise.allSettled([
-        this.getDominantMood(),
-        this.getHappinessIndex('month'),
-        this.getMoodFrequency('month'),
-        this.getThroughDayView('month'),
-        this.getMoodHistory()
-      ]);
+  try {
+    const results = await Promise.allSettled([
+      this.getDominantMood(),
+      this.getHappinessIndex('month'),
+      this.getMoodFrequency('month'),
+      this.getThroughDayView('month'),
+      this.getMoodHistory()
+    ]);
 
-      // Extract successful results, handle failures gracefully
-      const dominantMood = results[0].status === 'fulfilled' ? results[0].value : null;
-      const happinessIndex = results[1].status === 'fulfilled' ? results[1].value : [];
-      const frequencyToday = results[2].status === 'fulfilled' ? results[2].value : null;
-      const throughDayView = results[3].status === 'fulfilled' ? results[3].value : null;
-      const moodHistory = results[4].status === 'fulfilled' ? results[4].value : null;
-      // Log any failures for debugging
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          const apiNames = ['dominantMood', 'happinessIndex', 'frequencyToday', 'throughDayView', 'moodHistory'];
-          console.warn(`${apiNames[index]} API failed:`, result.reason);
-        }
+    // Extract successful results, handle failures gracefully
+    const dominantMood = results[0].status === 'fulfilled' ? results[0].value : null;
+    const happinessIndex = results[1].status === 'fulfilled' ? results[1].value : null;
+    const frequencyToday = results[2].status === 'fulfilled' ? results[2].value : null;
+    const throughDayView = results[3].status === 'fulfilled' ? results[3].value : null;
+    const moodHistory = results[4].status === 'fulfilled' ? results[4].value : null;
+
+    // Collect all failures for analysis
+    const failures = results
+      .map((result, index) => ({
+        index,
+        apiName: ['dominantMood', 'happinessIndex', 'frequencyToday', 'throughDayView', 'moodHistory'][index],
+        result
+      }))
+      .filter(item => item.result.status === 'rejected');
+
+    // If all APIs failed - catastrophic failure, notify user
+    if (failures.length === results.length) {
+      console.error('All user stats APIs failed');
+      
+      
+      // Notify via bridge
+      notificationBridge.notify({
+        type: 'error',
+        message: 'Unable to load dashboard data. Please refresh the page or come back later.',
+        duration: 5000
       });
+    } 
+    // If some APIs failed but not all - check if we should notify
+    else if (failures.length > 0) {
+          // Notify for critical errors
+          notificationBridge.notify({
+            type: 'warning',
+            message:'Some dashboard data could not be loaded.',
+            duration: 5000
+          });
 
-      return {
-        dominantMood,
-        happinessIndex,
-        frequencyToday,
-        throughDayView,
-        moodHistory
-      };
-    } catch (error) {
-      console.error('Error fetching all user stats:', error);
-      throw error;
     }
+
+    return {
+      dominantMood,
+      happinessIndex,
+      frequencyToday,
+      throughDayView,
+      moodHistory
+    };
+  } catch (error) {
+    // This should rarely happen with Promise.allSettled, but handle it
+    const uiMessage = ErrorLogger.logError(
+      error,
+      { service: "UserStatsService", action: "getAllUserStats" },
+      { logToConsole: true, logToUI: true }
+    );
+    
+    notificationBridge.notify({
+      type: 'error',
+      message: uiMessage || 'Unable to load dashboard. Please refresh the page.',
+      duration: 7000
+    });
+    
+    throw error;
   }
+}
 };
 
 // Export types for use in components

@@ -29,6 +29,9 @@ import { authApiService } from './services/AuthService';
 import { deviceService } from './services/DeviceService';
 import { NotificationProvider, useNotification } from './contexts/NotificationContext';
 import NotificationToast from './components/NotificationToast';
+// Add this import with your other service imports
+import { notificationBridge } from './services/NotificationBridge';
+
 
 interface MoodCacheData {
   mood: string;
@@ -58,6 +61,7 @@ const getMoodEmoji = (mood: string): string => {
 };
 
 function App() {
+
   return (
     <UserProvider>
       <NotificationProvider>
@@ -82,6 +86,15 @@ function AppContent() {
   // ADD routing hooks
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    notificationBridge.setHandler(showNotification);
+    console.log('NotificationBridge initialized');
+    
+    return () => {
+      notificationBridge.clearHandler();
+    };
+  }, [showNotification]);
   // Load mood history from localStorage on initial render
   // Add this useEffect for one-time auth verification (runs only on mount)
   useEffect(() => {

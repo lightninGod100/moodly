@@ -1,7 +1,6 @@
 // src/services/AIInsightsService.ts
 import ErrorLogger from '../utils/ErrorLogger';
 import { api } from './apiClient';
-const API_BASE_URL = 'http://localhost:5000/api';
 
 
 // Add these constants at the top with other constants
