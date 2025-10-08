@@ -30,7 +30,9 @@ import { deviceService } from './services/DeviceService';
 import { NotificationProvider, useNotification } from './contexts/NotificationContext';
 import NotificationToast from './components/NotificationToast';
 // Add this import with your other service imports
+// Add these imports after your api import
 import { notificationBridge } from './services/NotificationBridge';
+
 
 
 interface MoodCacheData {

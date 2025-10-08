@@ -342,377 +342,392 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
       {/* Enhanced Professional Main Content */}
       <div style={{
         position: 'absolute',
-        top: '1.1rem',                   // ← Fixed top position
-        left: '50%',
-        transform: 'translateX(-50%)', // ← Only X centering
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         zIndex: 5,
-        color: 'white',
-        width: '85%',
-        maxWidth: '1050px'
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
       }}>
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: '1.1rem 0 2rem 0'
+        }}>
+          <div style={{
+            color: 'white',
+            width: '85%',
+            maxWidth: '1050px'
+          }}>
 
-        {/* Hero Section - Current Mood Display */}
-        <div style={{ textAlign: 'center', marginBottom: '1rem', paddingTop: '4.75rem' }}>
+            {/* Hero Section - Current Mood Display */}
+            <div style={{ textAlign: 'center', marginBottom: '1rem', paddingTop: '4.75rem' }}>
 
 
-          {/* Enhanced Mood Display */}
-          <div style={{ marginBottom: '0.8rem' }}>
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              {/* Glow Effect */}
-              <div style={{
-                position: 'absolute',
-                inset: '0',
-                background: 'rgba(255, 255, 255, 0.3)',
-                borderRadius: '1.5rem',
-                filter: 'blur(1.5rem)',
-                transform: 'scale(1.3)',
-                animation: 'pulse 3s infinite'
-              }}></div>
+              {/* Enhanced Mood Display */}
+              <div style={{ marginBottom: '0.8rem' }}>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  {/* Glow Effect */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: '0',
+                    background: 'rgba(255, 255, 255, 0.3)',
+                    borderRadius: '1.5rem',
+                    filter: 'blur(1.5rem)',
+                    transform: 'scale(1.3)',
+                    animation: 'pulse 3s infinite'
+                  }}></div>
 
-              {/* Main Mood Container */}
-              <div style={{
-                position: 'relative',
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-                background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(20px)',
-                padding: '2.5rem 3rem',
-                paddingBottom: '1rem',
-                borderRadius: '1.5rem',
-                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-                width: '62vw',
-                minWidth: '400px',
-                maxWidth: '1050px',
-                overflow: 'hidden'
+                  {/* Main Mood Container */}
+                  <div style={{
+                    position: 'relative',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(20px)',
+                    padding: '2.5rem 3rem',
+                    paddingBottom: '1rem',
+                    borderRadius: '1.5rem',
+                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                    width: '62vw',
+                    minWidth: '400px',
+                    maxWidth: '1050px',
+                    overflow: 'hidden'
 
-              }}>
-                <div style={{
-                  fontSize: '5rem',
-                  marginBottom: '0rem',
-                  animation: 'bounce 2s infinite',
-                  filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+                  }}>
+                    <div style={{
+                      fontSize: '5rem',
+                      marginBottom: '0rem',
+                      animation: 'bounce 2s infinite',
+                      filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))'
+                    }}>
+                      {moodEmoji}
+                    </div>
+                    <div style={{
+                      fontSize: '2rem',
+                      fontWeight: '600',
+                      letterSpacing: '0.05em',
+                      textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                    }}>
+                      {currentMood}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enhanced Mood Message */}
+              <div style={{ marginBottom: '0rem' }}>
+                <p style={{
+                  fontSize: '1.35rem',
+                  fontWeight: '500',
+                  lineHeight: '1.6',
+                  maxWidth: '600px',
+                  margin: '0 auto',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.2)'
                 }}>
-                  {moodEmoji}
+                  {getMoodDependentMessage(currentMood)}
+                </p>
+              </div>
+            </div>
+
+            {/* Global Connection - NOW WITH REAL API DATA */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <div style={{
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                background: 'rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(15px)',
+                padding: '1.5rem 2.5rem',
+                borderRadius: '1rem',
+                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.15)',
+                textAlign: 'center',
+                maxWidth: '500px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                  <div style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🌍</div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    fontSize: '1rem',
+                    margin: 0,
+                    color: 'rgba(255, 255, 255, 0.95)'
+                  }}>
+                    Global Connection
+                  </h3>
+                </div>
+                <p style={{
+                  fontSize: '0.9rem',
+                  margin: 0,
+                  color: 'rgba(255, 255, 255, 0.8)',
+                  lineHeight: '1.4'
+                }}>
+                  {isLoadingStats ? (
+                    <LoadingSkeleton height="1.2rem" />
+                  ) : hasStatsError ? (
+                    "Something went wrong, please try again"
+                  ) : (
+                    allStats?.globalPercentage?.message || "Unable to load global percentage data"
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Professional Insights Grid - 2x2 Layout WITH REAL API DATA */}
+            <div className="insights-grid" style={{
+              display: 'grid',
+              gridTemplateColumns: '12fr 13fr',
+              gap: window.innerHeight > 900 ? '1rem' : '0.75rem',
+              marginBottom: window.innerHeight > 900 ? '2.5rem' : '1.5rem'
+            }}>
+
+              {/* Mood Transition Card - NOW WITH REAL API DATA */}
+              <div style={{
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(20px)',
+                padding: '1rem',
+                borderRadius: '1rem',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                cursor: 'pointer'
+              }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🔄</div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    fontSize: '1.1rem',
+                    margin: 0,
+                    color: 'rgba(255, 255, 255, 0.95)',
+                    textAlign: 'center'
+                  }}>
+                    Mood Transition
+                  </h3>
                 </div>
                 <div style={{
-                  fontSize: '2rem',
-                  fontWeight: '600',
-                  letterSpacing: '0.05em',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                  fontSize: '0.95rem',
+                  lineHeight: '1.5',
+                  color: 'rgba(255, 255, 255, 0.8)'
                 }}>
-                  {currentMood}
+                  {isLoadingStats ? (
+                    <div>
+                      <LoadingSkeleton height="1rem" />
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <LoadingSkeleton height="1rem" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ marginBottom: '0.5rem', marginLeft: '0.5rem' }}>
+                        • {allStats?.moodTransition?.message || "Unable to load mood transition data"}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Weekly Sentiment Card - NOW WITH REAL API DATA */}
+              {/* Weekly Sentiment Card - NOW WITH REAL API DATA */}
+              <div style={{
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(20px)',
+                padding: '1rem',
+                borderRadius: '1rem',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                cursor: 'pointer'
+              }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>📊</div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    fontSize: '1.1rem',
+                    margin: 0,
+                    color: 'rgba(255, 255, 255, 0.95)'
+                  }}>
+                    Weekly Sentiment
+                  </h3>
+                </div>
+                <div style={{
+                  fontSize: '0.95rem',
+                  lineHeight: '1.5',
+                  color: 'rgba(255, 255, 255, 0.8)'
+                }}>
+                  {isLoadingStats ? (
+                    <div>
+                      <LoadingSkeleton height="1rem" />
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <LoadingSkeleton height="0.8rem" />
+                      </div>
+                    </div>
+                  ) : allStats?.weeklySentiment?.hasData ? (
+                    <div>
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        {allStats.weeklySentiment.sentimentMessage}
+                      </div>
+                      {allStats.weeklySentiment.hasCurrentMood && allStats.weeklySentiment.frequencyMessage && (
+                        <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
+                          {allStats.weeklySentiment.frequencyMessage}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
+                      {allStats?.weeklySentiment?.message || "Unable to load weekly sentiment data"}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Achievements Card - NOW WITH REAL API DATA */}
+              <div style={{
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(20px)',
+                padding: '1rem',
+                borderRadius: '1rem',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                cursor: 'pointer'
+              }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🏆</div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    fontSize: '1.1rem',
+                    margin: 0,
+                    color: 'rgba(255, 255, 255, 0.95)'
+                  }}>
+                    Achievements
+                  </h3>
+                </div>
+                <div style={{
+                  fontSize: '0.95rem',
+                  lineHeight: '1.5',
+                  color: 'rgba(255, 255, 255, 0.8)'
+                }}>
+                  {isLoadingStats ? (
+                    // Loading state
+                    <div>
+                      <LoadingSkeleton height="1rem" />
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <LoadingSkeleton height="0.8rem" />
+                      </div>
+                    </div>
+                  ) : allStats?.achievements?.hasAchievement && allStats.achievements.achievements && allStats.achievements.achievements.length > 0 ? (
+                    // Has achievements - show them
+                    <div>
+                      {allStats.achievements.achievements.map((achievement, index) => (
+                        <div key={index} style={{
+                          marginBottom: index < allStats.achievements!.achievements!.length - 1 ? '0.5rem' : '0',
+                          fontSize: '0.95rem',
+                          lineHeight: '1.4'
+                        }}>
+                          🎯 <span style={{ fontWeight: '500' }}>{achievement.name}</span> : {achievement.message}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    // No achievements OR error - show appropriate message
+                    <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
+                      {allStats?.achievements?.message || "No achievements yet"}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Recommendations Card - UNCHANGED (static recommendations) */}
+              <div style={{
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(20px)',
+                padding: '1rem',
+                borderRadius: '1rem',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                cursor: 'pointer'
+              }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>💡</div>
+                  <h3 style={{
+                    fontWeight: '600',
+                    fontSize: '1.1rem',
+                    margin: 0,
+                    color: 'rgba(255, 255, 255, 0.95)'
+                  }}>
+                    Recommendations
+                  </h3>
+                </div>
+                <div style={{
+                  fontSize: '0.94rem',
+                  lineHeight: '1.4',
+                  color: 'rgba(255, 255, 255, 0.8)'
+                }}>
+                  {getRandomRecommendations(currentMood, 3).map((recommendation, index) => (
+                    <div key={index} style={{ marginBottom: '0.5rem' }}>
+                      • {recommendation}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Enhanced Mood Message */}
-          <div style={{ marginBottom: '0rem' }}>
-            <p style={{
-              fontSize: '1.35rem',
-              fontWeight: '500',
-              lineHeight: '1.6',
-              maxWidth: '600px',
-              margin: '0 auto',
-              textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-            }}>
-              {getMoodDependentMessage(currentMood)}
-            </p>
-          </div>
         </div>
-
-        {/* Global Connection - NOW WITH REAL API DATA */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginBottom: '1.5rem'
-        }}>
-          <div style={{
-            border: '1px solid rgba(255, 255, 255, 0.25)',
-            background: 'rgba(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(15px)',
-            padding: '1.5rem 2.5rem',
-            borderRadius: '1rem',
-            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.15)',
-            textAlign: 'center',
-            maxWidth: '500px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
-              <div style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>🌍</div>
-              <h3 style={{
-                fontWeight: '600',
-                fontSize: '1rem',
-                margin: 0,
-                color: 'rgba(255, 255, 255, 0.95)'
-              }}>
-                Global Connection
-              </h3>
-            </div>
-            <p style={{
-              fontSize: '0.9rem',
-              margin: 0,
-              color: 'rgba(255, 255, 255, 0.8)',
-              lineHeight: '1.4'
-            }}>
-              {isLoadingStats ? (
-                <LoadingSkeleton height="1.2rem" />
-              ) : hasStatsError ? (
-                "Something went wrong, please try again"
-              ) : (
-                allStats?.globalPercentage?.message || "Unable to load global percentage data"
-              )}
-            </p>
-          </div>
         </div>
-
-        {/* Professional Insights Grid - 2x2 Layout WITH REAL API DATA */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '12fr 13fr',  // ← This creates 40-60 split
-          gap: '1rem',
-          marginBottom: '2.5rem'
-        }}>
-
-          {/* Mood Transition Card - NOW WITH REAL API DATA */}
-          <div style={{
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            padding: '1rem',
-            borderRadius: '1rem',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            cursor: 'pointer'
-          }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-            }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🔄</div>
-              <h3 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: 0,
-                color: 'rgba(255, 255, 255, 0.95)',
-                textAlign: 'center'
-              }}>
-                Mood Transition
-              </h3>
-            </div>
-            <div style={{
-              fontSize: '0.95rem',
-              lineHeight: '1.5',
-              color: 'rgba(255, 255, 255, 0.8)'
-            }}>
-              {isLoadingStats ? (
-                <div>
-                  <LoadingSkeleton height="1rem" />
-                  <div style={{ marginTop: '0.5rem' }}>
-                    <LoadingSkeleton height="1rem" />
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div style={{ marginBottom: '0.5rem', marginLeft: '0.5rem' }}>
-                    • {allStats?.moodTransition?.message || "Unable to load mood transition data"}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Weekly Sentiment Card - NOW WITH REAL API DATA */}
-          {/* Weekly Sentiment Card - NOW WITH REAL API DATA */}
-          <div style={{
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            padding: '1rem',
-            borderRadius: '1rem',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            cursor: 'pointer'
-          }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-            }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>📊</div>
-              <h3 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: 0,
-                color: 'rgba(255, 255, 255, 0.95)'
-              }}>
-                Weekly Sentiment
-              </h3>
-            </div>
-            <div style={{
-              fontSize: '0.95rem',
-              lineHeight: '1.5',
-              color: 'rgba(255, 255, 255, 0.8)'
-            }}>
-              {isLoadingStats ? (
-                <div>
-                  <LoadingSkeleton height="1rem" />
-                  <div style={{ marginTop: '0.5rem' }}>
-                    <LoadingSkeleton height="0.8rem" />
-                  </div>
-                </div>
-              ) : allStats?.weeklySentiment?.hasData ? (
-                <div>
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    {allStats.weeklySentiment.sentimentMessage}
-                  </div>
-                  {allStats.weeklySentiment.hasCurrentMood && allStats.weeklySentiment.frequencyMessage && (
-                    <div style={{ fontSize: '0.85rem', opacity: 0.7 }}>
-                      {allStats.weeklySentiment.frequencyMessage}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
-                  {allStats?.weeklySentiment?.message || "Unable to load weekly sentiment data"}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Achievements Card - NOW WITH REAL API DATA */}
-          <div style={{
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            padding: '1rem',
-            borderRadius: '1rem',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            cursor: 'pointer'
-          }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-            }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>🏆</div>
-              <h3 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: 0,
-                color: 'rgba(255, 255, 255, 0.95)'
-              }}>
-                Achievements
-              </h3>
-            </div>
-            <div style={{
-              fontSize: '0.95rem',
-              lineHeight: '1.5',
-              color: 'rgba(255, 255, 255, 0.8)'
-            }}>
-              {isLoadingStats ? (
-                // Loading state
-                <div>
-                  <LoadingSkeleton height="1rem" />
-                  <div style={{ marginTop: '0.5rem' }}>
-                    <LoadingSkeleton height="0.8rem" />
-                  </div>
-                </div>
-              ) : allStats?.achievements?.hasAchievement && allStats.achievements.achievements && allStats.achievements.achievements.length > 0 ? (
-                // Has achievements - show them
-                <div>
-                  {allStats.achievements.achievements.map((achievement, index) => (
-                    <div key={index} style={{
-                      marginBottom: index < allStats.achievements!.achievements!.length - 1 ? '0.5rem' : '0',
-                      fontSize: '0.95rem',
-                      lineHeight: '1.4'
-                    }}>
-                      🎯 <span style={{ fontWeight: '500' }}>{achievement.name}</span> : {achievement.message}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                // No achievements OR error - show appropriate message
-                <div style={{ fontSize: '0.9rem', fontStyle: 'italic' }}>
-                  {allStats?.achievements?.message || "No achievements yet"}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Recommendations Card - UNCHANGED (static recommendations) */}
-          <div style={{
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            background: 'rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(20px)',
-            padding: '1rem',
-            borderRadius: '1rem',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-            cursor: 'pointer'
-          }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-            }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <div style={{ fontSize: '1.8rem', marginRight: '0.75rem' }}>💡</div>
-              <h3 style={{
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                margin: 0,
-                color: 'rgba(255, 255, 255, 0.95)'
-              }}>
-                Recommendations
-              </h3>
-            </div>
-            <div style={{
-              fontSize: '0.94rem',
-              lineHeight: '1.4',
-              color: 'rgba(255, 255, 255, 0.8)'
-            }}>
-              {getRandomRecommendations(currentMood, 3).map((recommendation, index) => (
-                <div key={index} style={{ marginBottom: '0.5rem' }}>
-                  • {recommendation}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Left bubbles - UNCHANGED (animations and phrases) */}
-      <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
-        {[...Array(5)].map((_, index) => {
-          const bubbleSize = 110 + moodPhrases[index].length / 5;
-          return (
-            <React.Fragment key={`left-bubble-group-${index}`}>
-              <div
-                key={`left-${index}`}
-                style={{
-                  position: 'absolute',
-                  bottom: '-30px',
-                  left: index % 2 === 0 ? '15%' : '25%',
-                  opacity: 0,
-                  animation: `floatUpLeft 20s linear ${index * 4}s infinite`,
-                  color: 'rgba(0, 0, 0, 0.8)',
-                  background: `
+        {/* Left bubbles - UNCHANGED (animations and phrases) */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
+          {[...Array(5)].map((_, index) => {
+            const bubbleSize = 110 + moodPhrases[index].length / 5;
+            return (
+              <React.Fragment key={`left-bubble-group-${index}`}>
+                <div
+                  key={`left-${index}`}
+                  style={{
+                    position: 'absolute',
+                    bottom: '-30px',
+                    left: index % 2 === 0 ? '15%' : '25%',
+                    opacity: 0,
+                    animation: `floatUpLeft 20s linear ${index * 4}s infinite`,
+                    color: 'rgba(0, 0, 0, 0.8)',
+                    background: `
                    radial-gradient(circle at 30% 30%, 
                      rgba(255, 255, 255, 0.8) 0%, 
                      rgba(255, 255, 255, 0.4) 30%, 
@@ -720,68 +735,68 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                      rgba(255, 255, 255, 0.05) 100%
                    )
                  `,
-                  borderRadius: '50%',
-                  border: '1px solid rgba(255, 255, 255, 0.6)',
-                  padding: '1rem',
-                  backdropFilter: 'blur(8px)',
-                  fontSize: '1rem',
-                  fontWeight: '500',
-                  textAlign: 'center',
-                  width: `${bubbleSize}px`,
-                  height: `${bubbleSize}px`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: `
+                    borderRadius: '50%',
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
+                    padding: '1rem',
+                    backdropFilter: 'blur(8px)',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                    width: `${bubbleSize}px`,
+                    height: `${bubbleSize}px`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: `
                    inset -10px -10px 20px rgba(255, 255, 255, 0.3),
                    inset 10px 10px 20px rgba(0, 0, 0, 0.1),
                    0 5px 15px rgba(0, 0, 0, 0.2)
                  `
-                }}
-              >
-                {moodPhrases[index]}
-              </div>
-              {[1, 2, 3, 4].map(fragIndex => (
+                  }}
+                >
+                  {moodPhrases[index]}
+                </div>
+                {[1, 2, 3, 4].map(fragIndex => (
+                  <div
+                    key={`left-fragment-${fragIndex}-${index}`}
+                    style={{
+                      position: 'absolute',
+                      bottom: '-30px',
+                      left: index % 2 === 0 ? '20%' : '30%',
+                      animation: `fragmentBurstLeft${fragIndex} 20s linear ${index * 4}s infinite`,
+                      color: 'rgba(0, 0, 0, 0.6)',
+                      background: 'radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 100%)',
+                      borderRadius: '50%',
+                      border: '1px solid rgba(255, 255, 255, 0.5)',
+                      backdropFilter: 'blur(4px)',
+                      width: '20px',
+                      height: '20px',
+                      opacity: 0,
+                      boxShadow: 'inset -3px -3px 6px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                ))}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Right bubbles - UNCHANGED (animations and quotes) */}
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
+          {[...Array(5)].map((_, index) => {
+            const bubbleSize = 170 + quotes[index].length / 5;
+            return (
+              <React.Fragment key={`right-bubble-group-${index}`}>
                 <div
-                  key={`left-fragment-${fragIndex}-${index}`}
+                  key={`right-${index}`}
                   style={{
                     position: 'absolute',
                     bottom: '-30px',
-                    left: index % 2 === 0 ? '20%' : '30%',
-                    animation: `fragmentBurstLeft${fragIndex} 20s linear ${index * 4}s infinite`,
-                    color: 'rgba(0, 0, 0, 0.6)',
-                    background: 'radial-gradient(circle, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.2) 100%)',
-                    borderRadius: '50%',
-                    border: '1px solid rgba(255, 255, 255, 0.5)',
-                    backdropFilter: 'blur(4px)',
-                    width: '20px',
-                    height: '20px',
+                    left: index % 2 === 0 ? '63%' : '73%',
                     opacity: 0,
-                    boxShadow: 'inset -3px -3px 6px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                />
-              ))}
-            </React.Fragment>
-          );
-        })}
-      </div>
-
-      {/* Right bubbles - UNCHANGED (animations and quotes) */}
-      <div style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', pointerEvents: 'none' }}>
-        {[...Array(5)].map((_, index) => {
-          const bubbleSize = 170 + quotes[index].length / 5;
-          return (
-            <React.Fragment key={`right-bubble-group-${index}`}>
-              <div
-                key={`right-${index}`}
-                style={{
-                  position: 'absolute',
-                  bottom: '-30px',
-                  left: index % 2 === 0 ? '63%' : '73%',
-                  opacity: 0,
-                  animation: `floatUpRight 20s linear ${index * 4}s infinite`,
-                  color: 'rgba(0, 0, 0, 0.8)',
-                  background: `
+                    animation: `floatUpRight 20s linear ${index * 4}s infinite`,
+                    color: 'rgba(0, 0, 0, 0.8)',
+                    background: `
                    radial-gradient(circle at 25% 25%, 
                      rgba(255, 255, 255, 0.9) 0%, 
                      rgba(255, 255, 255, 0.5) 25%, 
@@ -789,82 +804,82 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
                      rgba(255, 255, 255, 0.05) 100%
                    )
                  `,
-                  borderRadius: '50%',
-                  border: '1.5px solid rgba(255, 255, 255, 0.7)',
-                  padding: '1.5rem',
-                  backdropFilter: 'blur(12px)',
-                  fontSize: '0.8rem',
-                  fontWeight: '500',
-                  textAlign: 'center',
-                  width: `${bubbleSize}px`,
-                  height: `${bubbleSize}px`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  lineHeight: '1.3',
-                  wordWrap: 'break-word',
-                  boxShadow: `
+                    borderRadius: '50%',
+                    border: '1.5px solid rgba(255, 255, 255, 0.7)',
+                    padding: '1.5rem',
+                    backdropFilter: 'blur(12px)',
+                    fontSize: '0.8rem',
+                    fontWeight: '500',
+                    textAlign: 'center',
+                    width: `${bubbleSize}px`,
+                    height: `${bubbleSize}px`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    lineHeight: '1.3',
+                    wordWrap: 'break-word',
+                    boxShadow: `
                    inset -15px -15px 30px rgba(255, 255, 255, 0.4),
                    inset 15px 15px 30px rgba(0, 0, 0, 0.1),
                    0 8px 25px rgba(0, 0, 0, 0.25)
                  `
-                }}
-              >
-                {(() => {
-                  const fullQuote = quotes[index];
-                  const parts = fullQuote.split(' — ');
-                  const quoteText = parts[0];
-                  const author = parts[1] || '';
-
-                  return (
-                    <div>
-                      <div style={{ marginBottom: '0.5rem' }}>
-                        {quoteText}
-                      </div>
-                      {author && (
-                        <div style={{
-                          fontSize: '0.65rem',
-                          fontStyle: 'italic',
-                          opacity: 0.9,
-                          marginTop: '0.5rem',
-                          fontWeight: 'bold'
-                        }}>
-                          — {author}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-              {/* Fragment bubbles for realistic burst */}
-              {[1, 2, 3, 4].map(fragIndex => (
-                <div
-                  key={`right-fragment-${fragIndex}-${index}`}
-                  style={{
-                    position: 'absolute',
-                    bottom: '-200px',
-                    left: index % 2 === 0 ? '65%' : '75%',
-                    animation: `fragmentBurstRight${fragIndex} 12s linear ${index * 2.4}s infinite`,
-                    color: 'rgba(0, 0, 0, 0.6)',
-                    background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 100%)',
-                    borderRadius: '50%',
-                    border: '0.5px solid rgba(255, 255, 255, 0.6)',
-                    backdropFilter: 'blur(4px)',
-                    width: '34px',
-                    height: '34px',
-                    opacity: 0,
-                    boxShadow: 'inset -4px -4px 8px rgba(255,255,255,0.4), 0 3px 6px rgba(0,0,0,0.15)'
                   }}
-                />
-              ))}
-            </React.Fragment>
-          );
-        })}
-      </div>
+                >
+                  {(() => {
+                    const fullQuote = quotes[index];
+                    const parts = fullQuote.split(' — ');
+                    const quoteText = parts[0];
+                    const author = parts[1] || '';
 
-      {/* Working animations with immediate start - ADD PULSE ANIMATION */}
-      <style>
-        {`
+                    return (
+                      <div>
+                        <div style={{ marginBottom: '0.5rem' }}>
+                          {quoteText}
+                        </div>
+                        {author && (
+                          <div style={{
+                            fontSize: '0.65rem',
+                            fontStyle: 'italic',
+                            opacity: 0.9,
+                            marginTop: '0.5rem',
+                            fontWeight: 'bold'
+                          }}>
+                            — {author}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+                {/* Fragment bubbles for realistic burst */}
+                {[1, 2, 3, 4].map(fragIndex => (
+                  <div
+                    key={`right-fragment-${fragIndex}-${index}`}
+                    style={{
+                      position: 'absolute',
+                      bottom: '-200px',
+                      left: index % 2 === 0 ? '65%' : '75%',
+                      animation: `fragmentBurstRight${fragIndex} 12s linear ${index * 2.4}s infinite`,
+                      color: 'rgba(0, 0, 0, 0.6)',
+                      background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.3) 100%)',
+                      borderRadius: '50%',
+                      border: '0.5px solid rgba(255, 255, 255, 0.6)',
+                      backdropFilter: 'blur(4px)',
+                      width: '34px',
+                      height: '34px',
+                      opacity: 0,
+                      boxShadow: 'inset -4px -4px 8px rgba(255,255,255,0.4), 0 3px 6px rgba(0,0,0,0.15)'
+                    }}
+                  />
+                ))}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Working animations with immediate start - ADD PULSE ANIMATION */}
+        <style>
+          {`
          @keyframes pulse {
            0%, 100% { opacity: 1; }
            50% { opacity: 0.5; }
@@ -959,10 +974,43 @@ const MoodSelectedScreen: React.FC<MoodSelectedScreenProps> = ({ currentMood, mo
            96% { opacity: 0; transform: translateY(-96vh) translateX(25px) scale(0.5); }
            100% { opacity: 1; transform: translateY(-103vh) translateX(35px) scale(1); }
          }
+
+         /* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-height: 900px) {
+  .insights-grid {
+    gap: 0.75rem !important;
+  }
+}
+
+@media (min-height: 1080px) {
+  /* Large screens - center content vertically if space available */
+  .main-content-wrapper {
+    align-items: center !important;
+  }
+}
        `}
-      </style>
-    </div>
-  );
+        </style>
+      </div>
+      );
 };
 
-export default MoodSelectedScreen;
+      export default MoodSelectedScreen;

@@ -58,10 +58,6 @@ interface PendingLogout {
   attempts: number;
 }
 
-// API configuration
-const API_BASE = 'http://localhost:5000/api';
-
-
 const tokenManager = {
 
 
@@ -74,17 +70,13 @@ const tokenManager = {
 
 // User data management utilities
 const userDataManager = {
-  /**
-   * Store user data
-   */
+
+   //Store user data
   setUserData(user: AuthUser): void {
     localStorage.setItem('userData', JSON.stringify(user));
   },
 
-
-  /**
-   * Get stored user data
-   */
+   //Get stored user data
   getUserData(): AuthUser | null {
     try {
       const userData = localStorage.getItem('userData');
@@ -94,9 +86,7 @@ const userDataManager = {
     }
   },
 
-  /**
-   * Clear stored user data
-   */
+   // Clear stored user data
   clearUserData(): void {
     localStorage.removeItem('userData');
   }
@@ -204,9 +194,8 @@ const startLogoutRetryMechanism = (): void => {
 
 // Authentication API service functions
 export const authApiService = {
-  /**
-   * Register new user account
-   */
+  
+   // Register new user account
   async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
       // Frontend validation with centralized messages
@@ -285,9 +274,7 @@ export const authApiService = {
     }
   },
 
-  /**
-   * Login user with email and password
-   */
+   //Login user with email and password
   // Updated login method with Single Point Logging pattern
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
@@ -361,11 +348,8 @@ export const authApiService = {
     }
   },
 
-  /**
-   * ✅ UPDATED: Hybrid logout with retry mechanism
-   * Immediately clears local tokens but ensures server-side logging
-   */
-  // Updated logout method with Single Point Logging pattern
+   // ✅ UPDATED: Hybrid logout with retry mechanism
+   // Immediately clears local tokens but ensures server-side loggin
   async logout(): Promise<void> {
     const logoutTimestamp = Date.now(); // Capture REAL logout time
 
