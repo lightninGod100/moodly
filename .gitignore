@@ -1,20 +1,65 @@
+# ============================================
+# PROJECT ESSENTIALS
+# ============================================
 Project Essentials/progess.txt
 
-# Dependencies
-node_modules/
-*/node_modules/
-
-# Environment variables - ALL variations
+# ============================================
+# ENVIRONMENT VARIABLES (CRITICAL)
+# ============================================
+# Ignore ALL .env files
 .env*
+# Allow .env.example to be tracked (template file)
 !.env.example
 
-# Logs
-logs
+# ============================================
+# DEPENDENCIES
+# ============================================
+node_modules/
+*/node_modules/
+FE/node_modules/
+BE/node_modules/
+
+# Package locks (optional - uncomment if needed)
+# package-lock.json
+# yarn.lock
+
+# ============================================
+# BUILD OUTPUTS
+# ============================================
+dist/
+dist-ssr/
+build/
+*.local
+
+# ============================================
+# LOGS
+# ============================================
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Package locks (optional)
-package-lock.json
-yarn.lock
+# ============================================
+# EDITOR & IDE
+# ============================================
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# Other editors
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+
+# ============================================
+# OS FILES
+# ============================================
+.DS_Store
+Thumbs.db
