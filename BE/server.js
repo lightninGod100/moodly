@@ -77,26 +77,26 @@ app.get('/api/health', arl_healthCheck, async (req, res) => {
 });
 
 // Test database query route
-app.get('/api/test-db', arl_healthCheck, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM users LIMIT 5');
-    res.json({
-      message: 'Database query successful',
-      userCount: result.rows.length,
-      users: result.rows
-    });
-  } catch (error) {
-    const errorResponse = ErrorLogger.logAndCreateResponse(
-      ERROR_CATALOG.SYS_DATABASE_ERROR.code,
-      ERROR_CATALOG.SYS_DATABASE_ERROR.message,
-      'GET /api/test-db',
-      'test database query',
-      error,
-      null
-    );
-    res.status(500).json(errorResponse);
-  }
-});
+// app.get('/api/test-db', arl_healthCheck, async (req, res) => {
+//   try {
+//     const result = await pool.query('SELECT * FROM users LIMIT 5');
+//     res.json({
+//       message: 'Database query successful',
+//       userCount: result.rows.length,
+//       users: result.rows
+//     });
+//   } catch (error) {
+//     const errorResponse = ErrorLogger.logAndCreateResponse(
+//       ERROR_CATALOG.SYS_DATABASE_ERROR.code,
+//       ERROR_CATALOG.SYS_DATABASE_ERROR.message,
+//       'GET /api/test-db',
+//       'test database query',
+//       error,
+//       null
+//     );
+//     res.status(500).json(errorResponse);
+//   }
+// });
 
 // Authentication routes
 app.use('/api/auth', authRoutes);
