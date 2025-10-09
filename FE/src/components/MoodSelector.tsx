@@ -98,7 +98,7 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood,
             }
 
             // Check canvas after resize
-            const canvas = vantaRef.current?.querySelector('canvas');
+            //const canvas = vantaRef.current?.querySelector('canvas');
             // console.log('Canvas after resize:', canvas ? {
             //   width: canvas.width,
             //   height: canvas.height,

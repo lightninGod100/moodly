@@ -1,7 +1,7 @@
 // src/components/SettingsPage.tsx
 import { settingsApiService } from '../services/SettingsService';
 import React, { useState, useEffect, useRef } from 'react';
-import type { UserSettings, PasswordChangeRequest, CountryUpdateRequest, PhotoUploadRequest, AccountDeletionRequest, PasswordValidationRequest } from '../services/SettingsService';
+import type { PasswordChangeRequest, CountryUpdateRequest, PhotoUploadRequest, AccountDeletionRequest, PasswordValidationRequest } from '../services/SettingsService';
 import { useUser } from '../contexts/UserContext';
 import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';

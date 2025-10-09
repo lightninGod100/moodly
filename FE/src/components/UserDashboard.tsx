@@ -718,7 +718,7 @@ useEffect(() => {
                     fontSize: '12px',
                     color: '#ffffff'
                   }}
-                  formatter={(value: number, name: string, props: any) => [
+                  formatter={(value: number,  props: any) => [
                     `${value} times`,
                     `${props.payload.emoji} ${props.payload.mood}`
                   ]}

@@ -75,7 +75,7 @@ function App() {
 }
 
 function AppContent() {
-  const { user, dispatch } = useUser();
+  const { dispatch } = useUser();
   const { showNotification } = useNotification();
   // ADDED: API status tracking for error handling and loading states
   const [apiStatus, setApiStatus] = useState<'loading' | 'healthy' | 'error'>('loading');

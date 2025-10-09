@@ -241,7 +241,7 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onNavigate }) => {
         gender: formData.gender
       };
   
-      const response = await authApiService.register(userData);
+      await authApiService.register(userData);
       
       console.log('Registration successful');
   

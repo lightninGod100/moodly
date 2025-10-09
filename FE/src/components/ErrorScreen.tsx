@@ -14,9 +14,7 @@ interface ErrorScreenProps {
 const ErrorScreen: React.FC<ErrorScreenProps> = ({ 
   title = "We're Feeling Tired Right Now",
   message = "Our servers need a little rest.\nPlease try refreshing or come back later.",
-  emoji = "😴",
-  showMoodBox = true,
-  onRetry
+  emoji = "😴"
 }) => {
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
@@ -148,7 +146,7 @@ const ErrorScreen: React.FC<ErrorScreenProps> = ({
       </div>
 
       {/* CSS Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes bounce {
           0%, 20%, 53%, 80%, 100% {
             transform: translate3d(0,0,0);

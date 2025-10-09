@@ -1,8 +1,7 @@
-import React, { useState, createContext, useContext, useReducer } from 'react';
+import React, { createContext, useContext, useReducer } from 'react';
 import type { ReactNode } from 'react';
 import type { UserContextType } from './types';
 import { userReducer } from './userReducer';
-import { authApiService } from '../services/AuthService';
 
 // Create the context
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -11,15 +10,15 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 interface UserProviderProps {
   children: ReactNode;
 }
-interface LoginCredentials {
-  username: string;
-  password: string;
-}
+// interface LoginCredentials {
+//   username: string;
+//   password: string;
+// }
 
 // Provider component
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, dispatch] = useReducer(userReducer, null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  //const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // const login = async (credentials: LoginCredentials) => {
   //   const response = await authApiService.login(credentials);

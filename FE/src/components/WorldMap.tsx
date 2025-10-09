@@ -53,7 +53,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ countryData }) => {
     const [longitude, latitude] = position.coordinates;
     const zoom = position.zoom;
   
-    const defaultCenter = [0, 3];
+    //const defaultCenter = [0, 3];
     
     // Define comfortable movement bounds
     const maxLongitude = 60;
