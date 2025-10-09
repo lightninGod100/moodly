@@ -2,7 +2,8 @@
 
 import { deviceService } from './DeviceService';
 
-const API_BASE = 'https://moodly-delta.vercel.app';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 
 interface FetchOptions extends RequestInit {
   skipRefresh?: boolean; // Flag to prevent infinite refresh loops
