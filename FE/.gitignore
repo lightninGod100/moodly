@@ -34,3 +34,6 @@ dist-ssr
 logs
 *.log
 
+.env.development
+.env.production
+.env.test
