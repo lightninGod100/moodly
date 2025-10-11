@@ -28,11 +28,17 @@ const PORT = process.env.PORT || 5000;
 const cookieParser = require('cookie-parser');
 // ADD: Rate limiting import
 
-// Middleware
+// Enhanced CORS configuration
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200
 }));
+
+// Optional: Log to verify the environment variable is loaded
+console.log('CORS configured for:', process.env.FRONTEND_URL || 'http://localhost:5173');
 app.use(cookieParser());
 app.use(enhancedJsonParser());
 app.use(express.urlencoded({ extended: true, limit: '150kb' }));
