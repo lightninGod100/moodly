@@ -347,7 +347,7 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
     });
 
     // Send response
-    res.json({
+    res.status(200).json({
       message: 'Login successful',
       user: {
         username: user.rows[0].username,
