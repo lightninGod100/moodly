@@ -2,7 +2,8 @@
 const rateLimit = require('express-rate-limit');
 const {
   generateUserKey,
-  createRateLimitErrorHandler
+  createRateLimitErrorHandler,
+  skipOptionsRequests
 } = require('./rateLimitHelpers');
 
 /**
@@ -19,7 +20,9 @@ const arl_authHighSecurity = rateLimit({
   handler: createRateLimitErrorHandler('auth_login', 'POST /api/auth/login', 'ip'),
   standardHeaders: false,
   legacyHeaders: false,
-  skipSuccessfulRequests: true
+  skipSuccessfulRequests: true,
+  skip: skipOptionsRequests
+
 });
 
 /**
@@ -32,7 +35,9 @@ const arl_userHighSecurity = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('account_deletion', 'DELETE /api/user-settings/account', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
 });
 
 const arl_user_settings_password_change = rateLimit({
@@ -41,7 +46,10 @@ const arl_user_settings_password_change = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('password_change', 'PUT /api/user-settings/password', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
+  
 });
 
 const arl_userSettingsRead = rateLimit({
@@ -50,7 +58,10 @@ const arl_userSettingsRead = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('user_settings_read', 'GET /api/user-settings', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
+
 });
 
 const arl_mediumUsage = rateLimit({
@@ -59,7 +70,10 @@ const arl_mediumUsage = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('moods', 'API /api/moods/*', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
+
 });
 
 const arl_moodCreation = rateLimit({
@@ -68,7 +82,10 @@ const arl_moodCreation = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('moods', 'POST /api/moods', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
+
 });
 
 const arl_moodRetrievalLast = rateLimit({
@@ -77,7 +94,10 @@ const arl_moodRetrievalLast = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('moods', 'GET /api/moods/last', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
+
 });
 
 const arl_lowUsage = rateLimit({
@@ -86,7 +106,9 @@ const arl_lowUsage = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('user_stats', 'API /api/user-stats/*', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
 });
 
 const arl_user_stats = rateLimit({
@@ -95,7 +117,10 @@ const arl_user_stats = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('user_stats', 'GET /api/user-stats/*', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
+
 });
 
 const arl_world_stats = rateLimit({
@@ -103,7 +128,9 @@ const arl_world_stats = rateLimit({
   max: 48, // 10 page loads * 3 APIs = 30 requests per hour per IP
   handler: createRateLimitErrorHandler('world_stats', 'GET /api/world-stats/*', 'ip'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
 });
 
 const arl_mood_selected_stats = rateLimit({
@@ -112,7 +139,9 @@ const arl_mood_selected_stats = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('mood_selected_stats', 'GET /api/mood-selected-stats/*', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
 });
 
 const arl_veryLowUsage = rateLimit({
@@ -121,7 +150,10 @@ const arl_veryLowUsage = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('country_change', 'PUT /api/user-settings/country', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
+
 });
 
 const arl_account_deletion = rateLimit({
@@ -130,7 +162,9 @@ const arl_account_deletion = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('account_deletion', 'DELETE /api/user-settings/account', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
 });
 
 const arl_validate_password = rateLimit({
@@ -139,7 +173,9 @@ const arl_validate_password = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('validate_password', 'POST /api/user-settings/validate-password', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
 });
 
 const arl_country_change = rateLimit({
@@ -148,7 +184,9 @@ const arl_country_change = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('country_change', 'PUT /api/user-settings/country', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
 });
 
 const arl_logoutLimiter = rateLimit({
@@ -157,7 +195,9 @@ const arl_logoutLimiter = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('auth_logout', 'POST /api/auth/logout', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
 });
 
 const arl_healthCheck = rateLimit({
@@ -165,7 +205,9 @@ const arl_healthCheck = rateLimit({
   max: 100, // 100 requests per hour
   handler: createRateLimitErrorHandler('health_check', 'GET /api/health', 'ip'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+
 });
 
 const arl_photo_upload_delete = rateLimit({
@@ -174,7 +216,9 @@ const arl_photo_upload_delete = rateLimit({
   keyGenerator: generateUserKey,
   handler: createRateLimitErrorHandler('photo_upload', 'PUT /api/user-settings/photo', 'user'),
   standardHeaders: false,
-  legacyHeaders: false
+  legacyHeaders: false,
+  skip: skipOptionsRequests
+  
 });
 
 module.exports = {

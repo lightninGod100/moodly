@@ -26,6 +26,14 @@ const generateUserKey = (req) => {
   return undefined;
 };
 
+/**
+ * Skip rate limiting for OPTIONS requests (CORS preflight)
+ * @param {Object} req - Express request object
+ * @returns {boolean} - True to skip rate limiting
+ */
+const skipOptionsRequests = (req) => {
+  return req.method === 'OPTIONS';
+};
 
 
 // Endpoint-specific attack detection thresholds
@@ -260,5 +268,6 @@ module.exports = {
   createRateLimitErrorHandler, // New - endpoint-specific
   trackRateLimitAttack,
   getThresholdConfig,
-  THRESHOLD_CONFIGS
+  THRESHOLD_CONFIGS,
+  skipOptionsRequests
 };
