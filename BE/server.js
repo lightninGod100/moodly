@@ -25,7 +25,7 @@ const { createTimeoutMiddleware, timeoutDurations } = require('./middleware/time
 const aiInsightsRoutes = require('./routes/aiInsights');
 // Create Express app
 const app = express();
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 const cookieParser = require('cookie-parser');
 // ADD: Rate limiting import
