@@ -1,7 +1,7 @@
 // server.js
 require('dotenv').config();
 const express = require('express');
-app.set('trust proxy', true);
+
 const cors = require('cors');
 const { pool, testConnection } = require('./config/database');
 const userStatsRoutes = require('./routes/userStats');
@@ -25,6 +25,7 @@ const { createTimeoutMiddleware, timeoutDurations } = require('./middleware/time
 const aiInsightsRoutes = require('./routes/aiInsights');
 // Create Express app
 const app = express();
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 5000;
 const cookieParser = require('cookie-parser');
 // ADD: Rate limiting import
