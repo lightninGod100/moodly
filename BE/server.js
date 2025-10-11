@@ -1,6 +1,7 @@
 // server.js
 require('dotenv').config();
 const express = require('express');
+app.set('trust proxy', true);
 const cors = require('cors');
 const { pool, testConnection } = require('./config/database');
 const userStatsRoutes = require('./routes/userStats');
