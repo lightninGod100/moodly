@@ -246,8 +246,8 @@ const SignUpPage: React.FC<SignUpPageProps> = ({ onNavigate }) => {
       console.log('Registration successful');
   
       // Navigate directly to dashboard (token/userData storage handled by service)
-      onNavigate('home');
-      window.location.reload();
+      onNavigate('mood');
+      //window.location.reload();
   
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Registration failed. Please try again.');

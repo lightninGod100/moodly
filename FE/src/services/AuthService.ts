@@ -327,7 +327,7 @@ export const authApiService = {
 
       // Store tokens and user data
       userDataManager.setUserData(data.user);
-      window.location.href = '/mood';
+      //window.location.href = '/mood';
 
       return data;
     } catch (error) {
