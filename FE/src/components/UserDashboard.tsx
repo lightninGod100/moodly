@@ -718,10 +718,16 @@ useEffect(() => {
                     fontSize: '12px',
                     color: '#ffffff'
                   }}
-                  formatter={(value: number,  props: any) => [
-                    `${value} times`,
-                    `${props.payload.emoji} ${props.payload.mood}`
-                  ]}
+                  formatter={(value: number, props: any) => {
+                    // Defensive check for props.payload
+                    if (!props || !props.payload) {
+                      return [`${value} times`, 'Mood'];
+                    }
+                    return [
+                      `${value} times`,
+                      `${props.payload.emoji || ''} ${props.payload.mood || ''}`
+                    ];
+                  }}
                   labelFormatter={() => ''}
                 />
                 <Bar
