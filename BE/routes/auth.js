@@ -346,6 +346,7 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
       maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days
     });
 
+    console.log('📤 About to send login response for user:', user.rows[0].username);
     // Send response
     res.status(200).json({
       message: 'Login successful',
@@ -353,7 +354,7 @@ router.post('/login', arl_authHighSecurity, async (req, res) => {
         username: user.rows[0].username,
       }
     });
-
+    console.log('✅ Login response sent successfully');
   } catch (error) {
     // Multi-operation endpoint - let ErrorLogger determine context
     const errorResponse = ErrorLogger.logAndCreateResponse(
