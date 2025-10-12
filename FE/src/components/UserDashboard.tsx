@@ -771,7 +771,8 @@ useEffect(() => {
           <h3 className="dashboard-box-title">
             Mood History
           </h3>
-          <p className="text-gray-300 text-sm">No mood history available</p>
+          <p className="text-gray-300 text-sm">No mood history available.</p>
+          <p className="text-gray-300 text-sm">Start logging your mood to see your history.</p>
         </div>
       );
     }
