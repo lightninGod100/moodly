@@ -43,7 +43,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onNavigate }) => {
       // Navigate to home (token/userData storage handled by service)
       onNavigate('mood');
       
-      window.location.reload();
+      //window.location.reload();
       console.log('Login successful');
   
     } catch (error) {
