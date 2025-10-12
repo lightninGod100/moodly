@@ -225,7 +225,7 @@ const GlobePage: React.FC = () => {
     </div>
   </div>
   <div className="space-y-1">
-  {Object.entries(worldStats?.frequency || {})
+  {Object.entries(worldStats?.global || {})
     .sort(([, percentageA], [, percentageB]) => (percentageB || 0) - (percentageA || 0))
     .map(([mood, percentage], index, sortedArray) => (
     <div key={mood}>
@@ -253,7 +253,7 @@ const GlobePage: React.FC = () => {
   ))}
   
   {/* Add this "No data" message */}
-  {(!worldStats?.frequency || Object.keys(worldStats.frequency).length === 0) && (
+  {(!worldStats?.global || Object.keys(worldStats.global).length === 0) && (
     <div className="text-gray-400 text-center" style={{ fontSize: '0.875rem', padding: '0.5rem' }}>
       No data available
     </div>
