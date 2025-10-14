@@ -23,6 +23,7 @@ const { ERROR_CATALOG } = require('./config/errorCodes');
 const ErrorLogger = require('./services/errorLogger');
 const { createTimeoutMiddleware, timeoutDurations } = require('./middleware/timeout');
 const aiInsightsRoutes = require('./routes/aiInsights');
+const { ensureDatabaseInitialized } = require('./middleware/databaseInit');
 // Create Express app
 const app = express();
 app.set('trust proxy', 1);
@@ -45,6 +46,8 @@ app.use(cookieParser());
 app.use(enhancedJsonParser());
 app.use(express.urlencoded({ extended: true, limit: '150kb' }));
 //app.use(createTimeoutMiddleware(timeoutDurations.fast));
+
+app.use(ensureDatabaseInitialized);
 // Test route
 app.get('/', (req, res) => {
   res.json({
@@ -57,12 +60,24 @@ app.get('/', (req, res) => {
 // Health check route
 app.get('/api/health', arl_healthCheck, async (req, res) => {
   try {
-    // Test database connection
-    const dbConnected = await testConnection();
+    // Test database connection with timeout protection
+    let dbStatus = 'checking';
+    try {
+      const dbConnected = await Promise.race([
+        testConnection(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Health check timeout')), 3000)
+        )
+      ]);
+      dbStatus = dbConnected ? 'connected' : 'disconnected';
+    } catch (dbError) {
+      dbStatus = 'unavailable';
+      console.warn('⚠️ Health check database test failed:', dbError.message);
+    }
 
     res.json({
-      status: 'healthy',
-      database: dbConnected ? 'connected' : 'disconnected',
+      status: dbStatus === 'connected' ? 'healthy' : 'degraded',
+      database: dbStatus,
       server: 'running',
       timestamp: new Date().toISOString()
     });
@@ -155,12 +170,6 @@ const startServer = async () => {
   try {
     // Test database connection first
     console.log('🚀 Starting Moodly Backend Server...');
-
-    const dbConnected = await testConnection();
-    if (!dbConnected) {
-      console.error('❌ Failed to connect to database. Exiting...');
-      process.exit(1);
-    }
 
     // Start listening
     app.listen(PORT, () => {

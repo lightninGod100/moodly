@@ -11,11 +11,13 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  // Add these for serverless compatibility:
-  max: 10, // Maximum pool connections
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 10000, // Timeout after 10 seconds
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  // Optimized for Neon + Vercel serverless
+  max: 1, // Neon handles connection pooling server-side
+  min: 0, // Start with 0 connections, create on demand
+  connectionTimeoutMillis: 5000, // Fast fail - 5 seconds
+  idleTimeoutMillis: 10000, // Close idle connections after 10 seconds
+  allowExitOnIdle: true, // Critical for serverless - allows clean function exit
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false // ✅ Conditional SSL
 });
 
 // Test database connection
@@ -36,7 +38,7 @@ pool.on('error', (err) => {
   );
   
   console.error('❌ Database connection error:', err);
-  process.exit(-1);
+ 
 });
 
 // Function to test database connection
@@ -68,7 +70,41 @@ const testConnection = async () => {
   }
 };
 
+// Lazy database initialization - called on first request
+let isInitialized = false;
+const initializeDatabase = async () => {
+  if (isInitialized) {
+    return true; // Already initialized
+  }
+
+  try {
+    console.log('🔄 Initializing database connection pool...');
+    const client = await pool.connect();
+    await client.query('SELECT 1'); // Simple health check
+    client.release();
+    
+    isInitialized = true;
+    console.log('✅ Database pool initialized successfully');
+    return true;
+  } catch (err) {
+    ErrorLogger.serverLogError(
+      ERROR_CATALOG.SYS_DATABASE_CONNECTION_FAILED.code,
+      ERROR_CATALOG.SYS_DATABASE_CONNECTION_FAILED.message,
+      'DATABASE_INIT',
+      'lazy database initialization',
+      err,
+      null,
+      'database-service'
+    );
+    
+    console.error('❌ Database initialization failed:', err.message);
+    return false;
+  }
+};
+
+
 module.exports = {
   pool,
-  testConnection
+  testConnection,
+  initializeDatabase
 };
