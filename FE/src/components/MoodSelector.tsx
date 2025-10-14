@@ -17,12 +17,15 @@ interface MoodSelectorProps {
   onSelectMood: (mood: string) => void;
   error?: string | null;           // ← Add error
   onClearError?: () => void;       // ← Add clear function
+  isSubmittingMood?: boolean;
 }
 
-const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood, error, onClearError }) => {
+const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood, error, onClearError, isSubmittingMood = false }) => {
   const vantaRef = useRef<HTMLDivElement>(null);
   const vantaEffect = useRef<any>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
+
   const { showNotification } = useNotification(); // ADD THIS LINE
   // Function to calculate scale based on distance from hovered button
   const getScale = (currentIndex: number): number => {
@@ -127,7 +130,28 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood,
       }
     };
   }, []);
+  // Handle loading overlay with 300ms delay
+  useEffect(() => {
+    let timeoutId: number;
 
+    if (isSubmittingMood) {
+      // Start timer - show loading overlay if operation takes > 300ms
+      timeoutId = setTimeout(() => {
+        setShowLoadingOverlay(true);
+      }, 300);
+    } else {
+      // Reset immediately when submission completes
+      setShowLoadingOverlay(false);
+    }
+
+    // Cleanup timeout on unmount or when isSubmitting changes
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [isSubmittingMood]);
+  
   return (
     <div ref={vantaRef} className="vanta-waves-container">
       <h1 className="text-white text-4xl md:text-6xl font-bold text-center mb-6">How Are You Feeling Right Now?</h1>
@@ -137,13 +161,17 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood,
           <button
             key={mood.name}
             onClick={() => {
+              if (isSubmittingMood) return;
               console.log('Button clicked:', mood.name);
               onSelectMood(mood.name)
             }}
-            onMouseEnter={() => setHoveredIndex(index)}
+            disabled={isSubmittingMood}
+            onMouseEnter={() => !isSubmittingMood && setHoveredIndex(index)}
             onMouseLeave={() => setHoveredIndex(null)}
             style={{
               transform: `scale(${getScale(index)})`,
+              cursor: isSubmittingMood ? 'not-allowed' : 'pointer',  // ← ADD THIS
+              opacity: isSubmittingMood ? 0.5 : 1,  // ← ADD THIS
             }}
             className={`
       mood-button
@@ -153,8 +181,55 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({ selectedMood, onSelectMood,
             <span>{mood.emoji}</span>
             <span>{mood.name}</span>
           </button>
+
         ))}
       </div>
+      {/* Loading Overlay - shown after 300ms delay */}
+      {showLoadingOverlay && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              width: '60px',
+              height: '60px',
+              border: '6px solid rgba(255, 255, 255, 0.3)',
+              borderTop: '6px solid white',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          <p
+            style={{
+              color: 'white',
+              marginTop: '20px',
+              fontSize: '18px',
+              fontWeight: '500',
+            }}
+          >
+            Saving your mood...
+          </p>
+        </div>
+      )}
+
+      <style>{`
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`}</style>
     </div>
   );
 };

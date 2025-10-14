@@ -84,7 +84,7 @@ function AppContent() {
   const [currentMoodData, setCurrentMoodData] = useState<MoodCacheData | null>(null);
   const [moodError, setMoodError] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-
+  const [isSubmittingMood, setIsSubmittingMood] = useState(false);
   // ADD routing hooks
   const navigate = useNavigate();
   const location = useLocation();
@@ -259,6 +259,10 @@ function AppContent() {
   };
   // Handle mood selection
   const handleSelectMood = async (mood: string) => {
+    if (isSubmittingMood) return; 
+
+    setIsSubmittingMood(true);
+
     localStorage.removeItem('mood_selected_stats_all');
     try {
       await moodApiService.createMood(mood);
@@ -455,6 +459,7 @@ function AppContent() {
                         onSelectMood={handleSelectMood}
                         error={moodError}
                         onClearError={() => setMoodError(null)}
+                        isSubmittingMood={isSubmittingMood}
                       />
                     );
                   })()
