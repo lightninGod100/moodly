@@ -1,5 +1,6 @@
 Moodly 🎭
 Track Your Emotions. Understand Your Patterns. See the World's Mood.
+
 🌐 Live App: https://moodly-fe.vercel.app/
 
 📖 What is Moodly?
