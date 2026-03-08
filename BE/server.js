@@ -174,10 +174,10 @@ const startServer = async () => {
     // Test database connection first
     console.log('🚀 Starting Moodly Backend Server...');
     // Test Redis connection
-    const redisConnected = await testRedisConnection();
-    if (!redisConnected) {
-      console.warn('⚠️ Redis not available — background jobs will not work');
-    }
+    // const redisConnected = await testRedisConnection();
+    // if (!redisConnected) {
+    //   console.warn('⚠️ Redis not available — background jobs will not work');
+    // }
 
     // Start listening
     app.listen(PORT, () => {

@@ -204,7 +204,10 @@ const ERROR_CATALOG = {
         code: 'SYS_LOGGING_ERROR',
         message: 'Failed to log system event'
     },
-
+    SYS_JOB_ENQUEUE_FAILED: {
+        code: 'SYS_JOB_ENQUEUE_FAILED',
+        message: 'Failed to enqueue background job'
+    },
     // In BE/config/errorCodes.js, add:
     SYS_TIMEOUT_ERROR: {
         code: 'SYS_TIMEOUT_ERROR',
