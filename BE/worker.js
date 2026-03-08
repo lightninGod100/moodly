@@ -8,6 +8,7 @@ const { QUEUE_NAMES, CONCURRENCY } = require('./config/queue');
 const emailProcessor = require('./workers/emailProcessor');
 const aiInsightsProcessor = require('./workers/aiInsightsProcessor');
 const scheduledProcessor = require('./workers/scheduledProcessor');
+const { handleDeadLetter } = require('./workers/deadLetterHandler');
 
 const workers = [];
 
@@ -25,7 +26,13 @@ const createWorker = (queueName, processor, concurrency) => {
   });
 
   worker.on('failed', (job, error) => {
-    console.error(`❌ [${queueName}] Job ${job?.id} (${job?.name}) failed: ${error.message}`);
+    if (job && job.attemptsMade >= job.opts.attempts) {
+      // All retries exhausted — permanent failure
+      handleDeadLetter(queueName, job, error);
+    } else {
+      // Retry still pending
+      console.warn(`⚠️ [${queueName}] Job ${job?.id} (${job?.name}) failed (attempt ${job?.attemptsMade}/${job?.opts?.attempts}): ${error.message}`);
+    }
   });
 
   worker.on('error', (error) => {
