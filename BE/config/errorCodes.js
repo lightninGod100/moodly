@@ -188,6 +188,10 @@ const ERROR_CATALOG = {
         code: 'SYS_DATABASE_CONNECTION_FAILED',
         message: 'Unable to connect to database'
     },
+    SYS_REDIS_CONNECTION_FAILED: {
+        code: 'SYS_REDIS_CONNECTION_FAILED',
+        message: 'Unable to connect to Redis'
+    },
     SYS_SERVER_ERROR: {
         code: 'SYS_SERVER_ERROR',
         message: 'Server error occurred'

@@ -24,6 +24,9 @@ const ErrorLogger = require('./services/errorLogger');
 const { createTimeoutMiddleware, timeoutDurations } = require('./middleware/timeout');
 const aiInsightsRoutes = require('./routes/aiInsights');
 const { ensureDatabaseInitialized } = require('./middleware/databaseInit');
+const { testRedisConnection } = require('./config/redis');
+
+
 // Create Express app
 const app = express();
 app.set('trust proxy', 1);
@@ -170,6 +173,11 @@ const startServer = async () => {
   try {
     // Test database connection first
     console.log('🚀 Starting Moodly Backend Server...');
+    // Test Redis connection
+    const redisConnected = await testRedisConnection();
+    if (!redisConnected) {
+      console.warn('⚠️ Redis not available — background jobs will not work');
+    }
 
     // Start listening
     app.listen(PORT, () => {
