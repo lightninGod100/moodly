@@ -35,22 +35,45 @@ const addEmailJob = async (jobType, data) => {
 
 /**
  * Add an AI insights generation job to the ai-insights queue
- * @param {object} data - { userId, moodData, timezone, etc. }
+ * Uses deterministic jobId per user for built-in deduplication
+ * - If a job is already waiting/active/delayed → returns existing jobId (no duplicate)
+ * - If a previous job is completed/failed → removes it, enqueues fresh job
+ * @param {object} data - { userId }
  * @returns {string} jobId
  */
 const addAIInsightsJob = async (data) => {
   try {
     const queue = getAIInsightsQueue();
-    const job = await queue.add('generate_insights', {
+    const jobId = `ai-insights-${data.userId}`;
+
+    // Check for existing job with this deterministic ID
+    const existingJob = await queue.getJob(jobId);
+
+    if (existingJob) {
+      const state = await existingJob.getState();
+
+      if (['waiting', 'active', 'delayed'].includes(state)) {
+        // Job already in progress — deduplicate
+        console.log(`AI insights job already in progress for user ${data.userId} (ID: ${jobId}, state: ${state})`);
+        return jobId;
+      }
+
+      // Completed or failed — remove stale job so ID slot is freed
+      await existingJob.remove();
+      console.log(`Removed stale AI insights job for user ${data.userId} (state: ${state})`);
+    }
+
+    // Enqueue new job with deterministic ID
+    await queue.add('generate_insights', {
       ...data,
       createdAt: Date.now()
-    });
+    }, { jobId });
 
-    console.log(`🤖 AI insights job enqueued for user ${data.userId} (ID: ${job.id})`);
-    return job.id;
+    console.log(`🤖 AI insights job enqueued for user ${data.userId} (ID: ${jobId})`);
+    return jobId;
   } catch (error) {
     ErrorLogger.serverLogError(
-        ERROR_CATALOG.SYS_JOB_ENQUEUE_FAILED.code,
+      ERROR_CATALOG.SYS_JOB_ENQUEUE_FAILED.code,
       'Failed to enqueue AI insights job',
       'JOB_PRODUCER',
       'enqueue AI insights job',
