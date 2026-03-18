@@ -42,7 +42,7 @@ async function getPreviousInsights(userId, pool) {
 }
 
 // POST /api/ai-insights - Generate AI insights for user's mood data
-// POST /api/ai-insights - Generate AI insights for user's mood data
+
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;

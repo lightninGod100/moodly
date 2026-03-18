@@ -316,7 +316,7 @@ const aiInsightsProcessor = async (job) => {
     FINAL REMINDER: Your entire response must be valid JSON that starts with { and ends with } with no additional text or formatting whatsoever.
     `;
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const result = await model.generateContent(prompt);
   const aiResponse = result.response.text();
 
