@@ -12,6 +12,8 @@
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^4.6.2",
     "@types/react-simple-maps": "^3.0.6",
+    "browserslist": "^4.28.1",
+    "caniuse-lite": "^1.0.30001778",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.9.1",
