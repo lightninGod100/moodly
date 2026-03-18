@@ -2,23 +2,28 @@
 import ErrorLogger from '../utils/ErrorLogger';
 import { api } from './apiClient';
 
-
-// Add these constants at the top with other constants
-const GENERATION_STATUS_KEY = 'moodly_insights_generation_status';
-const GENERATION_TIMEOUT = 90 * 1000; // 90 seconds timeout
+// =====================================================
+// Cache Configuration
+// =====================================================
 
 const CACHE_KEYS = {
   CURRENT_INSIGHTS: 'moodly_current_insights',
   PREVIOUS_INSIGHTS: 'moodly_previous_insights'
 };
 
-
 const TTL = {
-  CURRENT_INSIGHTS: 48 * 60 * 60 * 1000, // 48 hours in milliseconds
-  PREVIOUS_INSIGHTS: 30 * 60 * 1000 // 30 minutes in milliseconds
+  CURRENT_INSIGHTS: 48 * 60 * 60 * 1000, // 48 hours
+  PREVIOUS_INSIGHTS: 30 * 60 * 1000      // 30 minutes
 };
 
-// Helper function to check if cached data is valid
+// Polling configuration
+const POLL_INTERVAL_MS = 3000;  // 3 seconds between polls
+const POLL_TIMEOUT_MS = 120000; // 2 minute max wait
+
+// =====================================================
+// Cache Helpers (unchanged)
+// =====================================================
+
 const isCacheValid = (cacheKey: string, ttlMs: number, useGeneratedAt: boolean = false) => {
   const cached = localStorage.getItem(cacheKey);
   if (!cached) return false;
@@ -27,16 +32,13 @@ const isCacheValid = (cacheKey: string, ttlMs: number, useGeneratedAt: boolean =
   const now = Date.now();
 
   if (useGeneratedAt && parsedCache.data?.generatedAt) {
-    // For current insights, use generatedAt from API response
     const generatedTime = parsedCache.data.generatedAt;
     return (now - generatedTime) < ttlMs;
   } else {
-    // For previous insights, use local cache timestamp
     return (now - parsedCache.cachedAt) < ttlMs;
   }
 };
 
-// Helper to get valid cache
 const getValidCache = (cacheKey: string, ttlMs: number, useGeneratedAt: boolean = false) => {
   try {
     if (!isCacheValid(cacheKey, ttlMs, useGeneratedAt)) {
@@ -45,86 +47,97 @@ const getValidCache = (cacheKey: string, ttlMs: number, useGeneratedAt: boolean 
     }
     const cached = localStorage.getItem(cacheKey);
     if (!cached) return null;
-    
+
     const parsed = JSON.parse(cached);
-    
-    // Ensure we have valid data structure
+
     if (!parsed || (parsed.data === undefined && !parsed.insights)) {
       localStorage.removeItem(cacheKey);
       return null;
     }
-    
+
     return parsed;
   } catch (error) {
-    // If parsing fails, clear the cache
     localStorage.removeItem(cacheKey);
     return null;
   }
 };
 
-
-// Add helper functions for generation status
-const setGenerationInProgress = () => {
-  localStorage.setItem(GENERATION_STATUS_KEY, JSON.stringify({
-    inProgress: true,
-    startedAt: Date.now()
-  }));
-};
-
-const clearGenerationStatus = () => {
-  localStorage.removeItem(GENERATION_STATUS_KEY);
-};
-
-const isGenerationInProgress = () => {
-  const status = localStorage.getItem(GENERATION_STATUS_KEY);
-  if (!status) return false;
-
-  const parsed = JSON.parse(status);
-  const now = Date.now();
-
-  // Check if generation timed out
-  if (now - parsed.startedAt > GENERATION_TIMEOUT) {
-    clearGenerationStatus();
-    return false;
-  }
-
-  return parsed.inProgress;
-};
+// =====================================================
+// Job Status Polling
+// =====================================================
 
 /**
- * 
- * 
- * Generate AI insights
+ * Poll the job status endpoint until completed or failed
+ * Resolves with the completed response data
+ * Rejects on failure or timeout
  */
+const pollJobStatus = (jobId: string): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now();
 
+    const poll = async () => {
+      try {
+        // Check timeout
+        if (Date.now() - startTime > POLL_TIMEOUT_MS) {
+          reject(new Error('Insights generation timed out. Please try again.'));
+          return;
+        }
+
+        const response = await api.get(`/ai-insights/status/${jobId}`);
+
+        if (!response.ok) {
+          const error = await response.json();
+          reject(new Error(error.message || 'Failed to check job status'));
+          return;
+        }
+
+        const result = await response.json();
+
+        if (result.status === 'completed') {
+          resolve(result);
+          return;
+        }
+
+        if (result.status === 'failed') {
+          reject(new Error(result.message || 'Insights generation failed'));
+          return;
+        }
+
+        // Still processing — poll again
+        setTimeout(poll, POLL_INTERVAL_MS);
+
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    // Start first poll
+    poll();
+  });
+};
+
+// =====================================================
+// Public API
+// =====================================================
+
+/**
+ * Generate AI insights
+ * Returns cached data instantly or polls for background job completion
+ */
 export const generateAIInsights = async () => {
   try {
-    // Check cache first - add try-catch for safety
+    // Check localStorage cache first
     try {
       const cachedData = getValidCache(CACHE_KEYS.CURRENT_INSIGHTS, TTL.CURRENT_INSIGHTS, true);
       if (cachedData) {
-        // Clear any lingering generation status since we have valid data
-        clearGenerationStatus();
-        console.log('Returning cached insights:', cachedData);
         return cachedData;
       }
     } catch (cacheError) {
       console.error('Cache retrieval error:', cacheError);
-      // Continue to generate new insights if cache fails
     }
-    
-    // Check if already generating
-    if (isGenerationInProgress()) {
-      throw new Error('Insight generation already in progress');
-    }
-    
-    // Set generation in progress
-    setGenerationInProgress();
 
+    // Call POST — backend checks DB cache, then enqueues if needed
     const response = await api.post('/ai-insights', {});
-    
-    // Clear generation status on success
-    clearGenerationStatus();
 
     if (!response.ok) {
       const error = await response.json();
@@ -132,20 +145,37 @@ export const generateAIInsights = async () => {
     }
 
     const data = await response.json();
-    
-    // Cache the response with consistent structure
-    const cacheData = {
-      ...data,
-      cachedAt: Date.now()
-    };
-    
-    localStorage.setItem(CACHE_KEYS.CURRENT_INSIGHTS, JSON.stringify(cacheData));
-    
-    return data;
+
+    // 200 — Backend returned cached insights from DB
+    if (response.status === 200) {
+      const cacheData = {
+        ...data,
+        cachedAt: Date.now()
+      };
+      localStorage.setItem(CACHE_KEYS.CURRENT_INSIGHTS, JSON.stringify(cacheData));
+      return data;
+    }
+
+    // 202 — Job enqueued, need to poll for result
+    if (response.status === 202 && data.jobId) {
+      const result = await pollJobStatus(data.jobId);
+
+      // Cache the completed result
+      const completedData = {
+        message: result.message,
+        data: result.data,
+        generatedAt: result.generatedAt,
+        cachedAt: Date.now()
+      };
+      localStorage.setItem(CACHE_KEYS.CURRENT_INSIGHTS, JSON.stringify(completedData));
+
+      return completedData;
+    }
+
+    // Unexpected response
+    throw new Error('Unexpected response from insights endpoint');
+
   } catch (error) {
-    // Clear generation status on error
-    clearGenerationStatus();
-    
     const uiMessage = ErrorLogger.logError(
       error,
       { service: "AIInsightsService", action: "generateAIInsights" },
@@ -160,10 +190,9 @@ export const generateAIInsights = async () => {
  */
 export const getPreviousInsights = async () => {
   try {
-    // Check cache first
     const cachedData = getValidCache(CACHE_KEYS.PREVIOUS_INSIGHTS, TTL.PREVIOUS_INSIGHTS, false);
     if (cachedData) {
-      return cachedData.data; // Return just the data part
+      return cachedData.data;
     }
 
     const response = await api.get('/ai-insights/previous');
@@ -175,7 +204,6 @@ export const getPreviousInsights = async () => {
 
     const data = await response.json();
 
-    // Cache the response with current timestamp
     localStorage.setItem(CACHE_KEYS.PREVIOUS_INSIGHTS, JSON.stringify({
       data: data,
       cachedAt: Date.now()
@@ -192,7 +220,9 @@ export const getPreviousInsights = async () => {
   }
 };
 
-// Update the export object
+// =====================================================
+// Exports
+// =====================================================
 
 export const hasValidCurrentInsights = () => {
   return isCacheValid(CACHE_KEYS.CURRENT_INSIGHTS, TTL.CURRENT_INSIGHTS, true);
@@ -202,6 +232,3 @@ export const aiInsightsApiService = {
   generateInsights: generateAIInsights,
   getPreviousInsights: getPreviousInsights
 };
-
-// Export the status check function
-export const isInsightGenerationInProgress = isGenerationInProgress;

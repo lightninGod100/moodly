@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import WAVES from 'vanta/dist/vanta.waves.min';
 import { useUser } from '../contexts/UserContext';
 // Import at top
-import { aiInsightsApiService, hasValidCurrentInsights, isInsightGenerationInProgress } from '../services/AIInsightsService';
+import { aiInsightsApiService, hasValidCurrentInsights } from '../services/AIInsightsService';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '../constants/routes';
 import { useNotification } from '../contexts/NotificationContext';
@@ -61,56 +61,15 @@ const UserDashboard = ({
   const [reportType, setReportType] = useState<'current' | 'previous' | null>(null);
   const navigate = useNavigate();
   const { showNotification } = useNotification();
-  // In the component, after state declarations, add effect to check generation status
-  useEffect(() => {
-    // Check if generation is in progress on mount
-    if (isInsightGenerationInProgress()) {
-      setIsReportGenerating(true);
 
-      // Poll for completion
-      const pollInterval = setInterval(() => {
-        if (!isInsightGenerationInProgress()) {
-          setIsReportGenerating(false);
-          clearInterval(pollInterval);
-          // Check if insights are now available
-
-          if (hasValidCurrentInsights()) {
-            setIsReportGenerating(false);
-            clearInterval(pollInterval);
-          }
-        }
-      }, 2000); // Poll every 2 seconds
-
-      return () => clearInterval(pollInterval);
-    }
-  }, []);
 
   // Update handleGenerateInsights to handle in-progress state
   const handleGenerateInsights = async () => {
     try {
-      // If we already have valid cached insights, just load them
-      if (hasValidCurrentInsights()) {
-        setIsReportGenerating(true);
-        const response = await aiInsightsApiService.generateInsights(); // This will return cached data
-        setInsightsData(response.data);
-        setReportType('current');
-        console.log('Loaded cached insights:', response.data);
-        setIsReportGenerating(false);
-        return;
-      }
-
-      // Only check generation status for new generation
-      if (isInsightGenerationInProgress()) {
-        console.log('Generation already in progress');
-        return;
-      }
-
       setIsReportGenerating(true);
       const response = await aiInsightsApiService.generateInsights();
       setInsightsData(response.data);
-      console.log('Current insights data structure:', response.data);
       setReportType('current');
-      console.log('Insights generated:', response.data);
     } catch (error) {
       console.error('Failed to generate insights:', error);
       // Only show alert if it's not the "already in progress" error
@@ -206,20 +165,20 @@ const UserDashboard = ({
 
   // Fetch frequency data when period changes
   useEffect(() => {
-    if (prevFrequencyPeriod.current !== null && 
-        prevFrequencyPeriod.current !== selectedFrequencyPeriod) {
+    if (prevFrequencyPeriod.current !== null &&
+      prevFrequencyPeriod.current !== selectedFrequencyPeriod) {
       fetchFrequencyData(selectedFrequencyPeriod);
     }
     prevFrequencyPeriod.current = selectedFrequencyPeriod;
   }, [selectedFrequencyPeriod]);
 
-useEffect(() => {
-  if (prevThroughDayPeriod.current !== null && 
+  useEffect(() => {
+    if (prevThroughDayPeriod.current !== null &&
       prevThroughDayPeriod.current !== throughDayViewPeriod) {
-    fetchThroughDayViewData(throughDayViewPeriod);
-  }
-  prevThroughDayPeriod.current = throughDayViewPeriod;
-}, [throughDayViewPeriod]);
+      fetchThroughDayViewData(throughDayViewPeriod);
+    }
+    prevThroughDayPeriod.current = throughDayViewPeriod;
+  }, [throughDayViewPeriod]);
 
 
   const fetchUserStats = async () => {
@@ -843,7 +802,7 @@ useEffect(() => {
       if (hasValidCurrentInsights()) {
         return false;
       }
-      return isReportGenerating || isInsightGenerationInProgress();
+      return isReportGenerating;
     };
     // In AIInsightsLanding component, update getStatusMessage
     const getStatusMessage = () => {
@@ -853,7 +812,7 @@ useEffect(() => {
       }
 
       // Only show if actually generating
-      if (isInsightGenerationInProgress()) {
+      if (isReportGenerating) {
         return (
           <div className="text-center mt-2">
             <p className="text-yellow-400 text-sm animate-pulse">
